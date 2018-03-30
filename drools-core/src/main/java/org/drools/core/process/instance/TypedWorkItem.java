@@ -18,7 +18,27 @@ package org.drools.core.process.instance;
 
 import java.util.Map;
 
-public interface WorkItem extends TypedWorkItem<Map<String, Object>>,
-                                  org.kie.api.runtime.process.WorkItem {
+public interface TypedWorkItem<T> extends org.kie.api.runtime.process.TypedWorkItem<T> {
 
+    void setName(String name);
+
+    void setParameters(T parameters);
+
+    void setResults(Map<String, Object> results);
+
+    void setState(int state);
+
+    void setProcessInstanceId(long processInstanceId);
+
+    void setDeploymentId(String deploymentId);
+
+    void setNodeInstanceId(long deploymentId);
+
+    void setNodeId(long deploymentId);
+
+    String getDeploymentId();
+
+    long getNodeInstanceId();
+
+    long getNodeId();
 }

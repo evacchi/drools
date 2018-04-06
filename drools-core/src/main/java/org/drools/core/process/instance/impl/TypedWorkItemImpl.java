@@ -17,25 +17,32 @@
 package org.drools.core.process.instance.impl;
 
 import java.io.Serializable;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
 import org.drools.core.process.instance.WorkItem;
 
-public class WorkItemImpl implements WorkItem<Map<String, Object>, Map<String, Object>>, Serializable {
+public class TypedWorkItemImpl<P, R> implements WorkItem<P, R>,
+                                                Serializable {
 
     private static final long serialVersionUID = 510l;
 
     private long id;
     private String name;
     private int state = 0;
-    private Map<String, Object> parameters = new HashMap<String, Object>();
-    private Map<String, Object> results = new HashMap<String, Object>();
+    private P parameters;
+    private R results;
     private long processInstanceId;
     private String deploymentId;
     private long nodeInstanceId;
     private long nodeId;
+
+    public TypedWorkItemImpl() {
+    }
+
+    public TypedWorkItemImpl(P parameters) {
+        this.parameters = parameters;
+    }
 
     public void setId(long id) {
         this.id = id;
@@ -61,37 +68,37 @@ public class WorkItemImpl implements WorkItem<Map<String, Object>, Map<String, O
         return state;
     }
 
-    public void setParameters(Map<String, Object> parameters) {
+    public void setParameters(P parameters) {
         this.parameters = parameters;
     }
 
     public void setParameter(String name, Object value) {
-        this.parameters.put(name, value);
+        throw new UnsupportedOperationException();
     }
 
     public Object getParameter(String name) {
-        return parameters.get(name);
+        throw new UnsupportedOperationException();
     }
 
-    public Map<String, Object> getParameters() {
+    public P getParameters() {
         return parameters;
     }
 
-    public void setResults(Map<String, Object> results) {
+    public void setResults(R results) {
         if (results != null) {
             this.results = results;
         }
     }
 
     public void setResult(String name, Object value) {
-        results.put(name, value);
+        throw new UnsupportedOperationException();
     }
 
     public Object getResult(String name) {
-        return results.get(name);
+        throw new UnsupportedOperationException();
     }
 
-    public Map<String, Object> getResults() {
+    public R getResults() {
         return results;
     }
 
@@ -136,17 +143,9 @@ public class WorkItemImpl implements WorkItem<Map<String, Object>, Map<String, O
         b.append(state);
         b.append(", processInstanceId=");
         b.append(processInstanceId);
-        b.append(", parameters{");
-        for (Iterator<Map.Entry<String, Object>> iterator = parameters.entrySet().iterator(); iterator.hasNext(); ) {
-            Map.Entry<String, Object> entry = iterator.next();
-            b.append(entry.getKey());
-            b.append("=");
-            b.append(entry.getValue());
-            if (iterator.hasNext()) {
-                b.append(", ");
-            }
-        }
-        b.append("}]");
+        b.append(", parameters=");
+        b.append(parameters);
+        b.append("]");
         return b.toString();
     }
 }

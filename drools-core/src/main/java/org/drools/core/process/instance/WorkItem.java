@@ -16,17 +16,15 @@
 
 package org.drools.core.process.instance;
 
-import java.util.Map;
-
-public interface WorkItem extends org.kie.api.runtime.process.WorkItem {
+public interface WorkItem<P, R> extends org.kie.api.runtime.process.WorkItem<P, R> {
 
     void setName(String name);
 
     void setParameter(String name, Object value);
 
-    void setParameters(Map<String, Object> parameters);
+    void setParameters(P parameters);
 
-    void setResults(Map<String, Object> results);
+    void setResults(R results);
 
     void setState(int state);
 

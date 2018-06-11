@@ -386,7 +386,15 @@ public class CompiledFEELSupport {
             }
             return ((FEELFunction) function).invokeReflectively(feelExprCtx, invocationParams);
         } else if (function instanceof UnaryTest) {
-            throw new UnsupportedOperationException("TODO"); // TODO
+            Object param = null;
+            if (params instanceof List) {
+                param = ((List) params).get(0);
+            } else if (params instanceof Object[]) {
+                param = ((Object[]) params)[0];
+            } else {
+                param = params;
+            }
+            return ((UnaryTest) function).apply(feelExprCtx, param);
         }
         return null;
     }

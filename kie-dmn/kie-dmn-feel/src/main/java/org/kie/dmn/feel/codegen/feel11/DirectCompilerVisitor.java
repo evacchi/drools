@@ -60,6 +60,7 @@ import org.drools.javaparser.ast.type.ClassOrInterfaceType;
 import org.drools.javaparser.ast.type.UnknownType;
 import org.kie.dmn.feel.lang.CompositeType;
 import org.kie.dmn.feel.lang.Type;
+import org.kie.dmn.feel.lang.ast.BaseNode;
 import org.kie.dmn.feel.lang.ast.InfixOpNode.InfixOperator;
 import org.kie.dmn.feel.lang.ast.RangeNode;
 import org.kie.dmn.feel.lang.ast.RangeNode.IntervalBoundary;
@@ -477,10 +478,20 @@ public class DirectCompilerVisitor extends FEEL_1_1BaseVisitor<DirectCompilerRes
         return DirectCompilerResult.of(list, BuiltInType.LIST, DirectCompilerResult.mergeFDs(exprs.toArray(new DirectCompilerResult[]{})));
     }
 
-//    @Override
-//    public DirectCompilerResult visitRelExpressionValueList(FEEL_1_1Parser.RelExpressionValueListContext ctx) {
-//        throw new UnsupportedOperationException("TODO"); // TODO
-//    }
+    @Override
+    public DirectCompilerResult visitRelExpressionValueList(FEEL_1_1Parser.RelExpressionValueListContext ctx) {
+        DirectCompilerResult value = visit(ctx.val);
+        DirectCompilerResult list = visit(ctx.expressionList());
+
+        MethodCallExpr expression = new MethodCallExpr(list.getExpression(), "contains");
+        expression.addArgument(value.getExpression());
+
+        return DirectCompilerResult.of(
+                expression,
+                BuiltInType.UNARY_TEST,
+                mergeFDs(value, list));
+
+    }
 
     @Override
     public DirectCompilerResult visitInterval(FEEL_1_1Parser.IntervalContext ctx) {
@@ -682,11 +693,11 @@ public class DirectCompilerVisitor extends FEEL_1_1BaseVisitor<DirectCompilerRes
 //    public DirectCompilerResult visitRelExpressionTestList(FEEL_1_1Parser.RelExpressionTestListContext ctx) {
 //        throw new UnsupportedOperationException("TODO"); // TODO
 //    }
-//
-//    @Override
-//    public DirectCompilerResult visitRelExpressionValue(RelExpressionValueContext ctx) {
-//        throw new UnsupportedOperationException("TODO"); // TODO
-//    }
+
+    @Override
+    public DirectCompilerResult visitRelExpressionValue(FEEL_1_1Parser.RelExpressionValueContext ctx) {
+        throw new UnsupportedOperationException("TODO"); // TODO
+    }
 
     @Override
     public DirectCompilerResult visitPositiveUnaryTestNull(FEEL_1_1Parser.PositiveUnaryTestNullContext ctx) {

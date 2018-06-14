@@ -20,6 +20,7 @@ import java.math.BigDecimal;
 import java.time.Period;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import org.kie.dmn.api.feel.runtime.events.FEELEvent;
 import org.kie.dmn.feel.lang.EvaluationContext;
@@ -101,6 +102,14 @@ public class CompiledFEELSemanticMappings {
             result.add(elem);
         }
         return result;
+    }
+
+    public static Object nullPreservingEquals(EvaluationContext ctx, Object left, Object right) {
+        if (left == null || right == null) {
+            ctx.notifyEvt(() -> new ASTEventBase(FEELEvent.Severity.ERROR, Msg.createMessage(Msg.IS_NULL, "argument"), null) );
+            return null;
+        }
+        return left.equals(right);
     }
 
     /**
@@ -220,18 +229,23 @@ public class CompiledFEELSemanticMappings {
         return EvalHelper.isEqual(left, right, null);
     }
 
-    public static Boolean between(Object val, Object s, Object e) {
-        if (!val.getClass().isAssignableFrom(s.getClass())) {
-            // TODO here in the original code "interpreted" there was an error reporting utility.
+    public static Boolean between(EvaluationContext ctx,
+                                  Object value, Object start, Object end) {
+        if ( value == null ) { ctx.notifyEvt(() -> new ASTEventBase(FEELEvent.Severity.ERROR, Msg.createMessage(Msg.IS_NULL, "value"), null) ); return null; }
+        if ( start == null ) { ctx.notifyEvt(() -> new ASTEventBase(FEELEvent.Severity.ERROR, Msg.createMessage(Msg.IS_NULL, "start"), null) ); return null; }
+        if ( end == null )   { ctx.notifyEvt(() -> new ASTEventBase(FEELEvent.Severity.ERROR, Msg.createMessage(Msg.IS_NULL, "end"), null) ); return null; }
+
+        if (!value.getClass().isAssignableFrom(start.getClass())) {
+            ctx.notifyEvt(() -> new ASTEventBase(FEELEvent.Severity.ERROR, Msg.createMessage(Msg.X_TYPE_INCOMPATIBLE_WITH_Y_TYPE, "value", "start"), null) );
             return null;
         }
 
-        if (!val.getClass().isAssignableFrom(e.getClass())) {
-            // TODO here in the original code "interpreted" there was an error reporting utility.
+        if (!value.getClass().isAssignableFrom(end.getClass())) {
+            ctx.notifyEvt(() -> new ASTEventBase(FEELEvent.Severity.ERROR, Msg.createMessage(Msg.X_TYPE_INCOMPATIBLE_WITH_Y_TYPE, "value", "end"), null) );
             return null;
         }
 
-        return gte(val, s) && lte(val, e);
+        return gte(value, start) && lte(value, end);
     }
 
     /**

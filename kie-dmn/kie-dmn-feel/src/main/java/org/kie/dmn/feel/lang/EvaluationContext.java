@@ -55,4 +55,5 @@ public interface EvaluationContext {
 
     Object getRootObject();
 
+    default EvaluationContext current() { return null; };
 }

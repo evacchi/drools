@@ -28,8 +28,11 @@ import org.kie.dmn.feel.runtime.UnaryTest;
 import org.kie.dmn.feel.runtime.functions.*;
 
 import java.time.*;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 
 public enum BuiltInType implements SimpleType {
@@ -47,6 +50,19 @@ public enum BuiltInType implements SimpleType {
     LIST("list"),
     CONTEXT("context"),
     UNARY_TEST("unary test");
+
+    private static final Set<BuiltInType> SCALAR_TYPES =
+            new HashSet<>(Arrays.asList(
+                UNKNOWN,
+                NUMBER,
+                STRING,
+                DATE,
+                TIME,
+                DATE_TIME,
+                DURATION,
+                BOOLEAN,
+                RANGE
+            ));
 
     private final String[] names;
     private final BuiltInTypeSymbol symbol;
@@ -156,5 +172,9 @@ public enum BuiltInType implements SimpleType {
             return true; // a null-value can be assigned to any type.
         }
         return isInstanceOf(value, this);
+    }
+
+    public boolean isScalar() {
+        return SCALAR_TYPES.contains(this);
     }
 }

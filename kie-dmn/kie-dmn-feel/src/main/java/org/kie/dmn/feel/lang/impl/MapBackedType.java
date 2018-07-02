@@ -83,4 +83,9 @@ public class MapBackedType
         }
         return true;
     }
+
+    @Override
+    public boolean isScalar() {
+        return false;
+    }
 }

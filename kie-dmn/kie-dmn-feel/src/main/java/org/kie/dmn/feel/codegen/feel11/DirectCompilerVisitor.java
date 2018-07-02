@@ -711,6 +711,13 @@ public class DirectCompilerVisitor extends FEEL_1_1BaseVisitor<DirectCompilerRes
                         .map(this::visit)
                         .collect(Collectors.toList());
 
+        if (tests.size() == 1) {
+            DirectCompilerResult directCompilerResult = tests.get(0);
+            if (directCompilerResult.resultType.isScalar()) {
+                return directCompilerResult;
+            }
+        }
+
         MethodCallExpr testList = new MethodCallExpr(
                 null,
                 "list",
@@ -1349,6 +1356,11 @@ public class DirectCompilerVisitor extends FEEL_1_1BaseVisitor<DirectCompilerRes
     public DirectCompilerResult visitNegatedUnaryTests(FEEL_1_1Parser.NegatedUnaryTestsContext ctx) {
         FEEL_1_1Parser.SimpleUnaryTestsContext child = (FEEL_1_1Parser.SimpleUnaryTestsContext) ctx.getChild(2);
         DirectCompilerResult result = visit(child);
-        return createUnaryTestExpression(ctx, result, UnaryOperator.NOT);
+        if ( result.resultType.isScalar() ) {
+            MethodCallExpr expr = new MethodCallExpr(null, "not", new NodeList<>(result.getExpression()));
+            return DirectCompilerResult.of(expr, BuiltInType.UNKNOWN, result.getFieldDeclarations());
+        } else {
+            return createUnaryTestExpression(ctx, result, UnaryOperator.NOT);
+        }
     }
 }

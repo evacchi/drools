@@ -108,4 +108,9 @@ public class JavaBackedType implements CompositeType {
     public boolean isAssignableValue(Object value) {
         return value == null || wrapped.getClass().isAssignableFrom(value.getClass());
     }
+
+    @Override
+    public boolean isScalar() {
+        return false;
+    }
 }

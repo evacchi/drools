@@ -45,4 +45,8 @@ public class BuiltInTypeSymbol
         return getType().isAssignableValue(value);
     }
 
+    @Override
+    public boolean isScalar() {
+        return getType().isScalar();
+    }
 }

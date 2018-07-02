@@ -364,7 +364,7 @@ public class CompiledFEELSemanticMappings {
         return not(test.apply(null, arg));
     }
 
-    private static Boolean not(Object arg) {
+    public static Boolean not(Object arg) {
         if (Boolean.TRUE.equals(arg)) {
             return Boolean.FALSE;
         }

@@ -104,6 +104,10 @@ public class ASTBuilderFactory {
         return new NameRefNode( ctx, type );
     }
 
+    public static NameRefNode newNameRefNode( ParserRuleContext ctx, String name, Type type ) {
+        return new NameRefNode( ctx, name, type );
+    }
+
     public static QualifiedNameNode newQualifiedNameNode(ParserRuleContext ctx, ArrayList<NameRefNode> parts, Type type ) {
         return new QualifiedNameNode( ctx, parts, type );
     }

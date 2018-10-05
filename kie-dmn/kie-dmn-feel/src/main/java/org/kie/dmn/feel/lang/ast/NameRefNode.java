@@ -36,6 +36,12 @@ public class NameRefNode
         this.resultType = type;
     }
 
+    public NameRefNode(ParserRuleContext ctx, String text, Type type) {
+        super( ctx );
+        this.resultType = type;
+        this.setText(text);
+    }
+
     @Override
     public Object evaluate(EvaluationContext ctx) {
         String varName = EvalHelper.normalizeVariableName( getText() );

@@ -197,7 +197,7 @@ public class DirectCompilerVisitor extends FEEL_1_1BaseVisitor<DirectCompilerRes
     }
 
     @Override
-    public DirectCompilerResult visitBooleanLiteral(FEEL_1_1Parser.BooleanLiteralContext ctx) {
+    public DirectCompilerResult visitBoolLiteral(FEEL_1_1Parser.BoolLiteralContext ctx) {
         Expression result = null;
         String literalText = ParserHelper.getOriginalText(ctx);
         // FEEL spec grammar rule 36. Boolean literal = "true" | "false" ;

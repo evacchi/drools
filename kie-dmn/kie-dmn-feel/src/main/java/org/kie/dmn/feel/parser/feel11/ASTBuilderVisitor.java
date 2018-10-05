@@ -101,7 +101,7 @@ public class ASTBuilderVisitor
     }
 
     @Override
-    public BaseNode visitBooleanLiteral(FEEL_1_1Parser.BooleanLiteralContext ctx) {
+    public BaseNode visitBoolLiteral(FEEL_1_1Parser.BoolLiteralContext ctx) {
         return ASTBuilderFactory.newBooleanNode( ctx );
     }
 
@@ -487,7 +487,7 @@ public class ASTBuilderVisitor
 
     @Override
     public BaseNode visitUnaryTests_negated(FEEL_1_1Parser.UnaryTests_negatedContext ctx) {
-        BaseNode name = ASTBuilderFactory.newNameRefNode( ctx.not_key(), BuiltInType.BOOLEAN ); // negating a unary tests: BOOLEAN-type anyway
+        BaseNode name = ASTBuilderFactory.newNameRefNode( ctx, "not", BuiltInType.BOOLEAN ); // negating a unary tests: BOOLEAN-type anyway
         ListNode value = (ListNode) visit( ctx.positiveUnaryTests() );
         return ASTBuilderFactory.newListNode(ctx, Collections.singletonList(buildNotCall(ctx, name, value)))    ;
     }

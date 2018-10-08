@@ -1,5 +1,8 @@
 package org.kie.dmn.feel.codegen.feel11;
 
+import java.util.List;
+
+import org.drools.javaparser.JavaParser;
 import org.drools.javaparser.ast.NodeList;
 import org.drools.javaparser.ast.body.Parameter;
 import org.drools.javaparser.ast.expr.CastExpr;
@@ -8,15 +11,23 @@ import org.drools.javaparser.ast.expr.Expression;
 import org.drools.javaparser.ast.expr.LambdaExpr;
 import org.drools.javaparser.ast.expr.MethodCallExpr;
 import org.drools.javaparser.ast.expr.NameExpr;
+import org.drools.javaparser.ast.expr.StringLiteralExpr;
 import org.drools.javaparser.ast.stmt.ExpressionStmt;
 import org.drools.javaparser.ast.type.Type;
 import org.drools.javaparser.ast.type.UnknownType;
+import org.kie.dmn.feel.lang.ast.InfixOpNode;
+import org.kie.dmn.feel.lang.ast.QuantifiedExpressionNode;
 import org.kie.dmn.feel.lang.ast.RangeNode;
+import org.kie.dmn.feel.lang.ast.UnaryTestNode;
 
 import static org.kie.dmn.feel.codegen.feel11.Constants.BigDecimalT;
+import static org.kie.dmn.feel.codegen.feel11.Constants.BuiltInTypeT;
 import static org.kie.dmn.feel.codegen.feel11.Constants.DECIMAL_128;
 
 public class Expressions {
+
+    private static final Expression QUANTIFIER_SOME = JavaParser.parseExpression("org.kie.dmn.feel.lang.ast.QuantifiedExpressionNode.Quantifier.SOME");
+    private static final Expression QUANTIFIER_EVERY = JavaParser.parseExpression("org.kie.dmn.feel.lang.ast.QuantifiedExpressionNode.Quantifier.EVERY");
 
     public static final String LEFT = "left";
     public static final NameExpr LEFT_EXPR = new NameExpr(LEFT);
@@ -28,16 +39,79 @@ public class Expressions {
         return new MethodCallExpr(e, "negate");
     }
 
-    public static MethodCallExpr add(Expression left, Expression right) {
+    public static MethodCallExpr binary(
+            InfixOpNode.InfixOperator operator,
+            Expression left,
+            Expression right) {
         EnclosedExpr l = castTo(BigDecimalT, left);
         EnclosedExpr r = castTo(BigDecimalT, right);
-        return new MethodCallExpr(l, "add", new NodeList<>(r, DECIMAL_128));
+        return new MethodCallExpr(l, toFunctionName(operator), new NodeList<>(r, DECIMAL_128));
     }
 
-    public static MethodCallExpr mult(Expression left, Expression right) {
-        EnclosedExpr l = castTo(BigDecimalT, left);
+    public static String toFunctionName(InfixOpNode.InfixOperator operator) {
+        switch (operator) {
+            case ADD:
+                return "add";
+            case SUB:
+                return "sub";
+            case MULT:
+                return "mult";
+            case DIV:
+                return "div";
+            case POW:
+                return "pow";
+            case LTE:
+                return "lte";
+            case LT:
+                return "lt";
+            case GT:
+                return "gt";
+            case GTE:
+                return "gte";
+            case EQ:
+                return "eq";
+            case NE:
+                return "ne";
+            case AND:
+                return "and";
+            case OR:
+                return "or";
+            default:
+                throw new UnsupportedOperationException(operator.toString());
+        }
+    }
+
+    public static MethodCallExpr unary(
+            UnaryTestNode.UnaryOperator operator,
+            Expression right) {
+        EnclosedExpr l = castTo(BigDecimalT, LEFT_EXPR);
         EnclosedExpr r = castTo(BigDecimalT, right);
-        return new MethodCallExpr(l, "mult", new NodeList<>(r, DECIMAL_128));
+        return new MethodCallExpr(l, toFunctionName(operator), new NodeList<>(r, DECIMAL_128));
+    }
+
+    private static String toFunctionName(UnaryTestNode.UnaryOperator operator) {
+        switch (operator) {
+            case LTE:
+                return "lte";
+            case LT:
+                return "lt";
+            case GT:
+                return "gt";
+            case GTE:
+                return "gte";
+            case EQ:
+                return "eq";
+            case NE:
+                return "ne";
+            case IN:
+                throw new UnsupportedOperationException(operator.toString());
+            case NOT:
+                throw new UnsupportedOperationException(operator.toString());
+            case TEST:
+                throw new UnsupportedOperationException(operator.toString());
+            default:
+                throw new UnsupportedOperationException(operator.toString());
+        }
     }
 
     public static MethodCallExpr eq(Expression left, Expression right) {
@@ -70,6 +144,28 @@ public class Expressions {
         return new EnclosedExpr(new CastExpr(type, new EnclosedExpr(expr)));
     }
 
+    public static Expression quantifier(
+            QuantifiedExpressionNode.Quantifier quantifier,
+            Expression quant,
+            List<Expression> names,
+            List<Expression> exprs) {
+        MethodCallExpr forCall = new MethodCallExpr(STDLIB, "quant");
+        forCall.addArgument(quantifier == QuantifiedExpressionNode.Quantifier.SOME ? QUANTIFIER_SOME : QUANTIFIER_EVERY);
+        forCall.addArgument(FeelCtx.FEELCTX);
+        Expression curForCallTail = forCall;
+        for (int i = 0; i < exprs.size(); i++) {
+            Expression name = names.get(i);
+            Expression expr = exprs.get(i);
+            curForCallTail = new MethodCallExpr(curForCallTail, "with")
+                    .addArgument(lambda(name))
+                    .addArgument(lambda(expr));
+        }
+        MethodCallExpr returnCall = new MethodCallExpr(curForCallTail, "satisfies");
+        Expression returnParam = lambda(quant);
+        returnCall.addArgument(returnParam);
+        return returnCall;
+    }
+
     public static MethodCallExpr range(RangeNode.IntervalBoundary lowBoundary,
                                        Expression lowEndPoint,
                                        Expression highEndPoint,
@@ -81,6 +177,13 @@ public class Expressions {
                 .addArgument(lowEndPoint)
                 .addArgument(highEndPoint)
                 .addArgument(Constants.rangeBoundary(highBoundary));
+    }
+
+    public static MethodCallExpr includes(Expression range, Expression target) {
+        return new MethodCallExpr(null, "includes")
+                .addArgument(FeelCtx.FEELCTX)
+                .addArgument(range)
+                .addArgument(target);
     }
 
     public static MethodCallExpr exists(Expression tests, Expression target) {
@@ -121,8 +224,19 @@ public class Expressions {
                 .addArgument(filter);
     }
 
-    public static MethodCallExpr unaryLt(Expression expression) {
-        return null;
+    public static MethodCallExpr isInstanceOf(Expression expr, Expression type) {
+        return new MethodCallExpr(type, "isInstanceOf")
+                .addArgument(expr);
+    }
+
+    public static MethodCallExpr determineTypeFromName(String typeAsText) {
+        return new MethodCallExpr(BuiltInTypeT, "determineTypeFromName")
+                .addArgument(new StringLiteralExpr(typeAsText));
+    }
+
+    public static Expression contains(Expression expr, Expression value) {
+        return new MethodCallExpr(expr, "contains")
+                .addArgument(value);
     }
 }
 

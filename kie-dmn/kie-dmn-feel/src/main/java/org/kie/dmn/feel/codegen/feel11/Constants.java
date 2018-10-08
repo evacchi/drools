@@ -29,6 +29,8 @@ public class Constants {
     public static final ClassOrInterfaceType UnaryTestT = JavaParser.parseClassOrInterfaceType(UnaryTest.class.getCanonicalName());
     public static final String RangeBoundary =
             Range.RangeBoundary.class.getCanonicalName();
+    public static final Expression BuiltInTypeT = JavaParser.parseExpression("org.kie.dmn.feel.lang.types.BuiltInType");
+
 
     public static FieldDeclaration of(Type type, String name, Expression initializer) {
         return new FieldDeclaration(
@@ -55,7 +57,7 @@ public class Constants {
     }
 
     public static FieldDeclaration unaryTest(String name, LambdaExpr value) {
-        return of(UnaryTestT, unaryTestName(name), value);
+        return of(UnaryTestT, name, value);
     }
 
     public static String unaryTestName(String originalText) {

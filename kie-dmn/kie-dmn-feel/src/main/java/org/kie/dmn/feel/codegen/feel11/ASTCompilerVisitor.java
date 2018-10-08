@@ -1,5 +1,6 @@
 package org.kie.dmn.feel.codegen.feel11;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 
 import org.drools.javaparser.ast.body.FieldDeclaration;
@@ -45,6 +46,8 @@ import org.kie.dmn.feel.lang.impl.MapBackedType;
 import org.kie.dmn.feel.lang.types.BuiltInType;
 import org.kie.dmn.feel.util.EvalHelper;
 
+import static org.kie.dmn.feel.codegen.feel11.DirectCompilerResult.mergeFDs;
+
 public class ASTCompilerVisitor implements Visitor<DirectCompilerResult> {
 
     @Override
@@ -89,11 +92,6 @@ public class ASTCompilerVisitor implements Visitor<DirectCompilerResult> {
     }
 
     @Override
-    public DirectCompilerResult visit(TypeNode n) {
-        throw new UnsupportedOperationException("Not yet implemented");
-    }
-
-    @Override
     public DirectCompilerResult visit(NameDefNode n) {
         StringLiteralExpr expr = new StringLiteralExpr(EvalHelper.normalizeVariableName(n.getText()));
         return DirectCompilerResult.of(expr, BuiltInType.STRING);
@@ -114,48 +112,28 @@ public class ASTCompilerVisitor implements Visitor<DirectCompilerResult> {
     public DirectCompilerResult visit(InfixOpNode n) {
         DirectCompilerResult left = n.getLeft().accept(this);
         DirectCompilerResult right = n.getRight().accept(this);
-        MethodCallExpr expr = null;
-        switch (n.getOperator()) {
-            case ADD:
-                expr = Expressions.add(left.getExpression(), right.getExpression());
-                break;
-            case SUB:
-                break;
-            case MULT:
-                expr = Expressions.mult(left.getExpression(), right.getExpression());
-                break;
-            case DIV:
-                break;
-            case POW:
-                break;
-            case LTE:
-                break;
-            case LT:
-                break;
-            case GT:
-                break;
-            case GTE:
-                break;
-            case EQ:
-                expr = Expressions.eq(left.getExpression(), right.getExpression());
-                break;
-            case NE:
-                break;
-            case AND:
-                break;
-            case OR:
-                break;
-            default:
-        }
-        if (expr == null) //fixme temp
-            throw new UnsupportedOperationException("Not yet implemented: " + n.getOperator());
-
+        MethodCallExpr expr = Expressions.binary(
+                n.getOperator(),
+                left.getExpression(),
+                right.getExpression());
         return DirectCompilerResult.of(expr, BuiltInType.UNKNOWN).withFD(left).withFD(right);
     }
 
     @Override
     public DirectCompilerResult visit(InstanceOfNode n) {
-        throw new UnsupportedOperationException("Not yet implemented");
+        DirectCompilerResult expr = n.getExpression().accept(this);
+        DirectCompilerResult type = n.getType().accept(this);
+        return DirectCompilerResult.of(
+                Expressions.isInstanceOf(expr.getExpression(), type.getExpression()),
+                BuiltInType.BOOLEAN,
+                mergeFDs(expr, type));
+    }
+
+    @Override
+    public DirectCompilerResult visit(TypeNode n) {
+        return DirectCompilerResult.of(
+                Expressions.determineTypeFromName(n.getText()),
+                BuiltInType.UNKNOWN);
     }
 
     @Override
@@ -267,9 +245,17 @@ public class ASTCompilerVisitor implements Visitor<DirectCompilerResult> {
         DirectCompilerResult value = n.getValue().accept(this);
         DirectCompilerResult exprs = n.getExprs().accept(this);
 
-        return DirectCompilerResult.of(
-                Expressions.exists(exprs.getExpression(), value.getExpression()),
-                BuiltInType.BOOLEAN).withFD(value).withFD(exprs);
+        if (exprs.resultType == BuiltInType.LIST) {
+            return DirectCompilerResult.of(
+                    Expressions.exists(exprs.getExpression(), value.getExpression()),
+                    BuiltInType.BOOLEAN).withFD(value).withFD(exprs);
+        } else if (exprs.resultType == BuiltInType.RANGE) {
+            return DirectCompilerResult.of(
+                    Expressions.includes(exprs.getExpression(), value.getExpression()),
+                    BuiltInType.BOOLEAN).withFD(value).withFD(exprs);
+        } else {
+            throw new IllegalArgumentException(exprs.resultType.toString());
+        }
     }
 
     @Override
@@ -305,7 +291,28 @@ public class ASTCompilerVisitor implements Visitor<DirectCompilerResult> {
 
     @Override
     public DirectCompilerResult visit(QuantifiedExpressionNode n) {
-        throw new UnsupportedOperationException("Not yet implemented");
+        DirectCompilerResult expr = n.getExpression().accept(this);
+
+        ArrayList<Expression> names = new ArrayList<>();
+        ArrayList<Expression> exprs = new ArrayList<>();
+        HashSet<FieldDeclaration> fds = new HashSet<>();
+
+        fds.addAll(expr.getFieldDeclarations());
+        for (IterationContextNode iterCtx : n.getIterationContexts()) {
+            DirectCompilerResult iterName = iterCtx.getName().accept(this);
+            DirectCompilerResult iterExpr = iterCtx.getExpression().accept(this);
+            names.add(iterName.getExpression());
+            exprs.add(iterExpr.getExpression());
+            fds.addAll(iterName.getFieldDeclarations());
+            fds.addAll(iterExpr.getFieldDeclarations());
+        }
+
+        return DirectCompilerResult.of(
+                Expressions.quantifier(
+                        n.getQuantifier(), expr.getExpression(), names, exprs),
+                expr.resultType,
+                fds);
+
     }
 
     @Override
@@ -320,7 +327,6 @@ public class ASTCompilerVisitor implements Visitor<DirectCompilerResult> {
                         n.getUpperBound()),
                 BuiltInType.RANGE,
                 DirectCompilerResult.mergeFDs(start, end));
-
     }
 
     @Override
@@ -328,7 +334,7 @@ public class ASTCompilerVisitor implements Visitor<DirectCompilerResult> {
         DirectCompilerResult result = n.getExpression().accept(this);
         if (n.getSign() == SignedUnaryNode.Sign.NEGATIVE) {
             return DirectCompilerResult.of(
-            Expressions.negate(result.getExpression()),
+                    Expressions.negate(result.getExpression()),
                     result.resultType,
                     result.getFieldDeclarations());
         } else {
@@ -339,36 +345,12 @@ public class ASTCompilerVisitor implements Visitor<DirectCompilerResult> {
     @Override
     public DirectCompilerResult visit(UnaryTestNode n) {
         DirectCompilerResult value = n.getValue().accept(this);
-        MethodCallExpr expr = null;
-        switch (n.getOperator()) {
-            case NOT:
-                expr = Expressions.notExists(value.getExpression());
-            case LTE:
-                break;
-            case LT:
-                expr = Expressions.lt(Expressions.LEFT_EXPR,  value.getExpression());
-            case GT:
-                expr = Expressions.gt(Expressions.LEFT_EXPR,  value.getExpression());
-            case GTE:
-                break;
-            case NE:
-                break;
-            case EQ:
-                break;
-            case IN:
-                break;
-            case TEST:
-                break;
-            default:
-                break;
-        }
-        if (expr == null) throw new UnsupportedOperationException(n.getOperator().toString());
+        MethodCallExpr expr = Expressions.unary(n.getOperator(), value.getExpression());
         LambdaExpr lambda = Expressions.lambda(expr);
         String utName = Constants.unaryTestName(n.getText());
         FieldDeclaration ut = Constants.unaryTest(utName, lambda);
         HashSet<FieldDeclaration> fds = new HashSet<>(value.getFieldDeclarations());
         fds.add(ut);
         return DirectCompilerResult.of(new NameExpr(utName), BuiltInType.UNARY_TEST, fds);
-
     }
 }

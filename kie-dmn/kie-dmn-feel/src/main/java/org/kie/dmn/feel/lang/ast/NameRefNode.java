@@ -56,6 +56,9 @@ public class NameRefNode
     public Type getResultType() {
         return resultType;
     }
-    
-    
+
+    @Override
+    public <T> T accept(Visitor<T> v) {
+        return v.visit(this);
+    }
 }

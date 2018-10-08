@@ -1,5 +1,6 @@
 package org.kie.dmn.feel.codegen.feel11;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.drools.javaparser.JavaParser;
@@ -85,39 +86,6 @@ public class Expressions {
 
     private static MethodCallExpr arithmetic(String op, Expression l, Expression r) {
         return new MethodCallExpr(l, op, new NodeList<>(r, DECIMAL_128));
-    }
-
-    public static String toFunctionName(InfixOpNode.InfixOperator operator) {
-        switch (operator) {
-            case ADD:
-                return "add";
-            case SUB:
-                return "sub";
-            case MULT:
-                return "mult";
-            case DIV:
-                return "div";
-            case POW:
-                return "pow";
-            case LTE:
-                return "lte";
-            case LT:
-                return "lt";
-            case GT:
-                return "gt";
-            case GTE:
-                return "gte";
-            case EQ:
-                return "eq";
-            case NE:
-                return "ne";
-            case AND:
-                return "and";
-            case OR:
-                return "or";
-            default:
-                throw new UnsupportedOperationException(operator.toString());
-        }
     }
 
     public static MethodCallExpr unary(
@@ -279,6 +247,15 @@ public class Expressions {
                 .addArgument(filter);
     }
 
+    public static MethodCallExpr path(Expression expr, List<Expression> filters) {
+        MethodCallExpr methodCallExpr = new MethodCallExpr(new MethodCallExpr(STDLIB, "path")
+                                                                   .addArgument(FeelCtx.FEELCTX)
+                                                                   .addArgument(expr),
+                                                           "with");
+        filters.forEach(methodCallExpr::addArgument);
+        return methodCallExpr;
+    }
+
     public static MethodCallExpr isInstanceOf(Expression expr, Expression type) {
         return new MethodCallExpr(type, "isInstanceOf")
                 .addArgument(expr);
@@ -292,6 +269,10 @@ public class Expressions {
     public static Expression contains(Expression expr, Expression value) {
         return new MethodCallExpr(expr, "contains")
                 .addArgument(value);
+    }
+
+    public static Expression coerceToString(Expression expression) {
+        return new MethodCallExpr(new NameExpr("String"), "valueOf").addArgument(expression);
     }
 }
 

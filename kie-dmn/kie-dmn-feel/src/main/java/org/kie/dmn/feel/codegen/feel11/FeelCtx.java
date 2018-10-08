@@ -22,6 +22,10 @@ public class FeelCtx {
         return new MethodCallExpr(FEELCTX, "getValue", new NodeList<>(new StringLiteralExpr(nameRef)));
     }
 
+    public static MethodCallExpr current() {
+        return new MethodCallExpr(FeelCtx.FEELCTX, "current");
+    }
+
     public static MethodCallExpr openContext() {
         return new MethodCallExpr(
                 new NameExpr(FEEL_SUPPORT),

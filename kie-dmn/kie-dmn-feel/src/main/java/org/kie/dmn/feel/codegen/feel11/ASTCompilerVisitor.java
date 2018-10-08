@@ -1,16 +1,31 @@
 package org.kie.dmn.feel.codegen.feel11;
 
+import java.lang.reflect.Method;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import org.drools.javaparser.JavaParser;
 import org.drools.javaparser.ast.body.FieldDeclaration;
+import org.drools.javaparser.ast.expr.BinaryExpr;
 import org.drools.javaparser.ast.expr.BooleanLiteralExpr;
+import org.drools.javaparser.ast.expr.CastExpr;
+import org.drools.javaparser.ast.expr.EnclosedExpr;
 import org.drools.javaparser.ast.expr.Expression;
 import org.drools.javaparser.ast.expr.LambdaExpr;
 import org.drools.javaparser.ast.expr.MethodCallExpr;
 import org.drools.javaparser.ast.expr.NameExpr;
 import org.drools.javaparser.ast.expr.NullLiteralExpr;
 import org.drools.javaparser.ast.expr.StringLiteralExpr;
+import org.kie.dmn.feel.lang.CompositeType;
+import org.kie.dmn.feel.lang.Type;
 import org.kie.dmn.feel.lang.ast.ASTNode;
 import org.kie.dmn.feel.lang.ast.BaseNode;
 import org.kie.dmn.feel.lang.ast.BetweenNode;
@@ -42,6 +57,7 @@ import org.kie.dmn.feel.lang.ast.StringNode;
 import org.kie.dmn.feel.lang.ast.TypeNode;
 import org.kie.dmn.feel.lang.ast.UnaryTestNode;
 import org.kie.dmn.feel.lang.ast.Visitor;
+import org.kie.dmn.feel.lang.impl.JavaBackedType;
 import org.kie.dmn.feel.lang.impl.MapBackedType;
 import org.kie.dmn.feel.lang.types.BuiltInType;
 import org.kie.dmn.feel.util.EvalHelper;
@@ -49,6 +65,42 @@ import org.kie.dmn.feel.util.EvalHelper;
 import static org.kie.dmn.feel.codegen.feel11.DirectCompilerResult.mergeFDs;
 
 public class ASTCompilerVisitor implements Visitor<DirectCompilerResult> {
+
+    private static class ScopeHelper {
+
+        Deque<Map<String, Type>> stack;
+
+        public ScopeHelper() {
+            this.stack = new ArrayDeque<>();
+            this.stack.push(new HashMap<>());
+        }
+
+        public void addTypes(Map<String, Type> inputTypes) {
+            stack.peek().putAll(inputTypes);
+        }
+
+        public void addType(String name, Type type) {
+            stack.peek().put(name,
+                             type);
+        }
+
+        public void pushScope() {
+            stack.push(new HashMap<>());
+        }
+
+        public void popScope() {
+            stack.pop();
+        }
+
+        public Optional<Type> resolveType(String name) {
+            return stack.stream()
+                    .map(scope -> Optional.ofNullable(scope.get(name)))
+                    .flatMap(o -> o.isPresent() ? Stream.of(o.get()) : Stream.empty())
+                    .findFirst();
+        }
+    }
+
+    ScopeHelper scopeHelper = new ScopeHelper();
 
     @Override
     public DirectCompilerResult visit(ASTNode n) {
@@ -100,18 +152,83 @@ public class ASTCompilerVisitor implements Visitor<DirectCompilerResult> {
     @Override
     public DirectCompilerResult visit(NameRefNode n) {
         String nameRef = EvalHelper.normalizeVariableName(n.getText());
+        Type type = scopeHelper.resolveType(nameRef).orElse(BuiltInType.UNKNOWN);
         return DirectCompilerResult.of(FeelCtx.getValue(nameRef), BuiltInType.UNKNOWN);
     }
 
     @Override
     public DirectCompilerResult visit(QualifiedNameNode n) {
-        throw new UnsupportedOperationException("Not yet implemented");
+        List<NameRefNode> parts = n.getParts();
+        DirectCompilerResult nameRef0 = parts.get(0).accept(this); // previously qualifiedName visitor "ingest"-ed directly by calling directly "visitNameRef"
+        Type typeCursor = nameRef0.resultType;
+        Expression exprCursor = nameRef0.getExpression();
+        List<NameRefNode> rest = parts.subList(1, parts.size());
+        for (NameRefNode acc : rest) {
+            String accText = acc.getText();
+            if (typeCursor instanceof CompositeType) {
+                CompositeType compositeType = (CompositeType) typeCursor;
+
+                // setting next typeCursor
+                typeCursor = compositeType.getFields().get(accText);
+                exprCursor = exprCursor(exprCursor, accText, compositeType);
+            } else {
+                //  degraded mode, or accessing fields of DATE etc.
+//                DirectCompilerResult telescope = telescopePathAccessor(DirectCompilerResult.of(exprCursor, typeCursor), Arrays.asList(accText));
+//                exprCursor = telescope.getExpression();
+//                typeCursor = telescope.resultType;
+
+                List<Expression> ls = rest.stream().map(nr -> new StringLiteralExpr(nr.getText())).collect(Collectors.toList());
+                return DirectCompilerResult.of(
+                        Expressions.path(
+                                nameRef0.getExpression(),
+                                ls),
+                        // here we could still try to infer the result type, but presently use ANY
+                        BuiltInType.UNKNOWN);
+            }
+        }
+        // If it was a NameRef expression, the number coercion is directly performed by the EvaluationContext for the simple variable.
+        // Otherwise in case of QualifiedName expression, for a structured type like this case, it need to be coerced on the last accessor:
+        MethodCallExpr coerceNumberMethodCallExpr = new MethodCallExpr(new NameExpr(CompiledFEELSupport.class.getSimpleName()), "coerceNumber");
+        coerceNumberMethodCallExpr.addArgument(exprCursor);
+        return DirectCompilerResult.of(coerceNumberMethodCallExpr, typeCursor);
+    }
+
+    public Expression exprCursor(Expression exprCursor, String accText, CompositeType compositeType) {
+        // setting next exprCursor
+        if (compositeType instanceof MapBackedType) {
+            CastExpr castExpr = new CastExpr(JavaParser.parseType(Map.class.getCanonicalName()), exprCursor);
+            EnclosedExpr enclosedExpr = new EnclosedExpr(castExpr);
+            MethodCallExpr getExpr = new MethodCallExpr(enclosedExpr, "get");
+            getExpr.addArgument(new StringLiteralExpr(accText));
+            exprCursor = getExpr;
+        } else if (compositeType instanceof JavaBackedType) {
+            JavaBackedType javaBackedType = (JavaBackedType) compositeType;
+            Method accessor = EvalHelper.getGenericAccessor(javaBackedType.getWrapped(), accText);
+            CastExpr castExpr = new CastExpr(JavaParser.parseType(javaBackedType.getWrapped().getCanonicalName()), exprCursor);
+            EnclosedExpr enclosedExpr = new EnclosedExpr(castExpr);
+            exprCursor = new MethodCallExpr(enclosedExpr, accessor.getName());
+        } else {
+            throw new UnsupportedOperationException("A Composite type is either MapBacked or JavaBAcked");
+        }
+        return exprCursor;
     }
 
     @Override
     public DirectCompilerResult visit(InfixOpNode n) {
         DirectCompilerResult left = n.getLeft().accept(this);
         DirectCompilerResult right = n.getRight().accept(this);
+
+        if (n.getOperator() == InfixOpNode.InfixOperator.ADD && (
+                left.resultType == BuiltInType.STRING ||
+                        right.resultType == BuiltInType.STRING ||
+                        left.resultType != BuiltInType.NUMBER && right.resultType != BuiltInType.NUMBER)) {
+            BinaryExpr binaryExpr = new BinaryExpr(
+                    Expressions.coerceToString(left.getExpression()),
+                    right.getExpression(),
+                    BinaryExpr.Operator.PLUS);
+            return DirectCompilerResult.of(binaryExpr, BuiltInType.UNKNOWN).withFD(left).withFD(right);
+        }
+
         MethodCallExpr expr = Expressions.binary(
                 n.getOperator(),
                 left.getExpression(),
@@ -180,7 +297,11 @@ public class ASTCompilerVisitor implements Visitor<DirectCompilerResult> {
         //   ...
         DirectCompilerResult entries = n.getEntries()
                 .stream()
-                .map(e -> e.accept(this))
+                .map(e -> {
+                    DirectCompilerResult r = e.accept(this);
+                    scopeHelper.addType(e.getName().getText(), r.resultType);
+                    return r;
+                })
                 .reduce(openContext,
                         (l, r) -> DirectCompilerResult.of(
                                 r.getExpression().asMethodCallExpr().setScope(l.getExpression()),
@@ -229,7 +350,27 @@ public class ASTCompilerVisitor implements Visitor<DirectCompilerResult> {
 
     @Override
     public DirectCompilerResult visit(FunctionDefNode n) {
-        throw new UnsupportedOperationException("Not yet implemented");
+        MethodCallExpr list = new MethodCallExpr(null, "list");
+        n.getFormalParameters()
+                .stream()
+                .map(fp -> fp.accept(this))
+                .map(DirectCompilerResult::getExpression)
+                .forEach(list::addArgument);
+
+        if (n.isExternal()) {
+            List<String> paramNames =
+                    n.getFormalParameters().stream()
+                            .map(BaseNode::getText)
+                            .collect(Collectors.toList());
+
+            return Functions.declaration(
+                    n, list,
+                    Functions.external(paramNames, n.getBody()));
+        } else {
+            DirectCompilerResult body = n.getBody().accept(this);
+            return Functions.declaration(n, list,
+                                         body.getExpression()).withFD(body);
+        }
     }
 
     @Override
@@ -307,7 +448,6 @@ public class ASTCompilerVisitor implements Visitor<DirectCompilerResult> {
         String eN = Constants.functionName(n.getExpression().getText());
         FieldDeclaration field = Constants.function(eN, eL);
 
-
         ArrayList<Expression> names = new ArrayList<>();
         ArrayList<Expression> exprs = new ArrayList<>();
         HashSet<FieldDeclaration> fds = new HashSet<>();
@@ -336,7 +476,6 @@ public class ASTCompilerVisitor implements Visitor<DirectCompilerResult> {
                         n.getQuantifier(), new NameExpr(eN), names, exprs),
                 expr.resultType,
                 fds);
-
     }
 
     @Override

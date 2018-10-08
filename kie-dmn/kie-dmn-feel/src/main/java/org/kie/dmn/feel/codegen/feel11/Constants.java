@@ -30,6 +30,7 @@ public class Constants {
     public static final String RangeBoundary =
             Range.RangeBoundary.class.getCanonicalName();
     public static final Expression BuiltInTypeT = JavaParser.parseExpression("org.kie.dmn.feel.lang.types.BuiltInType");
+    public static final ClassOrInterfaceType FunctionT = JavaParser.parseClassOrInterfaceType("java.util.function.Function<EvaluationContext, Object>");
 
 
     public static FieldDeclaration of(Type type, String name, Expression initializer) {
@@ -63,6 +64,15 @@ public class Constants {
     public static String unaryTestName(String originalText) {
         return "UT_" + CodegenStringUtil.escapeIdentifier(originalText);
     }
+
+    public static FieldDeclaration function(String name, LambdaExpr value) {
+        return of(FunctionT, name, value);
+    }
+
+    public static String functionName(String originalText) {
+        return "FN_" + CodegenStringUtil.escapeIdentifier(originalText);
+    }
+
 
     public static FieldAccessExpr rangeBoundary(RangeNode.IntervalBoundary boundary) {
         return new FieldAccessExpr(

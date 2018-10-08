@@ -8,7 +8,9 @@ import org.drools.javaparser.ast.expr.NameExpr;
 import org.drools.javaparser.ast.expr.StringLiteralExpr;
 
 public class FeelCtx {
-    public static final NameExpr FEELCTX = new NameExpr("feelExprCtx");
+
+    public static final String FEELCTX_N = "feelExprCtx";
+    public static final NameExpr FEELCTX = new NameExpr(FEELCTX_N);
     private static final String FEEL_SUPPORT = CompiledFEELSupport.class.getSimpleName();
     private static final Expression EMPTY_MAP = JavaParser.parseExpression("java.util.Collections.emptyMap()");
 

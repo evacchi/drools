@@ -45,7 +45,46 @@ public class Expressions {
             Expression right) {
         EnclosedExpr l = castTo(BigDecimalT, left);
         EnclosedExpr r = castTo(BigDecimalT, right);
-        return new MethodCallExpr(l, toFunctionName(operator), new NodeList<>(r, DECIMAL_128));
+        switch (operator) {
+            case ADD:
+                return arithmetic("add", l, r);
+            case SUB:
+                return arithmetic("subtract", l, r);
+            case MULT:
+                return arithmetic("multiply", l, r);
+            case DIV:
+                return arithmetic("divide", l, r);
+            case POW:
+                return arithmetic("pow", l,
+                                  new MethodCallExpr(r, "intValue"));
+
+            case LTE:
+                return comparison("lte", l, r);
+            case LT:
+                return comparison("lt", l, r);
+            case GT:
+                return comparison("gt", l, r);
+            case GTE:
+                return comparison("gte", l, r);
+            case EQ:
+                return comparison("eq", l, r);
+            case NE:
+                return comparison("ne", l, r);
+            case AND:
+                return comparison("and", l, r);
+            case OR:
+                return comparison("or", l, r);
+            default:
+                throw new UnsupportedOperationException(operator.toString());
+        }
+    }
+
+    private static MethodCallExpr comparison(String op, Expression l, Expression r) {
+        return new MethodCallExpr(null, op, new NodeList<>(l, r));
+    }
+
+    private static MethodCallExpr arithmetic(String op, Expression l, Expression r) {
+        return new MethodCallExpr(l, op, new NodeList<>(r, DECIMAL_128));
     }
 
     public static String toFunctionName(InfixOpNode.InfixOperator operator) {
@@ -157,11 +196,11 @@ public class Expressions {
             Expression name = names.get(i);
             Expression expr = exprs.get(i);
             curForCallTail = new MethodCallExpr(curForCallTail, "with")
-                    .addArgument(lambda(name))
-                    .addArgument(lambda(expr));
+                    .addArgument((name))
+                    .addArgument((expr));
         }
         MethodCallExpr returnCall = new MethodCallExpr(curForCallTail, "satisfies");
-        Expression returnParam = lambda(quant);
+        Expression returnParam = (quant);
         returnCall.addArgument(returnParam);
         return returnCall;
     }
@@ -203,7 +242,15 @@ public class Expressions {
     public static LambdaExpr lambda(Expression expr) {
         return new LambdaExpr(
                 new NodeList<>(
-                        new Parameter(UNKNOWN_TYPE, "feelExprCtx"),
+                        new Parameter(UNKNOWN_TYPE, FeelCtx.FEELCTX_N)),
+                new ExpressionStmt(expr),
+                true);
+    }
+
+    public static LambdaExpr unaryLambda(Expression expr) {
+        return new LambdaExpr(
+                new NodeList<>(
+                        new Parameter(UNKNOWN_TYPE, FeelCtx.FEELCTX_N),
                         new Parameter(UNKNOWN_TYPE, "left")),
                 new ExpressionStmt(expr),
                 true);
@@ -217,6 +264,14 @@ public class Expressions {
     }
 
     public static MethodCallExpr filter(Expression expr, Expression filter) {
+        return new MethodCallExpr(new MethodCallExpr(STDLIB, "filter")
+                                          .addArgument(FeelCtx.FEELCTX)
+                                          .addArgument(expr),
+                                  "with")
+                .addArgument(filter);
+    }
+
+    public static MethodCallExpr path(Expression expr, Expression filter) {
         return new MethodCallExpr(new MethodCallExpr(STDLIB, "path")
                                           .addArgument(FeelCtx.FEELCTX)
                                           .addArgument(expr),

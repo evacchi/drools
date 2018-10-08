@@ -216,7 +216,15 @@ public class ASTCompilerVisitor implements Visitor<DirectCompilerResult> {
 
     @Override
     public DirectCompilerResult visit(FilterExpressionNode n) {
-        throw new UnsupportedOperationException("Not yet implemented");
+        DirectCompilerResult expr = n.getExpression().accept(this);
+        // DirectCompilerResult name = n.getName().accept(this);
+        DirectCompilerResult filter = n.getFilter().accept(this);
+
+        Expression lambda = Expressions.lambda(filter.getExpression());
+        return DirectCompilerResult.of(
+                Expressions.filter(expr.getExpression(), lambda),
+                // here we could still try to infer the result type, but presently use ANY
+                BuiltInType.UNKNOWN).withFD(expr).withFD(filter);
     }
 
     @Override
@@ -254,7 +262,10 @@ public class ASTCompilerVisitor implements Visitor<DirectCompilerResult> {
                     Expressions.includes(exprs.getExpression(), value.getExpression()),
                     BuiltInType.BOOLEAN).withFD(value).withFD(exprs);
         } else {
-            throw new IllegalArgumentException(exprs.resultType.toString());
+            // this should be turned into a tree rewrite
+            return DirectCompilerResult.of(
+                    Expressions.exists(exprs.getExpression(), value.getExpression()),
+                    BuiltInType.BOOLEAN).withFD(value).withFD(exprs);
         }
     }
 
@@ -284,7 +295,7 @@ public class ASTCompilerVisitor implements Visitor<DirectCompilerResult> {
         Expression nameRef = new StringLiteralExpr(n.getName().getText());
 
         return DirectCompilerResult.of(
-                Expressions.filter(expr.getExpression(), nameRef),
+                Expressions.path(expr.getExpression(), nameRef),
                 // here we could still try to infer the result type, but presently use ANY
                 BuiltInType.UNKNOWN).withFD(expr);
     }
@@ -292,24 +303,37 @@ public class ASTCompilerVisitor implements Visitor<DirectCompilerResult> {
     @Override
     public DirectCompilerResult visit(QuantifiedExpressionNode n) {
         DirectCompilerResult expr = n.getExpression().accept(this);
+        LambdaExpr eL = Expressions.lambda(expr.getExpression());
+        String eN = Constants.functionName(n.getExpression().getText());
+        FieldDeclaration field = Constants.function(eN, eL);
+
 
         ArrayList<Expression> names = new ArrayList<>();
         ArrayList<Expression> exprs = new ArrayList<>();
         HashSet<FieldDeclaration> fds = new HashSet<>();
 
+        fds.add(field);
         fds.addAll(expr.getFieldDeclarations());
         for (IterationContextNode iterCtx : n.getIterationContexts()) {
             DirectCompilerResult iterName = iterCtx.getName().accept(this);
             DirectCompilerResult iterExpr = iterCtx.getExpression().accept(this);
-            names.add(iterName.getExpression());
-            exprs.add(iterExpr.getExpression());
+            LambdaExpr nameL = Expressions.lambda(iterName.getExpression());
+            LambdaExpr exprL = Expressions.lambda(iterExpr.getExpression());
+            String nameFieldName = Constants.functionName(iterCtx.getName().getText());
+            String exprFieldName = Constants.functionName(iterCtx.getExpression().getText());
+            FieldDeclaration fnName = Constants.function(nameFieldName, nameL);
+            FieldDeclaration fnExpr = Constants.function(exprFieldName, exprL);
+            names.add(new NameExpr(nameFieldName));
+            exprs.add(new NameExpr(exprFieldName));
+            fds.add(fnName);
+            fds.add(fnExpr);
             fds.addAll(iterName.getFieldDeclarations());
             fds.addAll(iterExpr.getFieldDeclarations());
         }
 
         return DirectCompilerResult.of(
                 Expressions.quantifier(
-                        n.getQuantifier(), expr.getExpression(), names, exprs),
+                        n.getQuantifier(), new NameExpr(eN), names, exprs),
                 expr.resultType,
                 fds);
 
@@ -346,7 +370,7 @@ public class ASTCompilerVisitor implements Visitor<DirectCompilerResult> {
     public DirectCompilerResult visit(UnaryTestNode n) {
         DirectCompilerResult value = n.getValue().accept(this);
         MethodCallExpr expr = Expressions.unary(n.getOperator(), value.getExpression());
-        LambdaExpr lambda = Expressions.lambda(expr);
+        LambdaExpr lambda = Expressions.unaryLambda(expr);
         String utName = Constants.unaryTestName(n.getText());
         FieldDeclaration ut = Constants.unaryTest(utName, lambda);
         HashSet<FieldDeclaration> fds = new HashSet<>(value.getFieldDeclarations());

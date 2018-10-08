@@ -1,6 +1,5 @@
 package org.kie.dmn.feel.codegen.feel11;
 
-import java.lang.reflect.Method;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -12,12 +11,9 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.drools.javaparser.JavaParser;
 import org.drools.javaparser.ast.body.FieldDeclaration;
 import org.drools.javaparser.ast.expr.BinaryExpr;
 import org.drools.javaparser.ast.expr.BooleanLiteralExpr;
-import org.drools.javaparser.ast.expr.CastExpr;
-import org.drools.javaparser.ast.expr.EnclosedExpr;
 import org.drools.javaparser.ast.expr.Expression;
 import org.drools.javaparser.ast.expr.LambdaExpr;
 import org.drools.javaparser.ast.expr.MethodCallExpr;
@@ -57,7 +53,6 @@ import org.kie.dmn.feel.lang.ast.StringNode;
 import org.kie.dmn.feel.lang.ast.TypeNode;
 import org.kie.dmn.feel.lang.ast.UnaryTestNode;
 import org.kie.dmn.feel.lang.ast.Visitor;
-import org.kie.dmn.feel.lang.impl.JavaBackedType;
 import org.kie.dmn.feel.lang.impl.MapBackedType;
 import org.kie.dmn.feel.lang.types.BuiltInType;
 import org.kie.dmn.feel.util.EvalHelper;
@@ -161,56 +156,25 @@ public class ASTCompilerVisitor implements Visitor<DirectCompilerResult> {
         List<NameRefNode> parts = n.getParts();
         DirectCompilerResult nameRef0 = parts.get(0).accept(this); // previously qualifiedName visitor "ingest"-ed directly by calling directly "visitNameRef"
         Type typeCursor = nameRef0.resultType;
-        Expression exprCursor = nameRef0.getExpression();
+        Expression currentContext = nameRef0.getExpression();
         List<NameRefNode> rest = parts.subList(1, parts.size());
         for (NameRefNode acc : rest) {
-            String accText = acc.getText();
+            String key = acc.getText();
             if (typeCursor instanceof CompositeType) {
-                CompositeType compositeType = (CompositeType) typeCursor;
-
-                // setting next typeCursor
-                typeCursor = compositeType.getFields().get(accText);
-                exprCursor = exprCursor(exprCursor, accText, compositeType);
+                CompositeType currentContextType = (CompositeType) typeCursor;
+                typeCursor = currentContextType.getFields().get(key);
+                currentContext = Contexts.getKey(currentContext, currentContextType, key);
             } else {
                 //  degraded mode, or accessing fields of DATE etc.
-//                DirectCompilerResult telescope = telescopePathAccessor(DirectCompilerResult.of(exprCursor, typeCursor), Arrays.asList(accText));
-//                exprCursor = telescope.getExpression();
-//                typeCursor = telescope.resultType;
-
-                List<Expression> ls = rest.stream().map(nr -> new StringLiteralExpr(nr.getText())).collect(Collectors.toList());
-                return DirectCompilerResult.of(
-                        Expressions.path(
-                                nameRef0.getExpression(),
-                                ls),
-                        // here we could still try to infer the result type, but presently use ANY
-                        BuiltInType.UNKNOWN);
+                currentContext = Expressions.path(currentContext, new StringLiteralExpr(key));
+                typeCursor = BuiltInType.UNKNOWN;
             }
         }
         // If it was a NameRef expression, the number coercion is directly performed by the EvaluationContext for the simple variable.
         // Otherwise in case of QualifiedName expression, for a structured type like this case, it need to be coerced on the last accessor:
-        MethodCallExpr coerceNumberMethodCallExpr = new MethodCallExpr(new NameExpr(CompiledFEELSupport.class.getSimpleName()), "coerceNumber");
-        coerceNumberMethodCallExpr.addArgument(exprCursor);
-        return DirectCompilerResult.of(coerceNumberMethodCallExpr, typeCursor);
-    }
-
-    public Expression exprCursor(Expression exprCursor, String accText, CompositeType compositeType) {
-        // setting next exprCursor
-        if (compositeType instanceof MapBackedType) {
-            CastExpr castExpr = new CastExpr(JavaParser.parseType(Map.class.getCanonicalName()), exprCursor);
-            EnclosedExpr enclosedExpr = new EnclosedExpr(castExpr);
-            MethodCallExpr getExpr = new MethodCallExpr(enclosedExpr, "get");
-            getExpr.addArgument(new StringLiteralExpr(accText));
-            exprCursor = getExpr;
-        } else if (compositeType instanceof JavaBackedType) {
-            JavaBackedType javaBackedType = (JavaBackedType) compositeType;
-            Method accessor = EvalHelper.getGenericAccessor(javaBackedType.getWrapped(), accText);
-            CastExpr castExpr = new CastExpr(JavaParser.parseType(javaBackedType.getWrapped().getCanonicalName()), exprCursor);
-            EnclosedExpr enclosedExpr = new EnclosedExpr(castExpr);
-            exprCursor = new MethodCallExpr(enclosedExpr, accessor.getName());
-        } else {
-            throw new UnsupportedOperationException("A Composite type is either MapBacked or JavaBAcked");
-        }
-        return exprCursor;
+        return DirectCompilerResult.of(
+                Expressions.coerceNumber(currentContext),
+                typeCursor);
     }
 
     @Override

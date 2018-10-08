@@ -1,7 +1,7 @@
 package org.kie.dmn.feel.codegen.feel11;
 
-import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import org.drools.javaparser.JavaParser;
 import org.drools.javaparser.ast.NodeList;
@@ -147,7 +147,7 @@ public class Expressions {
                 .addArgument(end);
     }
 
-    private static EnclosedExpr castTo(Type type, Expression expr) {
+    public static EnclosedExpr castTo(Type type, Expression expr) {
         return new EnclosedExpr(new CastExpr(type, new EnclosedExpr(expr)));
     }
 
@@ -273,6 +273,12 @@ public class Expressions {
 
     public static Expression coerceToString(Expression expression) {
         return new MethodCallExpr(new NameExpr("String"), "valueOf").addArgument(expression);
+    }
+
+    public static MethodCallExpr coerceNumber(Expression exprCursor) {
+        MethodCallExpr coerceNumberMethodCallExpr = new MethodCallExpr(new NameExpr(CompiledFEELSupport.class.getSimpleName()), "coerceNumber");
+        coerceNumberMethodCallExpr.addArgument(exprCursor);
+        return coerceNumberMethodCallExpr;
     }
 }
 

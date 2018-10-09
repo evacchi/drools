@@ -12,20 +12,26 @@ import org.drools.javaparser.ast.expr.Expression;
 import org.drools.javaparser.ast.expr.LambdaExpr;
 import org.drools.javaparser.ast.expr.MethodCallExpr;
 import org.drools.javaparser.ast.expr.NameExpr;
+import org.drools.javaparser.ast.expr.ObjectCreationExpr;
 import org.drools.javaparser.ast.expr.StringLiteralExpr;
 import org.drools.javaparser.ast.stmt.ExpressionStmt;
+import org.drools.javaparser.ast.type.ClassOrInterfaceType;
 import org.drools.javaparser.ast.type.Type;
 import org.drools.javaparser.ast.type.UnknownType;
 import org.kie.dmn.feel.lang.ast.InfixOpNode;
 import org.kie.dmn.feel.lang.ast.QuantifiedExpressionNode;
 import org.kie.dmn.feel.lang.ast.RangeNode;
 import org.kie.dmn.feel.lang.ast.UnaryTestNode;
+import org.kie.dmn.feel.lang.impl.NamedParameter;
 
 import static org.kie.dmn.feel.codegen.feel11.Constants.BigDecimalT;
+import static org.kie.dmn.feel.codegen.feel11.Constants.BooleanT;
 import static org.kie.dmn.feel.codegen.feel11.Constants.BuiltInTypeT;
 import static org.kie.dmn.feel.codegen.feel11.Constants.DECIMAL_128;
 
 public class Expressions {
+
+    public static final ClassOrInterfaceType NamedParamterT = new ClassOrInterfaceType(null, NamedParameter.class.getCanonicalName());
 
     public static class NamedLambda {
 
@@ -67,22 +73,19 @@ public class Expressions {
 
     public static MethodCallExpr binary(
             InfixOpNode.InfixOperator operator,
-            Expression left,
-            Expression right) {
-        EnclosedExpr l = castTo(BigDecimalT, left);
-        EnclosedExpr r = castTo(BigDecimalT, right);
+            Expression l,
+            Expression r) {
         switch (operator) {
             case ADD:
                 return arithmetic("add", l, r);
             case SUB:
-                return arithmetic("subtract", l, r);
+                return arithmetic("sub", l, r);
             case MULT:
-                return arithmetic("multiply", l, r);
+                return arithmetic("mult", l, r);
             case DIV:
-                return arithmetic("divide", l, r);
+                return arithmetic("div", l, r);
             case POW:
-                return arithmetic("pow", l,
-                                  new MethodCallExpr(r, "intValue"));
+                return arithmetic("pow", l, r);
 
             case LTE:
                 return comparison("lte", l, r);
@@ -93,25 +96,40 @@ public class Expressions {
             case GTE:
                 return comparison("gte", l, r);
             case EQ:
-                return comparison("eq", l, r);
+                return equality("eq", l, r);
             case NE:
-                return comparison("ne", l, r);
+                return equality("ne", l, r);
             case AND:
-                return comparison("and", l, r);
+                return booleans("and", l, r);
             case OR:
-                return comparison("or", l, r);
+                return booleans("or", l, r);
             default:
                 throw new UnsupportedOperationException(operator.toString());
         }
     }
 
-    private static MethodCallExpr comparison(String op, Expression l, Expression r) {
+    private static MethodCallExpr arithmetic(String op, Expression left, Expression right) {
+        return new MethodCallExpr(null, op, new NodeList<>(left, right));
+    }
+
+    private static MethodCallExpr equality(String op, Expression left, Expression right) {
+        return new MethodCallExpr(null, op, new NodeList<>(left, right));
+    }
+
+    private static MethodCallExpr comparison(String op, Expression left, Expression right) {
+        EnclosedExpr l = castTo(BigDecimalT, left);
+        EnclosedExpr r = castTo(BigDecimalT, right);
+
         return new MethodCallExpr(null, op, new NodeList<>(l, r));
     }
 
-    private static MethodCallExpr arithmetic(String op, Expression l, Expression r) {
-        return new MethodCallExpr(l, op, new NodeList<>(r, DECIMAL_128));
+    private static MethodCallExpr booleans(String op, Expression left, Expression right) {
+        Expression l = coerceToBoolean(left);
+        Expression r = coerceToBoolean(right);
+
+        return new MethodCallExpr(null, op, new NodeList<>(l, r));
     }
+
 
     public static MethodCallExpr unary(
             UnaryTestNode.UnaryOperator operator,
@@ -266,6 +284,10 @@ public class Expressions {
                 true);
     }
 
+    public static ObjectCreationExpr namedParameter(Expression name, Expression value) {
+        return new ObjectCreationExpr(null, NamedParamterT, new NodeList<>(name, value));
+    }
+
     public static MethodCallExpr invoke(Expression functionName, Expression params) {
         return new MethodCallExpr(STDLIB, "invoke")
                 .addArgument(FeelCtx.FEELCTX)
@@ -316,6 +338,13 @@ public class Expressions {
     public static Expression coerceToString(Expression expression) {
         return new MethodCallExpr(new NameExpr("String"), "valueOf").addArgument(expression);
     }
+
+    public static Expression coerceToBoolean(Expression expression) {
+        return new MethodCallExpr(null, "coerceToBoolean")
+                .addArgument(FeelCtx.FEELCTX)
+                .addArgument(expression);
+    }
+
 
     public static MethodCallExpr coerceNumber(Expression exprCursor) {
         MethodCallExpr coerceNumberMethodCallExpr = new MethodCallExpr(new NameExpr(CompiledFEELSupport.class.getSimpleName()), "coerceNumber");

@@ -23,7 +23,8 @@ import org.kie.dmn.feel.runtime.UnaryTest;
 public class Constants {
 
     public static final Expression DECIMAL_128 = JavaParser.parseExpression("java.math.MathContext.DECIMAL128");
-    public static final ClassOrInterfaceType BigDecimalT = JavaParser.parseClassOrInterfaceType(BigDecimal.class.getCanonicalName());
+    public static final ClassOrInterfaceType BigDecimalT = new ClassOrInterfaceType(BigDecimal.class.getCanonicalName());
+    public static final ClassOrInterfaceType BooleanT = new ClassOrInterfaceType(Boolean.class.getCanonicalName());
     private static final org.drools.javaparser.ast.type.Type ListT =
             JavaParser.parseType(List.class.getCanonicalName());
     public static final ClassOrInterfaceType UnaryTestT = JavaParser.parseClassOrInterfaceType(UnaryTest.class.getCanonicalName());
@@ -31,7 +32,6 @@ public class Constants {
             Range.RangeBoundary.class.getCanonicalName();
     public static final Expression BuiltInTypeT = JavaParser.parseExpression("org.kie.dmn.feel.lang.types.BuiltInType");
     public static final ClassOrInterfaceType FunctionT = JavaParser.parseClassOrInterfaceType("java.util.function.Function<EvaluationContext, Object>");
-
 
     public static FieldDeclaration of(Type type, String name, Expression initializer) {
         return new FieldDeclaration(
@@ -72,7 +72,6 @@ public class Constants {
     public static String functionName(String originalText) {
         return "ZZFN_" + CodegenStringUtil.escapeIdentifier(originalText);
     }
-
 
     public static FieldAccessExpr rangeBoundary(RangeNode.IntervalBoundary boundary) {
         return new FieldAccessExpr(

@@ -385,7 +385,11 @@ public class ASTCompilerVisitor implements Visitor<DirectCompilerResult> {
 
     @Override
     public DirectCompilerResult visit(NamedParameterNode n) {
-        throw new UnsupportedOperationException("Not yet implemented");
+        DirectCompilerResult name = n.getName().accept(this);
+        DirectCompilerResult expr = n.getExpression().accept(this);
+        return DirectCompilerResult.of(
+                Expressions.namedParameter(name.getExpression(), expr.getExpression()),
+                BuiltInType.UNKNOWN).withFD(name).withFD(expr);
     }
 
     @Override

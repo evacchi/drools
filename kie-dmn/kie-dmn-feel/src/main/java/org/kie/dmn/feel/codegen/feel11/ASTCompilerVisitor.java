@@ -158,13 +158,13 @@ public class ASTCompilerVisitor implements Visitor<DirectCompilerResult> {
         DirectCompilerResult nameRef0 = parts.get(0).accept(this); // previously qualifiedName visitor "ingest"-ed directly by calling directly "visitNameRef"
         Type typeCursor = nameRef0.resultType;
         Expression currentContext = nameRef0.getExpression();
-        List<NameRefNode> rest = parts.subList(1, parts.size());
-        for (NameRefNode acc : rest) {
+        for (int i = 1; i < parts.size(); i++) {
+            NameRefNode acc = parts.get(i);
             String key = acc.getText();
             if (typeCursor instanceof CompositeType) {
                 CompositeType currentContextType = (CompositeType) typeCursor;
-                typeCursor = currentContextType.getFields().get(key);
                 currentContext = Contexts.getKey(currentContext, currentContextType, key);
+                typeCursor = currentContextType.getFields().get(key);
             } else {
                 //  degraded mode, or accessing fields of DATE etc.
                 currentContext = Expressions.path(currentContext, new StringLiteralExpr(key));
@@ -182,18 +182,6 @@ public class ASTCompilerVisitor implements Visitor<DirectCompilerResult> {
     public DirectCompilerResult visit(InfixOpNode n) {
         DirectCompilerResult left = n.getLeft().accept(this);
         DirectCompilerResult right = n.getRight().accept(this);
-
-        if (n.getOperator() == InfixOpNode.InfixOperator.ADD && (
-                left.resultType == BuiltInType.STRING ||
-                        right.resultType == BuiltInType.STRING ||
-                        left.resultType != BuiltInType.NUMBER && right.resultType != BuiltInType.NUMBER)) {
-            BinaryExpr binaryExpr = new BinaryExpr(
-                    Expressions.coerceToString(left.getExpression()),
-                    right.getExpression(),
-                    BinaryExpr.Operator.PLUS);
-            return DirectCompilerResult.of(binaryExpr, BuiltInType.UNKNOWN).withFD(left).withFD(right);
-        }
-
         MethodCallExpr expr = Expressions.binary(
                 n.getOperator(),
                 left.getExpression(),
@@ -343,11 +331,13 @@ public class ASTCompilerVisitor implements Visitor<DirectCompilerResult> {
         // DirectCompilerResult name = n.getName().accept(this);
         DirectCompilerResult filter = n.getFilter().accept(this);
 
-        Expression lambda = Expressions.lambda(filter.getExpression());
-        return DirectCompilerResult.of(
-                Expressions.filter(expr.getExpression(), lambda),
+        Expressions.NamedLambda lambda = Expressions.namedLambda(filter.getExpression(), n.getFilter().getText());
+        DirectCompilerResult r = DirectCompilerResult.of(
+                Expressions.filter(expr.getExpression(), lambda.name()),
                 // here we could still try to infer the result type, but presently use ANY
                 BuiltInType.UNKNOWN).withFD(expr).withFD(filter);
+        r.addFieldDesclaration(lambda.field());
+        return r;
     }
 
     @Override

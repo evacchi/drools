@@ -105,7 +105,7 @@ public class ASTCompilerVisitor implements Visitor<DirectCompilerResult> {
 
     @Override
     public DirectCompilerResult visit(DashNode n) {
-        throw new UnsupportedOperationException("Not yet implemented");
+        return DirectCompilerResult.of(Expressions.dash(), BuiltInType.UNARY_TEST);
     }
 
     @Override
@@ -126,12 +126,12 @@ public class ASTCompilerVisitor implements Visitor<DirectCompilerResult> {
 
     @Override
     public DirectCompilerResult visit(StringNode n) {
-        StringLiteralExpr expr = new StringLiteralExpr();
         String actualStringContent = n.getText();
         actualStringContent = actualStringContent.substring(1, actualStringContent.length() - 1); // remove start/end " from the FEEL text expression.
         String unescaped = EvalHelper.unescapeString(actualStringContent); // unescapes String, FEEL-style
-        expr.setString(unescaped); // setString escapes the contents Java-style
-        return DirectCompilerResult.of(expr, BuiltInType.STRING);
+        return DirectCompilerResult.of(
+                new StringLiteralExpr().setString(unescaped), // setString escapes the contents Java-style
+                BuiltInType.STRING);
     }
 
     @Override
@@ -155,7 +155,7 @@ public class ASTCompilerVisitor implements Visitor<DirectCompilerResult> {
     @Override
     public DirectCompilerResult visit(QualifiedNameNode n) {
         List<NameRefNode> parts = n.getParts();
-        DirectCompilerResult nameRef0 = parts.get(0).accept(this); // previously qualifiedName visitor "ingest"-ed directly by calling directly "visitNameRef"
+        DirectCompilerResult nameRef0 = parts.get(0).accept(this);
         Type typeCursor = nameRef0.resultType;
         Expression currentContext = nameRef0.getExpression();
         for (int i = 1; i < parts.size(); i++) {
@@ -328,7 +328,6 @@ public class ASTCompilerVisitor implements Visitor<DirectCompilerResult> {
     @Override
     public DirectCompilerResult visit(FilterExpressionNode n) {
         DirectCompilerResult expr = n.getExpression().accept(this);
-        // DirectCompilerResult name = n.getName().accept(this);
         DirectCompilerResult filter = n.getFilter().accept(this);
 
         Expressions.NamedLambda lambda = Expressions.namedLambda(filter.getExpression(), n.getFilter().getText());
@@ -481,7 +480,6 @@ public class ASTCompilerVisitor implements Visitor<DirectCompilerResult> {
                     Expressions.path(expr.getExpression(), new StringLiteralExpr(nameNode.getText())),
                     // here we could still try to infer the result type, but presently use ANY
                     BuiltInType.UNKNOWN).withFD(expr);
-
         }
     }
 

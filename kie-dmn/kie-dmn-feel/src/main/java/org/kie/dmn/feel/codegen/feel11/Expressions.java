@@ -27,18 +27,18 @@ import org.kie.dmn.feel.lang.impl.NamedParameter;
 
 import static org.kie.dmn.feel.codegen.feel11.Constants.BigDecimalT;
 import static org.kie.dmn.feel.codegen.feel11.Constants.BuiltInTypeT;
-import static org.kie.dmn.feel.codegen.feel11.Constants.DECIMAL_128;
 
 public class Expressions {
 
     public static final ClassOrInterfaceType NamedParamterT = new ClassOrInterfaceType(null, NamedParameter.class.getCanonicalName());
+    private static final Expression DASH_UNARY_TEST = JavaParser.parseExpression(org.kie.dmn.feel.lang.ast.DashNode.DashUnaryTest.class.getCanonicalName() + ".INSTANCE");
 
     public static class NamedLambda {
 
         private final NameExpr name;
+
         private final LambdaExpr expr;
         private final FieldDeclaration field;
-
         private NamedLambda(NameExpr name, LambdaExpr expr, FieldDeclaration field) {
             this.name = name;
             this.expr = expr;
@@ -65,6 +65,10 @@ public class Expressions {
     public static final NameExpr LEFT_EXPR = new NameExpr(LEFT);
     public static final UnknownType UNKNOWN_TYPE = new UnknownType();
     public static final NameExpr STDLIB = new NameExpr(CompiledFEELSupport.class.getSimpleName());
+
+    public static Expression dash() {
+        return DASH_UNARY_TEST;
+    }
 
     public static Expression negate(Expression expression) {
         EnclosedExpr e = castTo(BigDecimalT, expression);

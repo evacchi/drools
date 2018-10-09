@@ -10,11 +10,11 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.drools.javaparser.JavaParser;
 import org.drools.javaparser.ast.body.FieldDeclaration;
 import org.drools.javaparser.ast.expr.BinaryExpr;
 import org.drools.javaparser.ast.expr.BooleanLiteralExpr;
 import org.drools.javaparser.ast.expr.ConditionalExpr;
+import org.drools.javaparser.ast.expr.EnclosedExpr;
 import org.drools.javaparser.ast.expr.Expression;
 import org.drools.javaparser.ast.expr.LambdaExpr;
 import org.drools.javaparser.ast.expr.MethodCallExpr;
@@ -223,11 +223,17 @@ public class ASTCompilerVisitor implements Visitor<DirectCompilerResult> {
         DirectCompilerResult condition = n.getCondition().accept(this);
         DirectCompilerResult thenExpr = n.getThenExpression().accept(this);
         DirectCompilerResult elseExpr = n.getElseExpression().accept(this);
+
         return DirectCompilerResult.of(
                 new ConditionalExpr(
-                        condition.getExpression(),
-                        thenExpr.getExpression(),
-                        elseExpr.getExpression()),
+                        new BinaryExpr(
+                                Expressions.nativeInstanceOf(
+                                        Constants.BooleanT, condition.getExpression()),
+                                Expressions.reflectiveCastTo(
+                                        Constants.BooleanT, condition.getExpression()),
+                                BinaryExpr.Operator.AND),
+                        new EnclosedExpr(thenExpr.getExpression()),
+                        new EnclosedExpr(elseExpr.getExpression())),
                 thenExpr.resultType // should find common type between then/else
         ).withFD(condition).withFD(thenExpr).withFD(elseExpr);
     }
@@ -257,9 +263,6 @@ public class ASTCompilerVisitor implements Visitor<DirectCompilerResult> {
                 Expressions.ffor(expressions, namedLambda.name()),
                 expr.resultType,
                 fds);
-
-
-
     }
 
     @Override

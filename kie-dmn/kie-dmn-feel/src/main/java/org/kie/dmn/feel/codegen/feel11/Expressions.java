@@ -7,6 +7,7 @@ import org.drools.javaparser.ast.NodeList;
 import org.drools.javaparser.ast.body.FieldDeclaration;
 import org.drools.javaparser.ast.body.Parameter;
 import org.drools.javaparser.ast.expr.CastExpr;
+import org.drools.javaparser.ast.expr.ClassExpr;
 import org.drools.javaparser.ast.expr.EnclosedExpr;
 import org.drools.javaparser.ast.expr.Expression;
 import org.drools.javaparser.ast.expr.LambdaExpr;
@@ -25,7 +26,6 @@ import org.kie.dmn.feel.lang.ast.UnaryTestNode;
 import org.kie.dmn.feel.lang.impl.NamedParameter;
 
 import static org.kie.dmn.feel.codegen.feel11.Constants.BigDecimalT;
-import static org.kie.dmn.feel.codegen.feel11.Constants.BooleanT;
 import static org.kie.dmn.feel.codegen.feel11.Constants.BuiltInTypeT;
 import static org.kie.dmn.feel.codegen.feel11.Constants.DECIMAL_128;
 
@@ -117,10 +117,7 @@ public class Expressions {
     }
 
     private static MethodCallExpr comparison(String op, Expression left, Expression right) {
-        EnclosedExpr l = castTo(BigDecimalT, left);
-        EnclosedExpr r = castTo(BigDecimalT, right);
-
-        return new MethodCallExpr(null, op, new NodeList<>(l, r));
+        return new MethodCallExpr(null, op, new NodeList<>(left, right));
     }
 
     private static MethodCallExpr booleans(String op, Expression left, Expression right) {
@@ -129,7 +126,6 @@ public class Expressions {
 
         return new MethodCallExpr(null, op, new NodeList<>(l, r));
     }
-
 
     public static MethodCallExpr unary(
             UnaryTestNode.UnaryOperator operator,
@@ -186,6 +182,11 @@ public class Expressions {
 
     public static EnclosedExpr castTo(Type type, Expression expr) {
         return new EnclosedExpr(new CastExpr(type, new EnclosedExpr(expr)));
+    }
+
+    public static MethodCallExpr reflectiveCastTo(Type type, Expression expr) {
+        return new MethodCallExpr(new ClassExpr(type), "cast")
+                .addArgument(new EnclosedExpr(expr));
     }
 
     public static Expression quantifier(
@@ -325,6 +326,13 @@ public class Expressions {
                 .addArgument(expr);
     }
 
+    public static MethodCallExpr nativeInstanceOf(Type type, Expression condition) {
+        return new MethodCallExpr(
+                new ClassExpr(type),
+                "isInstance")
+                .addArgument(new EnclosedExpr(condition));
+    }
+
     public static MethodCallExpr determineTypeFromName(String typeAsText) {
         return new MethodCallExpr(BuiltInTypeT, "determineTypeFromName")
                 .addArgument(new StringLiteralExpr(typeAsText));
@@ -344,7 +352,6 @@ public class Expressions {
                 .addArgument(FeelCtx.FEELCTX)
                 .addArgument(expression);
     }
-
 
     public static MethodCallExpr coerceNumber(Expression exprCursor) {
         MethodCallExpr coerceNumberMethodCallExpr = new MethodCallExpr(new NameExpr(CompiledFEELSupport.class.getSimpleName()), "coerceNumber");

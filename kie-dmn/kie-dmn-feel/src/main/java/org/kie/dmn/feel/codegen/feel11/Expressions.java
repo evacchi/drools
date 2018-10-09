@@ -130,9 +130,7 @@ public class Expressions {
     public static MethodCallExpr unary(
             UnaryTestNode.UnaryOperator operator,
             Expression right) {
-        EnclosedExpr l = castTo(BigDecimalT, LEFT_EXPR);
-        EnclosedExpr r = castTo(BigDecimalT, right);
-        return new MethodCallExpr(l, toFunctionName(operator), new NodeList<>(r, DECIMAL_128));
+        return new MethodCallExpr(null, toFunctionName(operator), new NodeList<>(LEFT_EXPR, right));
     }
 
     private static String toFunctionName(UnaryTestNode.UnaryOperator operator) {

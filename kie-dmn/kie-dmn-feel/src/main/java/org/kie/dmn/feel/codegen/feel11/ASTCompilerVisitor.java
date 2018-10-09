@@ -149,7 +149,7 @@ public class ASTCompilerVisitor implements Visitor<DirectCompilerResult> {
     public DirectCompilerResult visit(NameRefNode n) {
         String nameRef = EvalHelper.normalizeVariableName(n.getText());
         Type type = scopeHelper.resolveType(nameRef).orElse(BuiltInType.UNKNOWN);
-        return DirectCompilerResult.of(FeelCtx.getValue(nameRef), BuiltInType.UNKNOWN);
+        return DirectCompilerResult.of(FeelCtx.getValue(nameRef), type);
     }
 
     @Override
@@ -464,13 +464,25 @@ public class ASTCompilerVisitor implements Visitor<DirectCompilerResult> {
     @Override
     public DirectCompilerResult visit(PathExpressionNode n) {
         DirectCompilerResult expr = n.getExpression().accept(this);
-        // DirectCompilerResult name = n.getName().accept(this);
-        Expression nameRef = new StringLiteralExpr(n.getName().getText());
+        BaseNode nameNode = n.getName();
+        if (nameNode instanceof QualifiedNameNode) {
+            QualifiedNameNode qualifiedNameNode = (QualifiedNameNode) n.getName();
+            List<Expression> exprs =
+                    qualifiedNameNode.getParts().stream()
+                            .map(name -> new StringLiteralExpr(name.getText()))
+                            .collect(Collectors.toList());
 
-        return DirectCompilerResult.of(
-                Expressions.path(expr.getExpression(), nameRef),
-                // here we could still try to infer the result type, but presently use ANY
-                BuiltInType.UNKNOWN).withFD(expr);
+            return DirectCompilerResult.of(
+                    Expressions.path(expr.getExpression(), exprs),
+                    // here we could still try to infer the result type, but presently use ANY
+                    BuiltInType.UNKNOWN).withFD(expr);
+        } else {
+            return DirectCompilerResult.of(
+                    Expressions.path(expr.getExpression(), new StringLiteralExpr(nameNode.getText())),
+                    // here we could still try to infer the result type, but presently use ANY
+                    BuiltInType.UNKNOWN).withFD(expr);
+
+        }
     }
 
     @Override

@@ -318,7 +318,7 @@ public class CompiledFEELSemanticMappings {
 
     // to ground to null if right = 0
     public static Object div(Object left, BigDecimal right) {
-        return right.signum() == 0 ? null : InfixOpNode.div(left, right, null);
+        return right == null || right.signum() == 0 ? null : InfixOpNode.div(left, right, null);
     }
 
     public static Object pow(Object left, Object right) {

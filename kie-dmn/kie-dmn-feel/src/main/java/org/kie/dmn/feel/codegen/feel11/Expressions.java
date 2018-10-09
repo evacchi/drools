@@ -154,7 +154,7 @@ public class Expressions {
             case IN:
                 throw new UnsupportedOperationException(operator.toString());
             case NOT:
-                throw new UnsupportedOperationException(operator.toString());
+                return "notExists";
             case TEST:
                 throw new UnsupportedOperationException(operator.toString());
             default:

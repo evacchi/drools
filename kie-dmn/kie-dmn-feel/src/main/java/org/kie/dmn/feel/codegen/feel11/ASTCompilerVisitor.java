@@ -1,7 +1,6 @@
 package org.kie.dmn.feel.codegen.feel11;
 
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -11,9 +10,11 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.drools.javaparser.JavaParser;
 import org.drools.javaparser.ast.body.FieldDeclaration;
 import org.drools.javaparser.ast.expr.BinaryExpr;
 import org.drools.javaparser.ast.expr.BooleanLiteralExpr;
+import org.drools.javaparser.ast.expr.ConditionalExpr;
 import org.drools.javaparser.ast.expr.Expression;
 import org.drools.javaparser.ast.expr.LambdaExpr;
 import org.drools.javaparser.ast.expr.MethodCallExpr;
@@ -219,12 +220,46 @@ public class ASTCompilerVisitor implements Visitor<DirectCompilerResult> {
 
     @Override
     public DirectCompilerResult visit(IfExpressionNode n) {
-        throw new UnsupportedOperationException("Not yet implemented");
+        DirectCompilerResult condition = n.getCondition().accept(this);
+        DirectCompilerResult thenExpr = n.getThenExpression().accept(this);
+        DirectCompilerResult elseExpr = n.getElseExpression().accept(this);
+        return DirectCompilerResult.of(
+                new ConditionalExpr(
+                        condition.getExpression(),
+                        thenExpr.getExpression(),
+                        elseExpr.getExpression()),
+                thenExpr.resultType // should find common type between then/else
+        ).withFD(condition).withFD(thenExpr).withFD(elseExpr);
     }
 
     @Override
     public DirectCompilerResult visit(ForExpressionNode n) {
-        throw new UnsupportedOperationException("Not yet implemented");
+        DirectCompilerResult expr = n.getExpression().accept(this);
+        HashSet<FieldDeclaration> fds = new HashSet<>();
+
+        Expressions.NamedLambda namedLambda =
+                Expressions.namedLambda(
+                        expr.getExpression(),
+                        n.getExpression().getText());
+
+        fds.add(namedLambda.field());
+        fds.addAll(expr.getFieldDeclarations());
+
+        List<Expression> expressions = n.getIterationContexts()
+                .stream()
+                .map(iter -> iter.accept(this))
+                .peek(r -> fds.addAll(r.getFieldDeclarations()))
+                .map(DirectCompilerResult::getExpression)
+                .collect(Collectors.toList());
+
+        // .satisfies(expr)
+        return DirectCompilerResult.of(
+                Expressions.ffor(expressions, namedLambda.name()),
+                expr.resultType,
+                fds);
+
+
+
     }
 
     @Override
@@ -376,7 +411,43 @@ public class ASTCompilerVisitor implements Visitor<DirectCompilerResult> {
 
     @Override
     public DirectCompilerResult visit(IterationContextNode n) {
-        throw new UnsupportedOperationException("Not yet implemented");
+        DirectCompilerResult iterName = n.getName().accept(this);
+        DirectCompilerResult iterExpr = n.getExpression().accept(this);
+
+        Expressions.NamedLambda nameLambda =
+                Expressions.namedLambda(
+                        iterName.getExpression(),
+                        n.getName().getText());
+        Expressions.NamedLambda exprLambda =
+                Expressions.namedLambda(
+                        iterExpr.getExpression(),
+                        n.getExpression().getText());
+
+        MethodCallExpr with =
+                new MethodCallExpr(null, "with")
+                        .addArgument(nameLambda.name())
+                        .addArgument(exprLambda.name());
+
+        DirectCompilerResult r =
+                DirectCompilerResult.of(with, BuiltInType.UNKNOWN);
+        r.addFieldDesclaration(nameLambda.field());
+        r.addFieldDesclaration(exprLambda.field());
+        r.withFD(iterName);
+        r.withFD(iterExpr);
+
+        BaseNode rangeEndExpr = n.getRangeEndExpr();
+        if (rangeEndExpr != null) {
+            DirectCompilerResult rangeEnd = rangeEndExpr.accept(this);
+            Expressions.NamedLambda rangeLambda =
+                    Expressions.namedLambda(
+                            rangeEnd.getExpression(),
+                            rangeEndExpr.getText());
+            with.addArgument(rangeLambda.name());
+            r.addFieldDesclaration(rangeLambda.field());
+            r.withFD(rangeEnd);
+        }
+
+        return r;
     }
 
     @Override
@@ -408,36 +479,26 @@ public class ASTCompilerVisitor implements Visitor<DirectCompilerResult> {
     @Override
     public DirectCompilerResult visit(QuantifiedExpressionNode n) {
         DirectCompilerResult expr = n.getExpression().accept(this);
-        LambdaExpr eL = Expressions.lambda(expr.getExpression());
-        String eN = Constants.functionName(n.getExpression().getText());
-        FieldDeclaration field = Constants.function(eN, eL);
-
-        ArrayList<Expression> names = new ArrayList<>();
-        ArrayList<Expression> exprs = new ArrayList<>();
         HashSet<FieldDeclaration> fds = new HashSet<>();
 
-        fds.add(field);
-        fds.addAll(expr.getFieldDeclarations());
-        for (IterationContextNode iterCtx : n.getIterationContexts()) {
-            DirectCompilerResult iterName = iterCtx.getName().accept(this);
-            DirectCompilerResult iterExpr = iterCtx.getExpression().accept(this);
-            LambdaExpr nameL = Expressions.lambda(iterName.getExpression());
-            LambdaExpr exprL = Expressions.lambda(iterExpr.getExpression());
-            String nameFieldName = Constants.functionName(iterCtx.getName().getText());
-            String exprFieldName = Constants.functionName(iterCtx.getExpression().getText());
-            FieldDeclaration fnName = Constants.function(nameFieldName, nameL);
-            FieldDeclaration fnExpr = Constants.function(exprFieldName, exprL);
-            names.add(new NameExpr(nameFieldName));
-            exprs.add(new NameExpr(exprFieldName));
-            fds.add(fnName);
-            fds.add(fnExpr);
-            fds.addAll(iterName.getFieldDeclarations());
-            fds.addAll(iterExpr.getFieldDeclarations());
-        }
+        Expressions.NamedLambda namedLambda =
+                Expressions.namedLambda(
+                        expr.getExpression(),
+                        n.getExpression().getText());
 
+        fds.add(namedLambda.field());
+        fds.addAll(expr.getFieldDeclarations());
+
+        List<Expression> expressions = n.getIterationContexts()
+                .stream()
+                .map(iter -> iter.accept(this))
+                .peek(r -> fds.addAll(r.getFieldDeclarations()))
+                .map(DirectCompilerResult::getExpression)
+                .collect(Collectors.toList());
+
+        // .satisfies(expr)
         return DirectCompilerResult.of(
-                Expressions.quantifier(
-                        n.getQuantifier(), new NameExpr(eN), names, exprs),
+                Expressions.quantifier(n.getQuantifier(), namedLambda.name(), expressions),
                 expr.resultType,
                 fds);
     }
@@ -476,8 +537,10 @@ public class ASTCompilerVisitor implements Visitor<DirectCompilerResult> {
         LambdaExpr lambda = Expressions.unaryLambda(expr);
         String utName = Constants.unaryTestName(n.getText());
         FieldDeclaration ut = Constants.unaryTest(utName, lambda);
-        HashSet<FieldDeclaration> fds = new HashSet<>(value.getFieldDeclarations());
-        fds.add(ut);
-        return DirectCompilerResult.of(new NameExpr(utName), BuiltInType.UNARY_TEST, fds);
+        DirectCompilerResult r =
+                DirectCompilerResult.of(new NameExpr(utName), BuiltInType.UNARY_TEST)
+                        .withFD(value);
+        r.addFieldDesclaration(ut);
+        return r;
     }
 }

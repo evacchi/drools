@@ -70,7 +70,7 @@ public class Constants {
     }
 
     public static String functionName(String originalText) {
-        return "FN_" + CodegenStringUtil.escapeIdentifier(originalText);
+        return "ZZFN_" + CodegenStringUtil.escapeIdentifier(originalText);
     }
 
 

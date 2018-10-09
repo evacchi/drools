@@ -51,6 +51,10 @@ public class IterationContextNode
         return expression;
     }
 
+    public BaseNode getRangeEndExpr() {
+        return rangeEndExpr;
+    }
+
     public void setExpression(BaseNode expression) {
         this.expression = expression;
     }

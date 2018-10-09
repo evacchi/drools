@@ -1,10 +1,10 @@
 package org.kie.dmn.feel.codegen.feel11;
 
 import java.util.List;
-import java.util.Map;
 
 import org.drools.javaparser.JavaParser;
 import org.drools.javaparser.ast.NodeList;
+import org.drools.javaparser.ast.body.FieldDeclaration;
 import org.drools.javaparser.ast.body.Parameter;
 import org.drools.javaparser.ast.expr.CastExpr;
 import org.drools.javaparser.ast.expr.EnclosedExpr;
@@ -26,6 +26,31 @@ import static org.kie.dmn.feel.codegen.feel11.Constants.BuiltInTypeT;
 import static org.kie.dmn.feel.codegen.feel11.Constants.DECIMAL_128;
 
 public class Expressions {
+
+    public static class NamedLambda {
+
+        private final NameExpr name;
+        private final LambdaExpr expr;
+        private final FieldDeclaration field;
+
+        private NamedLambda(NameExpr name, LambdaExpr expr, FieldDeclaration field) {
+            this.name = name;
+            this.expr = expr;
+            this.field = field;
+        }
+
+        public NameExpr name() {
+            return name;
+        }
+
+        public LambdaExpr expr() {
+            return expr;
+        }
+
+        public FieldDeclaration field() {
+            return field;
+        }
+    }
 
     private static final Expression QUANTIFIER_SOME = JavaParser.parseExpression("org.kie.dmn.feel.lang.ast.QuantifiedExpressionNode.Quantifier.SOME");
     private static final Expression QUANTIFIER_EVERY = JavaParser.parseExpression("org.kie.dmn.feel.lang.ast.QuantifiedExpressionNode.Quantifier.EVERY");
@@ -121,12 +146,6 @@ public class Expressions {
         }
     }
 
-    public static MethodCallExpr eq(Expression left, Expression right) {
-        return new MethodCallExpr(null, "eq")
-                .addArgument(left)
-                .addArgument(right);
-    }
-
     public static MethodCallExpr lt(Expression left, Expression right) {
         return new MethodCallExpr(null, "lt")
                 .addArgument(left)
@@ -153,24 +172,40 @@ public class Expressions {
 
     public static Expression quantifier(
             QuantifiedExpressionNode.Quantifier quantifier,
-            Expression quant,
-            List<Expression> names,
-            List<Expression> exprs) {
-        MethodCallExpr forCall = new MethodCallExpr(STDLIB, "quant");
-        forCall.addArgument(quantifier == QuantifiedExpressionNode.Quantifier.SOME ? QUANTIFIER_SOME : QUANTIFIER_EVERY);
-        forCall.addArgument(FeelCtx.FEELCTX);
-        Expression curForCallTail = forCall;
-        for (int i = 0; i < exprs.size(); i++) {
-            Expression name = names.get(i);
-            Expression expr = exprs.get(i);
-            curForCallTail = new MethodCallExpr(curForCallTail, "with")
-                    .addArgument((name))
-                    .addArgument((expr));
-        }
-        MethodCallExpr returnCall = new MethodCallExpr(curForCallTail, "satisfies");
-        Expression returnParam = (quant);
-        returnCall.addArgument(returnParam);
-        return returnCall;
+            Expression condition,
+            List<Expression> iterationContexts) {
+
+        // quant({SOME,EVERY}, FEELCTX)
+        MethodCallExpr quant =
+                new MethodCallExpr(Expressions.STDLIB, "quant")
+                        .addArgument(quantifier == QuantifiedExpressionNode.Quantifier.SOME ?
+                                             QUANTIFIER_SOME :
+                                             QUANTIFIER_EVERY)
+                        .addArgument(FeelCtx.FEELCTX);
+
+        // .with(expr)
+        // .with(expr)
+        Expression chainedCalls = iterationContexts.stream()
+                .reduce(quant, (l, r) -> r.asMethodCallExpr().setScope(l));
+
+        return new MethodCallExpr(chainedCalls, "satisfies")
+                .addArgument(condition);
+    }
+
+    public static MethodCallExpr ffor(
+            List<Expression> iterationContexts,
+            Expression returnExpr) {
+        MethodCallExpr ffor =
+                new MethodCallExpr(Expressions.STDLIB, "ffor")
+                        .addArgument(FeelCtx.FEELCTX);
+
+        // .with(expr)
+        // .with(expr)
+        Expression chainedCalls = iterationContexts.stream()
+                .reduce(ffor, (l, r) -> r.asMethodCallExpr().setScope(l));
+
+        return new MethodCallExpr(chainedCalls, "rreturn")
+                .addArgument(returnExpr);
     }
 
     public static MethodCallExpr range(RangeNode.IntervalBoundary lowBoundary,
@@ -205,6 +240,13 @@ public class Expressions {
                 .addArgument(FeelCtx.FEELCTX)
                 .addArgument(expr)
                 .addArgument(LEFT_EXPR);
+    }
+
+    public static NamedLambda namedLambda(Expression expr, String text) {
+        LambdaExpr lambda = Expressions.lambda(expr);
+        String name = Constants.functionName(text);
+        FieldDeclaration field = Constants.function(name, lambda);
+        return new NamedLambda(new NameExpr(name), lambda, field);
     }
 
     public static LambdaExpr lambda(Expression expr) {

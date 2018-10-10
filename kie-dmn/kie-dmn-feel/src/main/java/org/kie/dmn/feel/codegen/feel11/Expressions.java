@@ -1,5 +1,6 @@
 package org.kie.dmn.feel.codegen.feel11;
 
+import java.util.Collection;
 import java.util.List;
 
 import org.drools.javaparser.JavaParser;
@@ -24,6 +25,7 @@ import org.kie.dmn.feel.lang.ast.QuantifiedExpressionNode;
 import org.kie.dmn.feel.lang.ast.RangeNode;
 import org.kie.dmn.feel.lang.ast.UnaryTestNode;
 import org.kie.dmn.feel.lang.impl.NamedParameter;
+import org.kie.dmn.feel.util.EvalHelper;
 
 import static org.kie.dmn.feel.codegen.feel11.Constants.BigDecimalT;
 import static org.kie.dmn.feel.codegen.feel11.Constants.BuiltInTypeT;
@@ -39,6 +41,7 @@ public class Expressions {
 
         private final LambdaExpr expr;
         private final FieldDeclaration field;
+
         private NamedLambda(NameExpr name, LambdaExpr expr, FieldDeclaration field) {
             this.name = name;
             this.expr = expr;
@@ -131,35 +134,36 @@ public class Expressions {
         return new MethodCallExpr(null, op, new NodeList<>(l, r));
     }
 
-    public static MethodCallExpr unary(
+    public static Expression unary(
             UnaryTestNode.UnaryOperator operator,
             Expression right) {
-        return new MethodCallExpr(null, toFunctionName(operator), new NodeList<>(LEFT_EXPR, right));
-    }
-
-    private static String toFunctionName(UnaryTestNode.UnaryOperator operator) {
         switch (operator) {
             case LTE:
-                return "lte";
+                return unaryComparison("lte", right);
             case LT:
-                return "lt";
+                return unaryComparison("lt", right);
             case GT:
-                return "gt";
+                return unaryComparison("gt", right);
             case GTE:
-                return "gte";
+                return unaryComparison("gte", right);
             case EQ:
-                return "eq";
+                return new MethodCallExpr(null, "gracefulEq", new NodeList<>(FeelCtx.FEELCTX, right, LEFT_EXPR));
             case NE:
-                return "ne";
+                return unaryComparison("ne", right);
             case IN:
-                throw new UnsupportedOperationException(operator.toString());
+                // only used in decision tables: refactor? how?
+                return new MethodCallExpr(null, "includes", new NodeList<>(FeelCtx.FEELCTX, right, LEFT_EXPR));
             case NOT:
-                return "notExists";
+                return new MethodCallExpr(null, "notExists", new NodeList<>(FeelCtx.FEELCTX, right, LEFT_EXPR));
             case TEST:
-                throw new UnsupportedOperationException(operator.toString());
+                return coerceToBoolean(right);
             default:
                 throw new UnsupportedOperationException(operator.toString());
         }
+    }
+
+    public static MethodCallExpr unaryComparison(String operator, Expression right) {
+        return new MethodCallExpr(null, operator, new NodeList<>(LEFT_EXPR, right));
     }
 
     public static MethodCallExpr lt(Expression left, Expression right) {
@@ -229,6 +233,15 @@ public class Expressions {
                 .addArgument(returnExpr);
     }
 
+    public static MethodCallExpr list(Expression... exprs) {
+        return new MethodCallExpr(null, "list", NodeList.nodeList(exprs));
+    }
+
+    public static MethodCallExpr list(Collection<Expression> exprs) {
+        return new MethodCallExpr(null, "list", NodeList.nodeList(exprs));
+    }
+
+
     public static MethodCallExpr range(RangeNode.IntervalBoundary lowBoundary,
                                        Expression lowEndPoint,
                                        Expression highEndPoint,
@@ -277,6 +290,14 @@ public class Expressions {
                 new ExpressionStmt(expr),
                 true);
     }
+
+    public static NamedLambda namedUnaryLambda(Expression expr, String text) {
+        LambdaExpr lambda = Expressions.unaryLambda(expr);
+        String name = Constants.unaryTestName(text);
+        FieldDeclaration field = Constants.unaryTest(name, lambda);
+        return new NamedLambda(new NameExpr(name), lambda, field);
+    }
+
 
     public static LambdaExpr unaryLambda(Expression expr) {
         return new LambdaExpr(
@@ -345,8 +366,14 @@ public class Expressions {
                 .addArgument(value);
     }
 
-    public static Expression coerceToString(Expression expression) {
-        return new MethodCallExpr(new NameExpr("String"), "valueOf").addArgument(expression);
+    public static StringLiteralExpr stringLiteral(String text) {
+        if (text.startsWith("\"") && text.endsWith("\"")) {
+            String actualStringContent = text.substring(1, text.length() - 1); // remove start/end " from the FEEL text expression.
+            String unescaped = EvalHelper.unescapeString(actualStringContent); // unescapes String, FEEL-style
+            return new StringLiteralExpr().setString(unescaped); // setString escapes the contents Java-style
+        } else {
+            return new StringLiteralExpr().setString(text);
+        }
     }
 
     public static Expression coerceToBoolean(Expression expression) {

@@ -52,6 +52,7 @@ import org.kie.dmn.feel.lang.ast.RangeNode;
 import org.kie.dmn.feel.lang.ast.SignedUnaryNode;
 import org.kie.dmn.feel.lang.ast.StringNode;
 import org.kie.dmn.feel.lang.ast.TypeNode;
+import org.kie.dmn.feel.lang.ast.UnaryTestListNode;
 import org.kie.dmn.feel.lang.ast.UnaryTestNode;
 import org.kie.dmn.feel.lang.ast.Visitor;
 import org.kie.dmn.feel.lang.impl.MapBackedType;
@@ -126,12 +127,34 @@ public class ASTCompilerVisitor implements Visitor<DirectCompilerResult> {
 
     @Override
     public DirectCompilerResult visit(StringNode n) {
-        String actualStringContent = n.getText();
-        actualStringContent = actualStringContent.substring(1, actualStringContent.length() - 1); // remove start/end " from the FEEL text expression.
-        String unescaped = EvalHelper.unescapeString(actualStringContent); // unescapes String, FEEL-style
         return DirectCompilerResult.of(
-                new StringLiteralExpr().setString(unescaped), // setString escapes the contents Java-style
+                Expressions.stringLiteral(n.getText()), // setString escapes the contents Java-style
                 BuiltInType.STRING);
+    }
+
+    @Override
+    public DirectCompilerResult visit(UnaryTestListNode n) {
+        MethodCallExpr expr = Expressions.list();
+        HashSet<FieldDeclaration> fds = new HashSet<>();
+        for (BaseNode e : n.getElements()) {
+            DirectCompilerResult r = e.accept(this);
+            fds.addAll(r.getFieldDeclarations());
+            expr.addArgument(r.getExpression());
+        }
+
+        if (n.isNegated()) {
+            Expressions.NamedLambda negated =
+                    Expressions.namedUnaryLambda(
+                            Expressions.notExists(expr), n.getText());
+
+            fds.add(negated.field());
+            return DirectCompilerResult.of(
+                    Expressions.list(negated.name()),
+                    BuiltInType.LIST, fds);
+        } else {
+            return DirectCompilerResult.of(
+                    expr, BuiltInType.LIST, fds);
+        }
     }
 
     @Override
@@ -141,7 +164,7 @@ public class ASTCompilerVisitor implements Visitor<DirectCompilerResult> {
 
     @Override
     public DirectCompilerResult visit(NameDefNode n) {
-        StringLiteralExpr expr = new StringLiteralExpr(EvalHelper.normalizeVariableName(n.getText()));
+        StringLiteralExpr expr = Expressions.stringLiteral(EvalHelper.normalizeVariableName(n.getText()));
         return DirectCompilerResult.of(expr, BuiltInType.STRING);
     }
 
@@ -341,7 +364,7 @@ public class ASTCompilerVisitor implements Visitor<DirectCompilerResult> {
 
     @Override
     public DirectCompilerResult visit(FunctionDefNode n) {
-        MethodCallExpr list = new MethodCallExpr(null, "list");
+        MethodCallExpr list = Expressions.list();
         n.getFormalParameters()
                 .stream()
                 .map(fp -> fp.accept(this))
@@ -448,7 +471,7 @@ public class ASTCompilerVisitor implements Visitor<DirectCompilerResult> {
 
     @Override
     public DirectCompilerResult visit(ListNode n) {
-        MethodCallExpr list = new MethodCallExpr(null, "list");
+        MethodCallExpr list = Expressions.list();
         DirectCompilerResult result = DirectCompilerResult.of(list, BuiltInType.LIST);
 
         for (BaseNode e : n.getElements()) {
@@ -540,14 +563,12 @@ public class ASTCompilerVisitor implements Visitor<DirectCompilerResult> {
     @Override
     public DirectCompilerResult visit(UnaryTestNode n) {
         DirectCompilerResult value = n.getValue().accept(this);
-        MethodCallExpr expr = Expressions.unary(n.getOperator(), value.getExpression());
-        LambdaExpr lambda = Expressions.unaryLambda(expr);
-        String utName = Constants.unaryTestName(n.getText());
-        FieldDeclaration ut = Constants.unaryTest(utName, lambda);
+        Expression expr = Expressions.unary(n.getOperator(), value.getExpression());
+        Expressions.NamedLambda namedLambda = Expressions.namedUnaryLambda(expr, n.getText());
         DirectCompilerResult r =
-                DirectCompilerResult.of(new NameExpr(utName), BuiltInType.UNARY_TEST)
+                DirectCompilerResult.of(namedLambda.name(), BuiltInType.UNARY_TEST)
                         .withFD(value);
-        r.addFieldDesclaration(ut);
+        r.addFieldDesclaration(namedLambda.field());
         return r;
     }
 }

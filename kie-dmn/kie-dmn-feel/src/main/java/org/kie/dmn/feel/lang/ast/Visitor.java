@@ -30,4 +30,5 @@ public interface Visitor<T> {
     T visit(RangeNode n);
     T visit(SignedUnaryNode n);
     T visit(UnaryTestNode n);
+    T visit(UnaryTestListNode n);
 }

@@ -52,6 +52,10 @@ public class ASTBuilderFactory {
         return new BetweenNode( ctx, value, start, end );
     }
 
+    public static UnaryTestListNode newUnaryTestListNode(ParserRuleContext ctx, List<BaseNode> exprs, UnaryTestListNode.State state) {
+        return new UnaryTestListNode( ctx, exprs, state );
+    }
+
     public static ListNode newListNode(ParserRuleContext ctx, List<BaseNode> exprs) {
         return new ListNode( ctx, exprs );
     }

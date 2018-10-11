@@ -4,13 +4,17 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 
 import org.antlr.v4.runtime.CommonToken;
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.drools.javaparser.ast.body.FieldDeclaration;
+import org.drools.javaparser.ast.expr.Expression;
 import org.kie.dmn.api.core.DMNContext;
 import org.kie.dmn.api.core.DMNMessage;
 import org.kie.dmn.api.core.DMNType;
@@ -24,6 +28,7 @@ import org.kie.dmn.feel.FEEL;
 import org.kie.dmn.feel.codegen.feel11.ASTCompilerVisitor;
 import org.kie.dmn.feel.codegen.feel11.ASTUnaryTestTransform;
 import org.kie.dmn.feel.codegen.feel11.CompiledFEELSupport;
+import org.kie.dmn.feel.codegen.feel11.CompiledFEELUnaryTests;
 import org.kie.dmn.feel.codegen.feel11.CompilerBytecodeLoader;
 import org.kie.dmn.feel.codegen.feel11.DirectCompilerResult;
 import org.kie.dmn.feel.codegen.feel11.DirectCompilerVisitor;
@@ -47,6 +52,9 @@ import org.kie.dmn.feel.util.ClassLoaderUtil;
 import org.kie.dmn.model.api.DMNElement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sun.util.resources.cldr.ar.CalendarData_ar_OM;
+
+import static org.kie.dmn.feel.codegen.feel11.CompiledFEELSupport.compiledErrorExpression;
 
 public class DMNFEELHelper {
 
@@ -254,27 +262,72 @@ public class DMNFEELHelper {
     }
 
     public String getSourceForUnaryTest(String packageName, String className, String input, DMNCompilerContext ctx, Type columntype) {
-        Map<String, Type> variableTypes = new HashMap<>();
+//        Map<String, Type> variableTypes = new HashMap<>();
+//        for ( Map.Entry<String, DMNType> entry : ctx.getVariables().entrySet() ) {
+//            variableTypes.put( entry.getKey(), dmnToFeelType((BaseDMNTypeImpl) entry.getValue()) );
+//        }
+//        variableTypes.put( "?", columntype );
+//
+//        FEELEventListenersManager manager = new FEELEventListenersManager();
+//        CompiledFEELSupport.SyntaxErrorListener errorListener = new CompiledFEELSupport.SyntaxErrorListener();
+//        manager.addListener(errorListener);
+//        FEEL_1_1Parser parser = FEELParser.parse(
+//                manager, input, variableTypes, Collections.emptyMap(), (( FEELImpl ) feel).getCustomFunctions(), Collections.emptyList());
+//        ParseTree tree = parser.unaryTestsRoot();
+//        DirectCompilerResult result;
+//        if (errorListener.isError()) {
+//            result = CompiledFEELSupport.compiledErrorUnaryTest(errorListener.event().getMessage());
+//        } else {
+//            BaseNode ast = tree.accept(new ASTBuilderVisitor(variableTypes));
+//            BaseNode rewritten = ast.accept(new ASTUnaryTestTransform()).node();
+//            result = rewritten.accept(new ASTCompilerVisitor());
+//        }
+//        return new CompilerBytecodeLoader().getSourceForUnaryTest(packageName, className, input, result);
+
+
+
+        CompilerContext compilerContext = feel.newCompilerContext();
         for ( Map.Entry<String, DMNType> entry : ctx.getVariables().entrySet() ) {
-            variableTypes.put( entry.getKey(), dmnToFeelType((BaseDMNTypeImpl) entry.getValue()) );
+            compilerContext.addInputVariableType( entry.getKey(), dmnToFeelType((BaseDMNTypeImpl) entry.getValue()) );
         }
-        variableTypes.put( "?", columntype );
+        compilerContext.addInputVariableType( "?", columntype );
+
+        // add listener to syntax errors, and save them
+        CompiledFEELSupport.SyntaxErrorListener errorListener =
+                new CompiledFEELSupport.SyntaxErrorListener();
 
         FEELEventListenersManager manager = new FEELEventListenersManager();
-        CompiledFEELSupport.SyntaxErrorListener errorListener = new CompiledFEELSupport.SyntaxErrorListener();
         manager.addListener(errorListener);
         FEEL_1_1Parser parser = FEELParser.parse(
-                manager, input, variableTypes, Collections.emptyMap(), (( FEELImpl ) feel).getCustomFunctions(), Collections.emptyList());
-        ParseTree tree = parser.unaryTestsRoot();
-        DirectCompilerResult result;
+                manager, input, compilerContext.getInputVariableTypes(), Collections.emptyMap(), (( FEELImpl ) feel).getCustomFunctions(), Collections.emptyList());
+
         if (errorListener.isError()) {
-            result = CompiledFEELSupport.compiledErrorUnaryTest(errorListener.event().getMessage());
-        } else {
-            BaseNode ast = tree.accept(new ASTBuilderVisitor(variableTypes));
-            BaseNode rewritten = ast.accept(new ASTUnaryTestTransform()).node();
-            result = rewritten.accept(new ASTCompilerVisitor());
+            return new CompilerBytecodeLoader().
+                    getSourceForUnaryTest(
+                            packageName,
+                            className,
+                            input,
+                            compiledErrorExpression(errorListener.event().getMessage()),
+                            Collections.emptySet());
+
         }
-        return new CompilerBytecodeLoader().getSourceForUnaryTest(packageName, className, input, result);
+
+        ParseTree tree = parser.unaryTestsRoot();
+
+        ASTBuilderVisitor v = new ASTBuilderVisitor(compilerContext.getInputVariableTypes());
+        BaseNode node = v.visit(tree);
+        BaseNode transformed = node.accept(new ASTUnaryTestTransform()).node();
+        DirectCompilerResult compilerResult = transformed.accept(new ASTCompilerVisitor());
+
+//        return feel.compileUnaryTests(input, compilerContext);
+
+        return new CompilerBytecodeLoader().
+                getSourceForUnaryTest(
+                        packageName,
+                        className,
+                        input,
+                        compilerResult.getExpression(),
+                        compilerResult.getFieldDeclarations());
     }
 
 

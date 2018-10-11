@@ -446,13 +446,25 @@ public class CompiledFEELSupport {
         return invocationParams;
     }
 
-    public static Object notifyCompilationError(EvaluationContext feelExprCtx, String message) {
+    public static <T> T notifyCompilationError(EvaluationContext feelExprCtx, String message) {
         feelExprCtx.notifyEvt(() -> new ASTEventBase(Severity.ERROR, message, null));
         return null;
     }
 
     public static Object coerceNumber(Object value) {
         return EvalHelper.coerceNumber(value);
+    }
+
+
+    /**
+     * Generates a compilable class that reports a (compile-time) error at runtime
+     */
+    public static CompiledFEELUnaryTests compiledUnaryTestsError(String expression, String msg) {
+        return new CompilerBytecodeLoader()
+                .makeFromJPUnaryTestsExpression(
+                        expression,
+                        compiledErrorExpression(msg),
+                        Collections.emptySet());
     }
 
 

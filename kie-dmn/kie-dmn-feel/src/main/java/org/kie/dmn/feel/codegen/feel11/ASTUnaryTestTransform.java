@@ -35,15 +35,56 @@ public class ASTUnaryTestTransform extends DefaultedVisitor<ASTUnaryTestTransfor
         for (BaseNode e : n.getElements()) {
             UnaryTestSubexpr accept = e.accept(this);
             if (accept.isWildcard()) {
-                collect.add(asWildcard(accept.node));
+                collect.add(rewriteWildcardToUnary(accept));
             } else if (!accept.isUnaryTest()) {
-                collect.add(asUnaryEq(accept.node));
+                collect.add(rewriteSimpleToUnary(accept.node));
             } else {
                 collect.add(accept.node);
             }
         }
         return new TopLevel(
                 ASTBuilderFactory.newUnaryTestListNode(n.getParserRuleContext(), collect, n.getState()));
+    }
+
+    private UnaryTestNode rewriteWildcardToUnary(UnaryTestSubexpr accept) {
+        return ASTBuilderFactory.newUnaryTestNode(
+                        accept.node.getParserRuleContext(), "test", accept.node);
+    }
+
+    public BaseNode rewriteSimpleToUnary(BaseNode node) {
+        if (node instanceof ListNode || node instanceof RangeNode) {
+            return ASTBuilderFactory.newUnaryTestNode(
+                    node.getParserRuleContext(), "in", node);
+        } else {
+            return ASTBuilderFactory.newUnaryTestNode(
+                    node.getParserRuleContext(), "=", node);
+        }
+    }
+
+    @Override
+    public UnaryTestSubexpr visit(NameRefNode n) {
+        if (n.getText().equals("?")) {
+            return new WildCardUnaryExpression(n);
+        } else {
+            return new SimpleUnaryExpression(n);
+        }
+    }
+
+    @Override
+    public UnaryTestSubexpr visit(QualifiedNameNode n) {
+        // wildcard is allowed only as the first part
+        UnaryTestSubexpr leading =
+                n.getParts().get(0).accept(this);
+        if (leading.isWildcard()) {
+            return new WildCardUnaryExpression(n);
+        } else {
+            return new SimpleUnaryExpression(n);
+        }
+    }
+
+    private UnaryTestSubexpr propagateWildcard(ASTNode n) {
+        return Arrays.stream(n.getChildrenNode()).map(e -> e.accept(this)).anyMatch(UnaryTestSubexpr::isWildcard) ?
+                new WildCardUnaryExpression((BaseNode) n) : new SimpleUnaryExpression((BaseNode) n);
     }
 
     @Override
@@ -84,47 +125,6 @@ public class ASTUnaryTestTransform extends DefaultedVisitor<ASTUnaryTestTransfor
     @Override
     public UnaryTestSubexpr visit(NameDefNode n) {
         return new SimpleUnaryExpression(n);
-    }
-
-    @Override
-    public UnaryTestSubexpr visit(NameRefNode n) {
-        if (n.getText().equals("?")) {
-            return new WildCardUnaryExpression(n);
-        } else {
-            return new SimpleUnaryExpression(n);
-        }
-    }
-
-    @Override
-    public UnaryTestSubexpr visit(QualifiedNameNode n) {
-        // wildcard is allowed only as the first part
-        UnaryTestSubexpr leading =
-                n.getParts().get(0).accept(this);
-        if (leading.isWildcard()) {
-            return new WildCardUnaryExpression(n);
-        } else {
-            return new SimpleUnaryExpression(n);
-        }
-    }
-
-    private BaseNode asWildcard(BaseNode node) {
-        return ASTBuilderFactory.newUnaryTestNode(
-                node.getParserRuleContext(), "test", node);
-    }
-
-    public BaseNode asUnaryEq(BaseNode node) {
-        if (node instanceof ListNode || node instanceof RangeNode) {
-            return ASTBuilderFactory.newUnaryTestNode(
-                    node.getParserRuleContext(), "in", node);
-        } else {
-            return ASTBuilderFactory.newUnaryTestNode(
-                    node.getParserRuleContext(), "=", node);
-        }
-    }
-
-    private UnaryTestSubexpr propagateWildcard(ASTNode n) {
-        return Arrays.stream(n.getChildrenNode()).map(e -> e.accept(this)).anyMatch(UnaryTestSubexpr::isWildcard) ?
-                new WildCardUnaryExpression((BaseNode) n) : new SimpleUnaryExpression((BaseNode) n);
     }
 
     public static abstract class UnaryTestSubexpr {

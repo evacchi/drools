@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.kie.dmn.api.feel.runtime.events.FEELEventListener;
+import org.kie.dmn.feel.codegen.feel11.CompiledFEELUnaryTests;
 import org.kie.dmn.feel.lang.CompiledExpression;
 import org.kie.dmn.feel.lang.CompilerContext;
 import org.kie.dmn.feel.lang.EvaluationContext;
@@ -97,7 +98,7 @@ public interface FEEL {
      * @return the result of the evaluation of the expression
      */
     Object evaluate(String expression);
-    
+
     /**
      * Evaluates the given FEEL expression using the
      * given EvaluationContext, and returns the result
@@ -146,7 +147,7 @@ public interface FEEL {
      * @return the result of the evaluation of the expression.
      */
     Object evaluate(CompiledExpression expression, Map<String, Object> inputVariables);
-    
+
     /**
      * Evaluates the given compiled FEEL expression using the
      * given EvaluationContext, and returns the result
@@ -183,6 +184,18 @@ public interface FEEL {
      * @return a List of compiled UnaryTests
      */
     List<UnaryTest> evaluateUnaryTests(String expression, Map<String, Type> variableTypes);
+
+
+    /**
+     * Compiles the given expression as a list of of unary tests using
+     * the given compiler context.
+     *
+     * @param expression a FEEL expression
+     * @param ctx a compiler context
+     * @return the list of compiled unary tests
+     *
+     */
+    CompiledExpression compileUnaryTests(String expression, CompilerContext ctx);
 
     /**
      * Registers a new event listener into this FEEL instance.

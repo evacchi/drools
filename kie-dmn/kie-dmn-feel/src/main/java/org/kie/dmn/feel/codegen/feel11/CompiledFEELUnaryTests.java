@@ -18,9 +18,10 @@ package org.kie.dmn.feel.codegen.feel11;
 
 import java.util.List;
 
+import org.kie.dmn.feel.lang.CompiledExpression;
 import org.kie.dmn.feel.runtime.UnaryTest;
 
-public interface CompiledFEELUnaryTests {
+public interface CompiledFEELUnaryTests extends CompiledExpression {
 
     List<UnaryTest> getUnaryTests();
 

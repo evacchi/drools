@@ -119,7 +119,10 @@ public class CompilerBytecodeLoader {
     }
 
     public String getSourceForUnaryTest(String packageName, String className, String feelExpression, Expression theExpression, Set<FieldDeclaration> fieldDeclarations) {
-        CompilationUnit cu = getCompilationUnitForUnaryTests( CompiledFEELUnaryTests.class, "/TemplateCompiledFEELUnaryTests.java", packageName, className, feelExpression, theExpression, fieldDeclarations );
+        CompilationUnit cu = getCompilationUnitForUnaryTests(
+                CompiledFEELUnaryTests.class,
+                "/TemplateCompiledFEELUnaryTests.java",
+                packageName, className, feelExpression, theExpression, fieldDeclarations );
         ClassOrInterfaceDeclaration classSource = cu.getClassByName( className ).get();
         classSource.setStatic( true );
         return classSource.toString();

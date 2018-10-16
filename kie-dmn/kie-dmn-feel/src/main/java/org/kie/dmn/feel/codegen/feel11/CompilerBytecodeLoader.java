@@ -125,7 +125,7 @@ public class CompilerBytecodeLoader {
         return classSource.toString();
     }
 
-    private <T> CompilationUnit getCompilationUnitForUnaryTests( Class<T> clazz, String templateResourcePath, String cuPackage, String cuClass, String feelExpression, Expression theExpression, Set<FieldDeclaration> fieldDeclarations ) {
+    public <T> CompilationUnit getCompilationUnitForUnaryTests( Class<T> clazz, String templateResourcePath, String cuPackage, String cuClass, String feelExpression, Expression theExpression, Set<FieldDeclaration> fieldDeclarations ) {
         CompilationUnit cu = JavaParser.parse(CompilerBytecodeLoader.class.getResourceAsStream(templateResourcePath));
         cu.setPackageDeclaration(cuPackage);
         ClassOrInterfaceDeclaration classSource = cu.getClassByName( templateResourcePath.substring( 1, templateResourcePath.length()-5 ) ).get();

@@ -31,8 +31,10 @@ import org.kie.dmn.api.feel.runtime.events.FEELEvent.Severity;
 import org.kie.dmn.feel.FEEL;
 import org.kie.dmn.feel.lang.CompiledExpression;
 import org.kie.dmn.feel.lang.EvaluationContext;
+import org.kie.dmn.feel.lang.impl.CompiledExecutableExpression;
 import org.kie.dmn.feel.lang.impl.CompiledExpressionImpl;
 import org.kie.dmn.feel.lang.impl.EvaluationContextImpl;
+import org.kie.dmn.feel.lang.impl.ExecutableExpression;
 import org.kie.dmn.feel.runtime.UnaryTest;
 import org.kie.dmn.feel.runtime.events.DecisionTableRulesMatchedEvent;
 import org.kie.dmn.feel.runtime.events.FEELEventBase;
@@ -269,8 +271,8 @@ public class DecisionTableImpl implements DecisionTable {
     private boolean matches(EvaluationContext ctx, Object[] params, DTDecisionRule rule) {
         for( int i = 0; i < params.length; i++ ) {
             CompiledExpression compiledInput = inputs.get(i).getCompiledInput();
-            if ( compiledInput instanceof CompiledExpressionImpl ) {
-                ctx.setValue("?", ((CompiledExpressionImpl) compiledInput).evaluate(ctx));
+            if ( compiledInput instanceof ExecutableExpression) {
+                ctx.setValue("?", ((ExecutableExpression) compiledInput).evaluate(ctx));
             }
             if( ! satisfies( ctx, params[i], rule.getInputEntry().get( i ) ) ) {
                 return false;

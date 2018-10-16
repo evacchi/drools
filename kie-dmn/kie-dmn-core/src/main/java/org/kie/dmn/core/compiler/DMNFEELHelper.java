@@ -24,9 +24,9 @@ import org.kie.dmn.feel.FEEL;
 import org.kie.dmn.feel.codegen.feel11.ASTCompilerVisitor;
 import org.kie.dmn.feel.codegen.feel11.ASTUnaryTestTransform;
 import org.kie.dmn.feel.codegen.feel11.CompiledFEELSupport;
+import org.kie.dmn.feel.codegen.feel11.CompiledUnaryTest;
 import org.kie.dmn.feel.codegen.feel11.CompilerBytecodeLoader;
 import org.kie.dmn.feel.codegen.feel11.DirectCompilerResult;
-import org.kie.dmn.feel.codegen.feel11.DirectCompilerVisitor;
 import org.kie.dmn.feel.lang.CompiledExpression;
 import org.kie.dmn.feel.lang.CompilerContext;
 import org.kie.dmn.feel.lang.FEELProfile;
@@ -95,7 +95,7 @@ public class DMNFEELHelper {
                     ctx.setValue( entry.getKey(), entry.getValue() );
                 }
             }
-    
+
             for ( UnaryTest t : unaryTests ) {
                 try {
                     Boolean applyT = t.apply( ctx, value );
@@ -238,6 +238,30 @@ public class DMNFEELHelper {
                                                               (msg.getSourceId() != null &&
                                                                element.getId() != null &&
                                                                msg.getSourceId().equals( element.getId() ))) );
+    }
+
+    public CompiledUnaryTest getCompiledUnaryTest(String input, String pkgName, String testClass, DMNCompilerContext ctx, Type columntype) {
+        CompilerContext compilerContext = feel.newCompilerContext();
+        Map<String, Type> variableTypes1 = new HashMap<>();
+        for ( Map.Entry<String, DMNType> entry : ctx.getVariables().entrySet() ) {
+//            variableTypes1.put(entry.getKey(), dmnToFeelType((BaseDMNTypeImpl) entry.getValue()) );
+            compilerContext.addInputVariableType(entry.getKey(), dmnToFeelType((BaseDMNTypeImpl) entry.getValue()) );
+        }
+//        variableTypes1.put("?", columntype);
+//        Map<String, Type> variableTypes = variableTypes1;
+        compilerContext.addInputVariableType("?", columntype );
+
+        return new CompiledUnaryTest(feel, input, pkgName, testClass, compilerContext);
+    }
+
+
+    private Map<String, Type> asTypeMap(DMNCompilerContext ctx, Type columntype) {
+        Map<String, Type> variableTypes = new HashMap<>();
+        for ( Map.Entry<String, DMNType> entry : ctx.getVariables().entrySet() ) {
+            variableTypes.put( entry.getKey(), dmnToFeelType((BaseDMNTypeImpl) entry.getValue()) );
+        }
+        variableTypes.put( "?", columntype );
+        return variableTypes;
     }
 
     public static class FEELEventsListenerImpl implements FEELEventListener {

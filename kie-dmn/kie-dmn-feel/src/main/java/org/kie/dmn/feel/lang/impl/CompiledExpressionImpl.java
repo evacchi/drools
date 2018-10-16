@@ -20,7 +20,8 @@ import org.kie.dmn.feel.lang.CompiledExpression;
 import org.kie.dmn.feel.lang.EvaluationContext;
 import org.kie.dmn.feel.lang.ast.ASTNode;
 
-public class CompiledExpressionImpl implements CompiledExpression {
+public class CompiledExpressionImpl implements CompiledExpression,
+                                               ExecutableExpression {
     private ASTNode     expression;
 
     public CompiledExpressionImpl(ASTNode expression) {

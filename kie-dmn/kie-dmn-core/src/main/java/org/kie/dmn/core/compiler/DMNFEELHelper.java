@@ -242,16 +242,19 @@ public class DMNFEELHelper {
 
     public CompiledUnaryTest getCompiledUnaryTest(String input, String pkgName, String testClass, DMNCompilerContext ctx, Type columntype) {
         CompilerContext compilerContext = feel.newCompilerContext();
-        Map<String, Type> variableTypes1 = new HashMap<>();
+        compilerContext.getListeners().addAll(feel.getListeners());
         for ( Map.Entry<String, DMNType> entry : ctx.getVariables().entrySet() ) {
-//            variableTypes1.put(entry.getKey(), dmnToFeelType((BaseDMNTypeImpl) entry.getValue()) );
             compilerContext.addInputVariableType(entry.getKey(), dmnToFeelType((BaseDMNTypeImpl) entry.getValue()) );
         }
-//        variableTypes1.put("?", columntype);
-//        Map<String, Type> variableTypes = variableTypes1;
         compilerContext.addInputVariableType("?", columntype );
 
-        return new CompiledUnaryTest(feel, input, pkgName, testClass, compilerContext);
+        return new CompiledUnaryTest(
+                ((FEELImpl)feel).getEventsManager(feel.getListeners()),
+                input,
+                pkgName,
+                testClass,
+                compilerContext,
+                Collections.emptyList());
     }
 
 

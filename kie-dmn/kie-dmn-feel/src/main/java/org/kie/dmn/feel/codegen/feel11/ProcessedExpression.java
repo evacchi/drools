@@ -37,14 +37,14 @@ public class ProcessedExpression {
             FEELEventListenersManager eventsManager,
             CompilerContext ctx,
             List<FEELProfile> profiles) {
-        Map<String, Type> variableTypes =
-                ctx.getInputVariableTypes();
 
         this.expression = expression;
         this.packageName = generateRandomPackage();
         this.className = "TemplateCompiledFEELExpression";
         eventsManager.addListener(errorListener);
 
+        Map<String, Type> variableTypes =
+                ctx.getInputVariableTypes();
         FEEL_1_1Parser parser = FEELParser.parse(
                 eventsManager,
                 expression,

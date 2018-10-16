@@ -188,7 +188,7 @@ public class FEELImpl
 
     CompiledUnaryTest compileUnaryTests(String expressions, CompilerContext ctx) {
         return new CompiledUnaryTest(
-                this,
+                getEventsManager(getListeners()),
                 expressions,
                 generateRandomPackage(),
                 ctx);
@@ -196,7 +196,7 @@ public class FEELImpl
 
     @Override
     public List<UnaryTest> evaluateUnaryTests(String expression, Map<String, Type> variableTypes) {
-        CompilerContext ctx = newCompilerContext();
+        CompilerContext ctx = newCompilerContext(getListeners());
         for( Map.Entry<String, Type> e : variableTypes.entrySet() ) {
             ctx.addInputVariableType( e.getKey(), e.getValue() );
         }

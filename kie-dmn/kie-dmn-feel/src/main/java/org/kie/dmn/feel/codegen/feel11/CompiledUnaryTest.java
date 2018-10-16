@@ -1,18 +1,18 @@
 package org.kie.dmn.feel.codegen.feel11;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.drools.javaparser.ast.CompilationUnit;
 import org.drools.javaparser.ast.body.ClassOrInterfaceDeclaration;
-import org.kie.dmn.feel.FEEL;
 import org.kie.dmn.feel.lang.CompilerContext;
+import org.kie.dmn.feel.lang.FEELProfile;
 import org.kie.dmn.feel.lang.Type;
 import org.kie.dmn.feel.lang.ast.BaseNode;
 import org.kie.dmn.feel.lang.impl.CompiledExpressionImpl;
 import org.kie.dmn.feel.lang.impl.FEELEventListenersManager;
-import org.kie.dmn.feel.lang.impl.FEELImpl;
 import org.kie.dmn.feel.lang.impl.UnaryTestCompiledExecutableExpression;
 import org.kie.dmn.feel.lang.impl.UnaryTestInterpretedExecutableExpression;
 import org.kie.dmn.feel.parser.feel11.ASTBuilderVisitor;
@@ -21,44 +21,55 @@ import org.kie.dmn.feel.parser.feel11.FEEL_1_1Parser;
 
 public class CompiledUnaryTest {
 
-    private final FEEL feel;
     private final String packageName;
     private final String className;
     private final String input;
 
-    private final FEELEventListenersManager manager = new FEELEventListenersManager();
-    private final CompiledFEELSupport.SyntaxErrorListener errorListener = new CompiledFEELSupport.SyntaxErrorListener();
+    private final CompiledFEELSupport.SyntaxErrorListener errorListener =
+            new CompiledFEELSupport.SyntaxErrorListener();
     private final BaseNode ast;
     private DirectCompilerResult compiledExpression;
-    private final CompilerBytecodeLoader compiler = new CompilerBytecodeLoader();
+    private final CompilerBytecodeLoader compiler =
+            new CompilerBytecodeLoader();
 
     public CompiledUnaryTest(
-            FEEL feel,
+            FEELEventListenersManager eventsManager,
             String input,
             String packageName,
             String testClass,
-            CompilerContext ctx) {
-        this.feel = feel;
+            CompilerContext ctx,
+            List<FEELProfile> profiles) {
         this.input = input;
         this.packageName = packageName;
         this.className = testClass;
+        eventsManager.addListener(errorListener);
 
-        manager.addListener(errorListener);
-
+        Map<String, Type> variableTypes =
+                ctx.getInputVariableTypes();
         FEEL_1_1Parser parser = FEELParser.parse(
-                manager, this.input, ctx.getInputVariableTypes(), ctx.getInputVariables(), ((FEELImpl) this.feel)
-                        .getCustomFunctions(), Collections.emptyList());
+                eventsManager,
+                input,
+                variableTypes,
+                ctx.getInputVariables(),
+                ctx.getFEELFunctions(),
+                profiles);
+
         ParseTree tree = parser.unaryTestsRoot();
         BaseNode initialAst = tree.accept(new ASTBuilderVisitor(ctx.getInputVariableTypes()));
         ast = initialAst.accept(new ASTUnaryTestTransform()).node();
     }
 
     public CompiledUnaryTest(
-            FEELImpl feel,
+            FEELEventListenersManager eventsManager,
             String expressions,
             String generateRandomPackage,
             CompilerContext ctx) {
-        this(feel, expressions, generateRandomPackage, "TemplateCompiledFEELUnaryTests", ctx);
+        this(eventsManager,
+             expressions,
+             generateRandomPackage,
+             "TemplateCompiledFEELUnaryTests",
+             ctx,
+             Collections.emptyList());
     }
 
     private DirectCompilerResult getCompilerResult() {
@@ -107,11 +118,5 @@ public class CompiledUnaryTest {
                                                         compilerResult.getExpression(),
                                                         compilerResult.getFieldDeclarations());
         return new UnaryTestCompiledExecutableExpression(compiledFEELExpression);
-    }
-
-    private FEEL_1_1Parser makeFeelParser(Map<String, Type> vs, FEELEventListenersManager manager) {
-        return FEELParser.parse(
-                manager, input, vs, Collections.emptyMap(), ((FEELImpl) feel)
-                        .getCustomFunctions(), Collections.emptyList());
     }
 }

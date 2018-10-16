@@ -29,6 +29,7 @@ import org.kie.dmn.feel.FEEL;
 import org.kie.dmn.feel.lang.CompiledExpression;
 import org.kie.dmn.feel.lang.ast.FunctionDefNode;
 import org.kie.dmn.feel.lang.impl.CompiledExpressionImpl;
+import org.kie.dmn.feel.lang.impl.InterpretedExecutableExpression;
 
 /**
  * An evaluator for DMN Literal Expressions
@@ -42,7 +43,8 @@ public class DMNLiteralExpressionEvaluator
     }
 
     public boolean isFunctionDefinition() {
-        return expression instanceof CompiledExpressionImpl && ((CompiledExpressionImpl)expression).getExpression() instanceof FunctionDefNode;
+        return expression instanceof CompiledExpressionImpl && ((CompiledExpressionImpl)expression).getExpression() instanceof FunctionDefNode
+                || expression instanceof InterpretedExecutableExpression && ((InterpretedExecutableExpression) expression).isFunctionOhNoWhyAreYouDoingThis() ;
     }
 
     public CompiledExpression getExpression() {

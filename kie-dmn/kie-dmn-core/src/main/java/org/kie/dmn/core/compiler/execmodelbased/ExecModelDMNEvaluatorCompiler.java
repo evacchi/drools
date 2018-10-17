@@ -27,17 +27,13 @@ import org.drools.compiler.commons.jci.problems.CompilationProblem;
 import org.drools.compiler.compiler.io.memory.MemoryFileSystem;
 import org.drools.core.common.ProjectClassLoader;
 import org.kie.api.runtime.rule.DataSource;
-import org.kie.dmn.api.core.DMNType;
 import org.kie.dmn.core.api.DMNExpressionEvaluator;
 import org.kie.dmn.core.ast.DMNBaseNode;
 import org.kie.dmn.core.compiler.DMNCompilerContext;
 import org.kie.dmn.core.compiler.DMNCompilerImpl;
 import org.kie.dmn.core.compiler.DMNEvaluatorCompiler;
 import org.kie.dmn.core.compiler.DMNFEELHelper;
-import org.kie.dmn.core.impl.BaseDMNTypeImpl;
 import org.kie.dmn.core.impl.DMNModelImpl;
-import org.kie.dmn.feel.codegen.feel11.CompiledUnaryTest;
-import org.kie.dmn.feel.lang.Type;
 import org.kie.dmn.model.api.DRGElement;
 import org.kie.dmn.model.api.DecisionTable;
 import org.slf4j.Logger;
@@ -327,16 +323,16 @@ public class ExecModelDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
                     if (testClass == null) {
                         testClass = className + "r" + i + "c" + j;
                         testClassesByInput.put(input, testClass);
-                        testsBuilder.append( "\n" );
                         instancesBuilder.append( "    private static final CompiledDTTest " + testClass + "_INSTANCE = new CompiledDTTest( new " + testClass + "() );\n" );
-                        CompiledUnaryTest compiledUnaryTest = feel.getCompiledUnaryTest(
+
+                        String sourceCode = feel.compileUnaryTests(
                                 input,
-                                pkgName,
-                                testClass,
                                 ctx,
-                                dTableModel.getColumns().get(j).getType());
-                        testsBuilder.append(
-                                compiledUnaryTest.getSourceCode().toString() );
+                                dTableModel.getColumns().get(j).getType())
+                                .setName(testClass).toString();
+
+                        testsBuilder.append( "\n" );
+                        testsBuilder.append( sourceCode );
                         testsBuilder.append( "\n" );
                     }
                     testArrayBuilder.append( testClass ).append( "_INSTANCE" );

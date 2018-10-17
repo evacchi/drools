@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 
 import org.kie.dmn.api.feel.runtime.events.FEELEventListener;
 import org.kie.dmn.feel.FEEL;
@@ -187,11 +186,7 @@ public class FEELImpl
     }
 
     public CompiledUnaryTest compileUnaryTests(String expressions, CompilerContext ctx) {
-        return new CompiledUnaryTest(
-                getEventsManager(getListeners()),
-                expressions,
-                generateRandomPackage(),
-                ctx);
+        return new CompiledUnaryTest(expressions, ctx);
     }
 
     @Override
@@ -204,12 +199,6 @@ public class FEELImpl
         return compileUnaryTests(expression, ctx)
                 .getInterpreted().evaluate();
     }
-
-    private String generateRandomPackage() {
-        String uuid = UUID.randomUUID().toString().replaceAll("-", "");
-        return this.getClass().getPackage().getName() + ".gen" + uuid;
-    }
-
 
     @Override
     public void addListener(FEELEventListener listener) {

@@ -3,6 +3,7 @@ package org.kie.dmn.feel.codegen.feel11;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.drools.javaparser.ast.CompilationUnit;
@@ -33,7 +34,6 @@ public class CompiledUnaryTest {
             new CompilerBytecodeLoader();
 
     public CompiledUnaryTest(
-            FEELEventListenersManager eventsManager,
             String input,
             String packageName,
             String testClass,
@@ -42,7 +42,10 @@ public class CompiledUnaryTest {
         this.input = input;
         this.packageName = packageName;
         this.className = testClass;
+        FEELEventListenersManager eventsManager =
+                new FEELEventListenersManager();
         eventsManager.addListener(errorListener);
+        eventsManager.addListeners(ctx.getListeners());
 
         Map<String, Type> variableTypes =
                 ctx.getInputVariableTypes();
@@ -60,16 +63,18 @@ public class CompiledUnaryTest {
     }
 
     public CompiledUnaryTest(
-            FEELEventListenersManager eventsManager,
             String expressions,
-            String generateRandomPackage,
             CompilerContext ctx) {
-        this(eventsManager,
-             expressions,
-             generateRandomPackage,
+        this(expressions,
+             generateRandomPackage(),
              "TemplateCompiledFEELUnaryTests",
              ctx,
              Collections.emptyList());
+    }
+
+    private static String generateRandomPackage() {
+        String uuid = UUID.randomUUID().toString().replaceAll("-", "");
+        return "_" + uuid + ".gen" + uuid;
     }
 
     private DirectCompilerResult getCompilerResult() {
@@ -87,9 +92,9 @@ public class CompiledUnaryTest {
         return compiledExpression;
     }
 
-    public ClassOrInterfaceDeclaration getSourceCode() {
+    public CompilationUnit getSourceCode() {
         DirectCompilerResult compilerResult = getCompilerResult();
-        CompilationUnit cu = compiler.getCompilationUnitForUnaryTests(
+        return compiler.getCompilationUnitForUnaryTests(
                 CompiledFEELUnaryTests.class,
                 "/TemplateCompiledFEELUnaryTests.java",
                 packageName,
@@ -97,9 +102,6 @@ public class CompiledUnaryTest {
                 input,
                 compilerResult.getExpression(),
                 compilerResult.getFieldDeclarations());
-        ClassOrInterfaceDeclaration classSource = cu.getClassByName(className).get();
-        classSource.setStatic(true);
-        return classSource;
     }
 
     public UnaryTestInterpretedExecutableExpression getInterpreted() {

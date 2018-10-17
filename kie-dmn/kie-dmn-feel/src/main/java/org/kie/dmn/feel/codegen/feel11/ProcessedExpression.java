@@ -7,12 +7,15 @@ import java.util.UUID;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.drools.javaparser.ast.CompilationUnit;
 import org.drools.javaparser.ast.body.ClassOrInterfaceDeclaration;
+import org.kie.dmn.feel.lang.CompiledExpression;
 import org.kie.dmn.feel.lang.CompilerContext;
+import org.kie.dmn.feel.lang.EvaluationContext;
 import org.kie.dmn.feel.lang.FEELProfile;
 import org.kie.dmn.feel.lang.Type;
 import org.kie.dmn.feel.lang.ast.BaseNode;
 import org.kie.dmn.feel.lang.impl.CompiledExecutableExpression;
 import org.kie.dmn.feel.lang.impl.CompiledExpressionImpl;
+import org.kie.dmn.feel.lang.impl.ExecutableExpression;
 import org.kie.dmn.feel.lang.impl.FEELEventListenersManager;
 import org.kie.dmn.feel.lang.impl.InterpretedExecutableExpression;
 import org.kie.dmn.feel.lang.types.BuiltInType;
@@ -25,13 +28,12 @@ public class ProcessedExpression {
     private final String packageName;
     private final String className;
     private final String expression;
+    private final CompiledFEELSupport.SyntaxErrorListener errorListener =
+            new CompiledFEELSupport.SyntaxErrorListener();
 
-    private final FEELEventListenersManager manager = new FEELEventListenersManager();
-    private final CompiledFEELSupport.SyntaxErrorListener errorListener = new CompiledFEELSupport.SyntaxErrorListener();
     private final BaseNode ast;
     private DirectCompilerResult compiledExpression;
     private final CompilerBytecodeLoader compiler = new CompilerBytecodeLoader();
-
     public ProcessedExpression(
             String expression,
             FEELEventListenersManager eventsManager,
@@ -50,7 +52,8 @@ public class ProcessedExpression {
                 expression,
                 variableTypes,
                 ctx.getInputVariables(),
-                ctx.getFEELFunctions(), profiles);
+                ctx.getFEELFunctions(),
+                profiles);
 
         ParseTree tree = parser.compilation_unit();
         ast = tree.accept(new ASTBuilderVisitor(variableTypes));

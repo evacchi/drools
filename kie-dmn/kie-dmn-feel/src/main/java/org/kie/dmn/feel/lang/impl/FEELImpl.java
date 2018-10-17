@@ -186,7 +186,7 @@ public class FEELImpl
         return evaluateUnaryTests( expression, Collections.emptyMap() );
     }
 
-    CompiledUnaryTest compileUnaryTests(String expressions, CompilerContext ctx) {
+    public CompiledUnaryTest compileUnaryTests(String expressions, CompilerContext ctx) {
         return new CompiledUnaryTest(
                 getEventsManager(getListeners()),
                 expressions,

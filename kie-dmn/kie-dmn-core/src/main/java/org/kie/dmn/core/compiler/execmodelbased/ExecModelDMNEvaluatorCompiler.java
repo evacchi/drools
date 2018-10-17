@@ -45,7 +45,6 @@ import org.slf4j.LoggerFactory;
 
 import static java.util.stream.Collectors.joining;
 import static org.drools.modelcompiler.builder.JavaParserCompiler.getCompiler;
-import static org.kie.dmn.core.compiler.DMNFEELHelper.dmnToFeelType;
 
 public class ExecModelDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
 

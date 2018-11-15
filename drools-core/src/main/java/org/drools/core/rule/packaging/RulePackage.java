@@ -1,4 +1,21 @@
-package org.drools.core.definitions;
+/*
+ * Copyright 2018 Red Hat, Inc. and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ *
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.drools.core.rule.packaging;
 
 import java.io.IOException;
 import java.io.ObjectInput;
@@ -29,9 +46,7 @@ import org.kie.api.io.ResourceType;
 import org.kie.api.runtime.rule.AccumulateFunction;
 import org.kie.soup.project.datamodel.commons.types.TypeResolver;
 
-public interface RulePackage extends KiePluginPackage {
-
-    Map<ResourceType, ResourceTypePackage> getResourceTypePackages();
+public interface RulePackage extends ResourceTypePackage {
 
     Collection<Rule> getRules();
 
@@ -101,6 +116,8 @@ public interface RulePackage extends KiePluginPackage {
 
     void addFactTemplate(FactTemplate factTemplate);
 
+    Map<String, FactTemplate> getFactTemplates();
+
     void addRule(RuleImpl rule);
 
     void removeRule(RuleImpl rule);
@@ -156,4 +173,7 @@ public interface RulePackage extends KiePluginPackage {
     boolean needsStreamMode();
 
     void setNeedStreamMode();
+
+    void merge(RulePackage rulePackage);
+
 }

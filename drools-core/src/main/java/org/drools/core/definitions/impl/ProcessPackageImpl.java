@@ -7,13 +7,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.drools.core.definitions.ProcessPackage;
+import org.drools.core.rule.packaging.ProcessPackage;
 import org.drools.core.rule.InvalidRulePackage;
 import org.kie.api.definition.process.Process;
 import org.kie.api.io.Resource;
+import org.kie.api.io.ResourceType;
 
 public class ProcessPackageImpl implements ProcessPackage {
-    private static final long serialVersionUID = 510l;
+
+    @Override
+    public ResourceType getResourceType() {
+        return ResourceType.BPMN2;
+    }
 
     /**
      * Name of the pkg.

@@ -21,7 +21,7 @@ import org.drools.core.base.ClassFieldAccessorCache;
 import org.drools.core.base.ClassFieldAccessorStore;
 import org.drools.core.common.DroolsObjectInputStream;
 import org.drools.core.common.DroolsObjectOutputStream;
-import org.drools.core.definitions.RulePackage;
+import org.drools.core.rule.packaging.RulePackage;
 import org.drools.core.definitions.rule.impl.GlobalImpl;
 import org.drools.core.definitions.rule.impl.RuleImpl;
 import org.drools.core.factmodel.traits.TraitRegistry;
@@ -39,14 +39,17 @@ import org.kie.api.definition.rule.Global;
 import org.kie.api.definition.rule.Query;
 import org.kie.api.definition.rule.Rule;
 import org.kie.api.definition.type.FactType;
-import org.kie.api.internal.io.ResourceTypePackage;
 import org.kie.api.io.Resource;
 import org.kie.api.io.ResourceType;
 import org.kie.api.runtime.rule.AccumulateFunction;
 import org.kie.soup.project.datamodel.commons.types.TypeResolver;
 
 public class RulePackageImpl implements RulePackage {
-    private static final long serialVersionUID = 510l;
+
+    @Override
+    public ResourceType getResourceType() {
+        return ResourceType.DRL;
+    }
 
     /**
      * Name of the pkg.
@@ -82,8 +85,6 @@ public class RulePackageImpl implements RulePackage {
     private ClassFieldAccessorStore classFieldAccessorStore;
 
     private TraitRegistry traitRegistry;
-
-    private Map<ResourceType, ResourceTypePackage> resourceTypePackages;
 
     private Map<String, Object> cloningResources = new HashMap<>();
 
@@ -127,15 +128,19 @@ public class RulePackageImpl implements RulePackage {
         this.classFieldAccessorStore = new ClassFieldAccessorStore();
         this.entryPointsIds = Collections.emptySet();
         this.windowDeclarations = Collections.emptyMap();
-        this.resourceTypePackages = Collections.emptyMap();
     }
 
     @Override
-    public Map<ResourceType, ResourceTypePackage> getResourceTypePackages() {
-        if (resourceTypePackages == Collections.EMPTY_MAP) {
-            resourceTypePackages = new HashMap<ResourceType, ResourceTypePackage>();
-        }
-        return resourceTypePackages;
+    public void merge(RulePackage rulePackage) {
+        this.getAccumulateFunctions().putAll(rulePackage.getAccumulateFunctions());
+        this.getStaticImports().addAll(rulePackage.getStaticImports());
+        this.getGlobals().putAll(rulePackage.getGlobals());
+        this.getFactTemplates().putAll(rulePackage.getFactTemplates());
+        this.getFunctions().putAll(rulePackage.getFunctions());
+        this.getDialectRuntimeRegistry().merge(rulePackage.getDialectRuntimeRegistry(), getPackageClassLoader());
+        this.getClassFieldAccessorStore().merge(rulePackage.getClassFieldAccessorStore());
+        this.getEntryPointIds().addAll(rulePackage.getEntryPointIds());
+        this.getWindowDeclarations().putAll(rulePackage.getWindowDeclarations());
     }
 
     @Override
@@ -233,7 +238,6 @@ public class RulePackageImpl implements RulePackage {
         out.writeObject(this.entryPointsIds);
         out.writeObject(this.windowDeclarations);
         out.writeObject(this.traitRegistry);
-        out.writeObject(this.resourceTypePackages);
         // writing the whole stream as a byte array
         if (!isDroolsStream) {
             bytes.flush();
@@ -281,7 +285,6 @@ public class RulePackageImpl implements RulePackage {
         this.entryPointsIds = (Set<String>) in.readObject();
         this.windowDeclarations = (Map<String, WindowDeclaration>) in.readObject();
         this.traitRegistry = (TraitRegistry) in.readObject();
-        this.resourceTypePackages = (Map<ResourceType, ResourceTypePackage>) in.readObject();
 
         in.setStore(null);
 
@@ -459,6 +462,11 @@ public class RulePackageImpl implements RulePackage {
         }
         this.factTemplates.put(factTemplate.getName(),
                                factTemplate);
+    }
+
+    @Override
+    public Map<String, FactTemplate> getFactTemplates() {
+        return factTemplates;
     }
 
     /**

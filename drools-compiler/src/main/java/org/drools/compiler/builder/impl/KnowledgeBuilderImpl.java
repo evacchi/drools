@@ -45,9 +45,7 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.function.Supplier;
 
 import org.drools.compiler.compiler.AnnotationDeclarationError;
-import org.drools.compiler.compiler.BPMN2ProcessFactory;
 import org.drools.compiler.compiler.BaseKnowledgeBuilderResultImpl;
-import org.drools.compiler.compiler.CMMNCaseFactory;
 import org.drools.compiler.compiler.ConfigurableSeverityResult;
 import org.drools.compiler.compiler.DecisionTableFactory;
 import org.drools.compiler.compiler.DeprecatedResourceTypeWarning;
@@ -73,8 +71,6 @@ import org.drools.compiler.compiler.PackageBuilderResults;
 import org.drools.compiler.compiler.PackageRegistry;
 import org.drools.compiler.compiler.ParserError;
 import org.drools.compiler.compiler.ProcessBuilder;
-import org.drools.compiler.compiler.ProcessBuilderFactory;
-import org.drools.compiler.compiler.ProcessLoadError;
 import org.drools.compiler.compiler.ResourceConversionResult;
 import org.drools.compiler.compiler.ResourceTypeDeclarationWarning;
 import org.drools.compiler.compiler.RuleBuildError;
@@ -218,7 +214,10 @@ public class KnowledgeBuilderImpl implements KnowledgeBuilder {
 
     private Map<String, Object> builderCache;
 
-    private BPMNPackage bpmnPackage;
+    private final BPMNKnowledgeBuilder bpmnPackage;
+    private final CMMNKnowledgeBuilder cmmnPackage;
+    private final DRFKnowledgeBuilder drfPackage;
+
 
     /**
      * Use this when package is starting from scratch.
@@ -281,7 +280,10 @@ public class KnowledgeBuilderImpl implements KnowledgeBuilder {
             pkgRegistry.addImport(new ImportDescr(implDecl.getTarget()));
         }
 
-        bpmnPackage = new BPMNPackage(this);
+        bpmnPackage = new BPMNKnowledgeBuilder(this);
+        cmmnPackage = new CMMNKnowledgeBuilder(this);
+        drfPackage = new DRFKnowledgeBuilder(this);
+
         typeBuilder = new TypeDeclarationBuilder(this);
     }
 
@@ -309,7 +311,9 @@ public class KnowledgeBuilderImpl implements KnowledgeBuilder {
 
         this.kBase = kBase;
 
-        bpmnPackage = new BPMNPackage(this);
+        bpmnPackage = new BPMNKnowledgeBuilder(this);
+        cmmnPackage = new CMMNKnowledgeBuilder(this);
+        drfPackage = new DRFKnowledgeBuilder(this);
 
         typeBuilder = new TypeDeclarationBuilder(this);
     }
@@ -744,21 +748,19 @@ public class KnowledgeBuilderImpl implements KnowledgeBuilder {
             } else if (ResourceType.XDRL.equals(type)) {
                 addPackageFromXml(resource);
             } else if (ResourceType.DRF.equals(type)) {
-                bpmnPackage.addProcessFromXml(resource);
-                bpmnPackage.getProcesses().forEach(kBase::addProcess); // this is pretty useless, could be delegated
-                bpmnPackage.getBuilderResults().forEach(this::addBuilderResult);
+                drfPackage.addProcessFromXml(resource);
+                drfPackage.getProcesses().forEach(kBase::addProcess); // this is pretty useless, could be delegated
+                drfPackage.getBuilderResults().forEach(this::addBuilderResult);
 
             } else if (ResourceType.BPMN2.equals(type)) {
-                BPMN2ProcessFactory.configurePackageBuilder(this);
                 bpmnPackage.addProcessFromXml(resource);
                 bpmnPackage.getProcesses().forEach(kBase::addProcess); // this is pretty useless, could be delegated
                 bpmnPackage.getBuilderResults().forEach(this::addBuilderResult);
 
             } else if (ResourceType.CMMN.equals(type)) {
-                CMMNCaseFactory.configurePackageBuilder(this);
-                bpmnPackage.addProcessFromXml(resource);
-                bpmnPackage.getProcesses().forEach(kBase::addProcess); // this is pretty useless, could be delegated
-                bpmnPackage.getBuilderResults().forEach(this::addBuilderResult);
+                cmmnPackage.addProcessFromXml(resource);
+                cmmnPackage.getProcesses().forEach(kBase::addProcess); // this is pretty useless, could be delegated
+                cmmnPackage.getBuilderResults().forEach(this::addBuilderResult);
 
             } else if (ResourceType.DTABLE.equals(type)) {
                 addPackageFromDecisionTable(resource, configuration);
@@ -2162,15 +2164,6 @@ public class KnowledgeBuilderImpl implements KnowledgeBuilder {
 
         if (results != null) {
             Iterator<KnowledgeBuilderResult> i = results.iterator();
-            while (i.hasNext()) {
-                if (resource.equals(i.next().getResource())) {
-                    i.remove();
-                }
-            }
-        }
-
-        if (bpmnPackage != null) {
-            Iterator<? extends KnowledgeBuilderResult> i = bpmnPackage.getBuilderResults().iterator();
             while (i.hasNext()) {
                 if (resource.equals(i.next().getResource())) {
                     i.remove();

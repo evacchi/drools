@@ -34,16 +34,18 @@ import org.kie.internal.builder.KnowledgeBuilder;
 import org.kie.internal.builder.KnowledgeBuilderResult;
 import org.kie.internal.builder.ResourceChange;
 
-public class BPMNPackage {
+public abstract class ProcessKnowledgeBuilder {
 
     private final org.drools.compiler.compiler.ProcessBuilder processBuilder;
-    private final BuilderResultCollector results;
+    protected final KnowledgeBuilder knowledgeBuilder;
+    protected final BuilderResultCollector results;
     private KnowledgeBuilderImpl.AssetFilter assetFilter; // fixme
     private List<Process> processes;
 
-    public BPMNPackage(
+    public ProcessKnowledgeBuilder(
             KnowledgeBuilder knowledgeBuilder) {
         this.processBuilder = ProcessBuilderFactory.newProcessBuilder(knowledgeBuilder);
+        this.knowledgeBuilder = knowledgeBuilder;
         this.results = new BuilderResultCollector();
         this.processes = Collections.emptyList();
     }
@@ -57,7 +59,9 @@ public class BPMNPackage {
             List<Process> processes = processBuilder.addProcessFromXml(resource);
             List<BaseKnowledgeBuilderResultImpl> errors = processBuilder.getErrors();
             if (errors.isEmpty()) {
-                this.processes = processes.stream().filter(p -> filterAccepts(ResourceChange.Type.PROCESS, p.getNamespace(), p.getId())).collect(Collectors.toList());
+                this.processes = processes.stream()
+                        .filter(p -> filterAccepts(ResourceChange.Type.PROCESS, p.getNamespace(), p.getId()))
+                        .collect(Collectors.toList());
             } else {
                 this.results.addAll(errors);
                 errors.clear();

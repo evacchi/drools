@@ -15,20 +15,21 @@
  * limitations under the License.
  */
 
-package org.drools.compiler.builder.impl;
+package org.drools.compiler.builder.impl.resourcetypes;
 
-import org.drools.compiler.compiler.CMMNCaseFactory;
+import org.drools.compiler.builder.impl.KnowledgeBuilderImpl;
+import org.drools.compiler.compiler.DeprecatedResourceTypeWarning;
 import org.kie.api.io.Resource;
 
-public class CMMNKnowledgeBuilder extends ProcessKnowledgeBuilder {
+public class DRFKnowledgeBuilder extends ProcessKnowledgeBuilder {
 
-    public CMMNKnowledgeBuilder(KnowledgeBuilderImpl knowledgeBuilder) {
+    public DRFKnowledgeBuilder(KnowledgeBuilderImpl knowledgeBuilder) {
         super(knowledgeBuilder);
     }
 
     @Override
     public void addProcessFromXml(Resource resource) {
-        CMMNCaseFactory.configurePackageBuilder(knowledgeBuilder);
+        results.add(new DeprecatedResourceTypeWarning(resource, "RF"));
         super.addProcessFromXml(resource);
     }
 }

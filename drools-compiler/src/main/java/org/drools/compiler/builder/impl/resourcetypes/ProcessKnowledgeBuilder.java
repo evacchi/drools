@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.drools.compiler.builder.impl;
+package org.drools.compiler.builder.impl.resourcetypes;
 
 import java.io.Reader;
 import java.util.Collection;
@@ -23,6 +23,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.drools.compiler.builder.impl.BuilderResultCollector;
+import org.drools.compiler.builder.impl.KnowledgeBuilderImpl;
 import org.drools.compiler.compiler.BaseKnowledgeBuilderResultImpl;
 import org.drools.compiler.compiler.ProcessBuilderFactory;
 import org.drools.compiler.compiler.ProcessLoadError;

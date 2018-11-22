@@ -44,6 +44,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 import java.util.function.Supplier;
 
+import org.drools.compiler.builder.impl.resourcetypes.BPMNKnowledgeBuilder;
+import org.drools.compiler.builder.impl.resourcetypes.CMMNKnowledgeBuilder;
+import org.drools.compiler.builder.impl.resourcetypes.DRFKnowledgeBuilder;
 import org.drools.compiler.compiler.AnnotationDeclarationError;
 import org.drools.compiler.compiler.BaseKnowledgeBuilderResultImpl;
 import org.drools.compiler.compiler.ConfigurableSeverityResult;

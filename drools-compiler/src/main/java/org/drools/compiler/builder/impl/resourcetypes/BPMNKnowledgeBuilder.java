@@ -15,8 +15,9 @@
  * limitations under the License.
  */
 
-package org.drools.compiler.builder.impl;
+package org.drools.compiler.builder.impl.resourcetypes;
 
+import org.drools.compiler.builder.impl.KnowledgeBuilderImpl;
 import org.drools.compiler.compiler.BPMN2ProcessFactory;
 import org.kie.api.io.Resource;
 

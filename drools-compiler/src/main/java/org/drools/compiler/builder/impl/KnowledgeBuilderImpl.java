@@ -15,12 +15,8 @@
 
 package org.drools.compiler.builder.impl;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.Reader;
-import java.io.StringReader;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.security.AccessController;
@@ -38,7 +34,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
@@ -46,18 +41,20 @@ import java.util.function.Supplier;
 
 import org.drools.compiler.builder.impl.resourcetypes.BPMNKnowledgeBuilder;
 import org.drools.compiler.builder.impl.resourcetypes.CMMNKnowledgeBuilder;
+import org.drools.compiler.builder.impl.resourcetypes.ChangeSetKnowledgeBuilder;
 import org.drools.compiler.builder.impl.resourcetypes.DRFKnowledgeBuilder;
 import org.drools.compiler.builder.impl.resourcetypes.DRLKnowledgeBuilder;
 import org.drools.compiler.builder.impl.resourcetypes.DSLRKnowledgeBuilder;
 import org.drools.compiler.builder.impl.resourcetypes.DTABLEKnowledgeBuilder;
 import org.drools.compiler.builder.impl.resourcetypes.GDSTKnowledgeBuilder;
+import org.drools.compiler.builder.impl.resourcetypes.InputStreamKnowledgeBuilder;
 import org.drools.compiler.builder.impl.resourcetypes.SCGDKnowledgeBuilder;
+import org.drools.compiler.builder.impl.resourcetypes.ScoreCardKnowledgeBuilder;
 import org.drools.compiler.builder.impl.resourcetypes.TemplateKnowledgeBuilder;
 import org.drools.compiler.builder.impl.resourcetypes.XSDKnowledgeBuilder;
 import org.drools.compiler.compiler.AnnotationDeclarationError;
 import org.drools.compiler.compiler.BaseKnowledgeBuilderResultImpl;
 import org.drools.compiler.compiler.ConfigurableSeverityResult;
-import org.drools.compiler.compiler.DecisionTableFactory;
 import org.drools.compiler.compiler.DeprecatedResourceTypeWarning;
 import org.drools.compiler.compiler.DescrBuildError;
 import org.drools.compiler.compiler.Dialect;
@@ -71,23 +68,15 @@ import org.drools.compiler.compiler.DroolsWarningWrapper;
 import org.drools.compiler.compiler.DuplicateFunction;
 import org.drools.compiler.compiler.DuplicateRule;
 import org.drools.compiler.compiler.GlobalError;
-import org.drools.compiler.compiler.GuidedDecisionTableFactory;
-import org.drools.compiler.compiler.GuidedDecisionTableProvider;
-import org.drools.compiler.compiler.GuidedRuleTemplateFactory;
-import org.drools.compiler.compiler.GuidedRuleTemplateProvider;
-import org.drools.compiler.compiler.GuidedScoreCardFactory;
 import org.drools.compiler.compiler.PackageBuilderErrors;
 import org.drools.compiler.compiler.PackageBuilderResults;
 import org.drools.compiler.compiler.PackageRegistry;
 import org.drools.compiler.compiler.ParserError;
 import org.drools.compiler.compiler.ProcessBuilder;
-import org.drools.compiler.compiler.ResourceConversionResult;
 import org.drools.compiler.compiler.ResourceTypeDeclarationWarning;
 import org.drools.compiler.compiler.RuleBuildError;
-import org.drools.compiler.compiler.ScoreCardFactory;
 import org.drools.compiler.compiler.TypeDeclarationError;
 import org.drools.compiler.compiler.xml.XmlPackageReader;
-import org.drools.compiler.lang.ExpanderException;
 import org.drools.compiler.lang.descr.AbstractClassTypeDeclarationDescr;
 import org.drools.compiler.lang.descr.AccumulateImportDescr;
 import org.drools.compiler.lang.descr.AnnotatedBaseDescr;
@@ -109,14 +98,10 @@ import org.drools.compiler.lang.descr.RuleDescr;
 import org.drools.compiler.lang.descr.TypeDeclarationDescr;
 import org.drools.compiler.lang.descr.TypeFieldDescr;
 import org.drools.compiler.lang.descr.WindowDeclarationDescr;
-import org.drools.compiler.lang.dsl.DSLMappingFile;
-import org.drools.compiler.lang.dsl.DSLTokenizedMappingFile;
-import org.drools.compiler.lang.dsl.DefaultExpander;
 import org.drools.compiler.rule.builder.RuleBuildContext;
 import org.drools.compiler.rule.builder.RuleBuilder;
 import org.drools.compiler.rule.builder.RuleConditionBuilder;
 import org.drools.compiler.rule.builder.dialect.DialectError;
-import org.drools.compiler.runtime.pipeline.impl.DroolsJaxbHelperProviderImpl;
 import org.drools.core.base.ClassFieldAccessorCache;
 import org.drools.core.builder.conf.impl.JaxbConfigurationImpl;
 import org.drools.core.common.ProjectClassLoader;
@@ -127,7 +112,6 @@ import org.drools.core.impl.InternalKnowledgeBase;
 import org.drools.core.impl.KnowledgeBaseFactory;
 import org.drools.core.io.impl.BaseResource;
 import org.drools.core.io.impl.ClassPathResource;
-import org.drools.core.io.impl.DescrResource;
 import org.drools.core.io.impl.ReaderResource;
 import org.drools.core.io.internal.InternalResource;
 import org.drools.core.rule.Function;
@@ -136,8 +120,6 @@ import org.drools.core.rule.JavaDialectRuntimeData;
 import org.drools.core.rule.Pattern;
 import org.drools.core.rule.TypeDeclaration;
 import org.drools.core.rule.WindowDeclaration;
-import org.drools.core.util.DroolsStreamUtils;
-import org.drools.core.util.IoUtils;
 import org.drools.core.util.StringUtils;
 import org.drools.core.xml.XmlChangeSetReader;
 import org.kie.api.KieBase;
@@ -154,7 +136,6 @@ import org.kie.api.io.ResourceWithConfiguration;
 import org.kie.api.runtime.rule.AccumulateFunction;
 import org.kie.internal.ChangeSet;
 import org.kie.internal.builder.CompositeKnowledgeBuilder;
-import org.kie.internal.builder.DecisionTableConfiguration;
 import org.kie.internal.builder.KnowledgeBuilder;
 import org.kie.internal.builder.KnowledgeBuilderError;
 import org.kie.internal.builder.KnowledgeBuilderErrors;
@@ -162,15 +143,11 @@ import org.kie.internal.builder.KnowledgeBuilderResult;
 import org.kie.internal.builder.KnowledgeBuilderResults;
 import org.kie.internal.builder.ResourceChange;
 import org.kie.internal.builder.ResultSeverity;
-import org.kie.internal.builder.ScoreCardConfiguration;
-import org.kie.internal.io.ResourceFactory;
-import org.kie.internal.io.ResourceWithConfigurationImpl;
 import org.kie.soup.project.datamodel.commons.types.TypeResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
-import static org.drools.compiler.builder.impl.resourcetypes.DRLKnowledgeBuilder.createDumpDrlFile;
 import static org.drools.core.impl.KnowledgeBaseImpl.registerFunctionClassAndInnerClasses;
 import static org.drools.core.util.StringUtils.isEmpty;
 import static org.drools.core.util.StringUtils.ucFirst;
@@ -234,7 +211,9 @@ public class KnowledgeBuilderImpl implements KnowledgeBuilder {
     private final XSDKnowledgeBuilder xsdKnowledgeBuilder;
     private final GDSTKnowledgeBuilder gdstKnowledgeBuilder;
     private final SCGDKnowledgeBuilder scgdKnowledgeBuilder;
-
+    private final ScoreCardKnowledgeBuilder scoreCardKnowledgeBuilder;
+    private final InputStreamKnowledgeBuilder inputStreamKnowledgeBuilder;
+    private ChangeSetKnowledgeBuilder changeSetPackageBuilder;
 
     /**
      * Use this when package is starting from scratch.
@@ -417,56 +396,6 @@ public class KnowledgeBuilderImpl implements KnowledgeBuilder {
     }
 
 
-
-    public void addPackageFromScoreCard(final Resource resource,
-                                        final ResourceConfiguration configuration) throws DroolsParserException, IOException {
-        this.resource = resource;
-        final ScoreCardConfiguration scardConfiguration = configuration instanceof ScoreCardConfiguration ?
-                (ScoreCardConfiguration) configuration :
-                null;
-        final String pmmlString = ScoreCardFactory.getPMMLStringFromInputStream(resource.getInputStream(), scardConfiguration);
-        if (pmmlString != null) {
-            addPackageFromScoreCard(pmmlString, "scorecard_generated.pmml");
-        }
-        this.resource = null;
-    }
-
-    public void addPackageFromGuidedScoreCard(final Resource resource) throws DroolsParserException, IOException {
-        this.resource = resource;
-        final String pmmlString = GuidedScoreCardFactory.getPMMLStringFromInputStream(resource.getInputStream());
-        if (pmmlString != null) {
-            addPackageFromScoreCard(pmmlString, "guided_scorecard_generated.pmml");
-        }
-        this.resource = null;
-    }
-
-    private void addPackageFromScoreCard(final String pmmlString, final String fileName) throws DroolsParserException, IOException  {
-        final File dumpDir = this.configuration.getDumpDir();
-        if (dumpDir != null) {
-            final String dirName = dumpDir.getCanonicalPath().endsWith("/") ? dumpDir.getCanonicalPath() : dumpDir.getCanonicalPath() + "/";
-            final String outputPath = dirName + fileName;
-            try (final FileOutputStream fos = new FileOutputStream(outputPath)) {
-                fos.write(pmmlString.getBytes());
-            }
-        }
-        final Resource res = ResourceFactory.newByteArrayResource(pmmlString.getBytes());
-
-        try {
-            ResourceWithConfiguration resCon = new ResourceWithConfigurationImpl(res, null, null, null);
-            addPackageForExternalType(ResourceType.PMML,Arrays.asList(resCon));
-        } catch (Exception e) {
-            throw new DroolsParserException(e);
-        }
-    }
-
-//    public void addPackageFromTemplate(Resource resource) throws DroolsParserException,
-//            IOException {
-//        this.resource = resource;
-//        addPackage();
-//        this.resource = null;
-//    }
-
-
     public void addPackageFromDrl(Resource resource) throws DroolsParserException,
             IOException {
         this.resource = resource;
@@ -609,7 +538,6 @@ public class KnowledgeBuilderImpl implements KnowledgeBuilder {
             } else if (ResourceType.DSL.equals(type)) {
                 dslrPackage.addDsl(resource);
             } else if (ResourceType.XDRL.equals(type)) {
-//                addPackageFromXml(resource);
                 PackageDescr packageDescr = drlPackage.xmlToPackageDescr(resource);
                 addPackage(packageDescr);
             } else if (ResourceType.DRF.equals(type)) {
@@ -631,13 +559,13 @@ public class KnowledgeBuilderImpl implements KnowledgeBuilder {
                 PackageDescr packageDescr = dtableKnowledgeBuilder.decisionTableToPackageDescr(resource, configuration);
                 addPackage(packageDescr);
             } else if (ResourceType.PKG.equals(type)) {
-                addPackageFromInputStream(resource);
+                inputStreamKnowledgeBuilder.addPackageFromInputStream(resource);
             } else if (ResourceType.CHANGE_SET.equals(type)) {
                 addPackageFromChangeSet(resource);
             } else if (ResourceType.XSD.equals(type)) {
                 xsdKnowledgeBuilder.addPackageFromXSD(resource, (JaxbConfigurationImpl) configuration);
             } else if (ResourceType.SCARD.equals(type)) {
-                addPackageFromScoreCard(resource, configuration);
+                scoreCardKnowledgeBuilder.addPackageFromScoreCard(resource, configuration);
             } else if (ResourceType.TDRL.equals(type)) {
                 PackageDescr packageDescr = drlPackage.drlToPackageDescr(resource);
                 addPackage(packageDescr);
@@ -648,7 +576,8 @@ public class KnowledgeBuilderImpl implements KnowledgeBuilder {
                 PackageDescr packageDescr = gdstKnowledgeBuilder.guidedDecisionTableToPackageDescr(resource);
                 addPackage(packageDescr);
             } else if (ResourceType.SCGD.equals(type)) {
-                addPackageFromGuidedScoreCard(resource);
+                PackageDescr packageDescr = scgdKnowledgeBuilder.guidedDecisionTableToPackageDescr(resource);
+                addPackage(packageDescr);
             } else {
                 addPackageForExternalType(resource, type, configuration);
             }
@@ -694,109 +623,14 @@ public class KnowledgeBuilderImpl implements KnowledgeBuilder {
 
     void addPackageFromChangeSet(Resource resource) throws SAXException,
             IOException {
-        XmlChangeSetReader reader = new XmlChangeSetReader(this.configuration.getSemanticModules());
-        if (resource instanceof ClassPathResource) {
-            reader.setClassLoader(((ClassPathResource) resource).getClassLoader(),
-                                  ((ClassPathResource) resource).getClazz());
-        } else {
-            reader.setClassLoader(this.configuration.getClassLoader(),
-                                  null);
-        }
-        Reader resourceReader = null;
-        try {
-            resourceReader = resource.getReader();
-            ChangeSet changeSet = reader.read(resourceReader);
-            if (changeSet == null) {
-                // @TODO should log an error
-            }
-            for (Resource nestedResource : changeSet.getResourcesAdded()) {
-                InternalResource iNestedResourceResource = (InternalResource) nestedResource;
-                if (iNestedResourceResource.isDirectory()) {
-                    for (Resource childResource : iNestedResourceResource.listResources()) {
-                        if (((InternalResource) childResource).isDirectory()) {
-                            continue; // ignore sub directories
-                        }
-                        ((InternalResource) childResource).setResourceType(iNestedResourceResource.getResourceType());
-                        addKnowledgeResource(childResource,
-                                             iNestedResourceResource.getResourceType(),
-                                             iNestedResourceResource.getConfiguration());
-                    }
-                } else {
-                    addKnowledgeResource(iNestedResourceResource,
-                                         iNestedResourceResource.getResourceType(),
-                                         iNestedResourceResource.getConfiguration());
-                }
-            }
-        } finally {
-            if (resourceReader != null) {
-                resourceReader.close();
-            }
-        }
+        changeSetPackageBuilder.addPackageFromChangeSet(resource);
     }
 
     void addPackageFromInputStream(final Resource resource) throws IOException,
             ClassNotFoundException {
-        InputStream is = resource.getInputStream();
-        Object object = DroolsStreamUtils.streamIn(is, this.configuration.getClassLoader());
-        is.close();
-        if (object instanceof Collection) {
-            // KnowledgeBuilder API
-            @SuppressWarnings("unchecked")
-            Collection<KiePackage> pkgs = (Collection<KiePackage>) object;
-            for (KiePackage kpkg : pkgs) {
-                overrideReSource((KnowledgePackageImpl) kpkg, resource);
-                addPackage((KnowledgePackageImpl) kpkg);
-            }
-        } else if (object instanceof KnowledgePackageImpl) {
-            // KnowledgeBuilder API
-            KnowledgePackageImpl kpkg = (KnowledgePackageImpl) object;
-            overrideReSource(kpkg, resource);
-            addPackage(kpkg);
-        } else {
-            results.add(new DroolsError(resource) {
-
-                @Override
-                public String getMessage() {
-                    return "Unknown binary format trying to load resource " + resource.toString();
-                }
-
-                @Override
-                public int[] getLines() {
-                    return new int[0];
-                }
-            });
-        }
+        inputStreamKnowledgeBuilder.addPackageFromInputStream(resource);
     }
 
-    private void overrideReSource(InternalKnowledgePackage pkg,
-                                  Resource res) {
-        for (org.kie.api.definition.rule.Rule r : pkg.getRules()) {
-            if (isSwappable(((RuleImpl) r).getResource(), res)) {
-                ((RuleImpl) r).setResource(res);
-            }
-        }
-        for (TypeDeclaration d : pkg.getTypeDeclarations().values()) {
-            if (isSwappable(d.getResource(), res)) {
-                d.setResource(res);
-            }
-        }
-        for (Function f : pkg.getFunctions().values()) {
-            if (isSwappable(f.getResource(), res)) {
-                f.setResource(res);
-            }
-        }
-        for (org.kie.api.definition.process.Process p : pkg.getRuleFlows().values()) {
-            if (isSwappable(p.getResource(), res)) {
-                p.setResource(res);
-            }
-        }
-    }
-
-    private boolean isSwappable(Resource original,
-                                Resource source) {
-        return original == null
-                || (original instanceof ReaderResource && ((ReaderResource) original).getReader() == null);
-    }
 
     /**
      * This adds a package from a Descr/AST This will also trigger a compile, if

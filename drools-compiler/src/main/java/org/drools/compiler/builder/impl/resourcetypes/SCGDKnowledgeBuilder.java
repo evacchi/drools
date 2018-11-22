@@ -17,9 +17,14 @@
 
 package org.drools.compiler.builder.impl.resourcetypes;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.Arrays;
+import java.util.UUID;
 
+import org.drools.compiler.builder.impl.BuilderResultCollector;
+import org.drools.compiler.builder.impl.KnowledgeBuilderConfigurationImpl;
 import org.drools.compiler.builder.impl.KnowledgeBuilderImpl;
 import org.drools.compiler.compiler.DrlParser;
 import org.drools.compiler.compiler.DroolsParserException;
@@ -28,12 +33,20 @@ import org.drools.compiler.compiler.GuidedDecisionTableProvider;
 import org.drools.compiler.compiler.ParserError;
 import org.drools.compiler.compiler.ResourceConversionResult;
 import org.drools.compiler.lang.descr.PackageDescr;
+import org.drools.core.util.IoUtils;
 import org.kie.api.io.Resource;
 import org.kie.api.io.ResourceType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import static org.drools.compiler.builder.impl.resourcetypes.DRLKnowledgeBuilder.createDumpDrlFile;
 
 public class SCGDKnowledgeBuilder {
+    protected static final transient Logger logger = LoggerFactory.getLogger(DRLKnowledgeBuilder.class);
 
     private DSLRKnowledgeBuilder dslrPackage;
+    private KnowledgeBuilderConfigurationImpl configuration;
+    private BuilderResultCollector results;
 
     public SCGDKnowledgeBuilder(KnowledgeBuilderImpl knowledgeBuilder) {
 
@@ -74,5 +87,22 @@ public class SCGDKnowledgeBuilder {
         }
         return parser.hasErrors() ? null : pkg;
     }
+
+    private void dumpDrlGeneratedFromDTable(File dumpDir, String generatedDrl, String srcPath) {
+        File dumpFile;
+        if (srcPath != null) {
+            dumpFile = createDumpDrlFile(dumpDir, srcPath, ".drl");
+        } else {
+            dumpFile = createDumpDrlFile(dumpDir, "decision-table-" + UUID.randomUUID(), ".drl");
+        }
+        try {
+            IoUtils.write(dumpFile, generatedDrl.getBytes(IoUtils.UTF8_CHARSET));
+        } catch (IOException ex) {
+            // nothing serious, just failure when writing the generated DRL to file, just log the exception and continue
+            logger.warn("Can't write the DRL generated from decision table to file " + dumpFile.getAbsolutePath() + "!\n" +
+                                Arrays.toString(ex.getStackTrace()));
+        }
+    }
+
 
 }

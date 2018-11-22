@@ -40,7 +40,7 @@ public class BuilderResultCollector {
         results.clear();
     }
 
-    public void addAll(List<BaseKnowledgeBuilderResultImpl> errors) {
+    public void addAll(List<? extends KnowledgeBuilderResult> errors) {
         results.addAll(errors);
     }
 }

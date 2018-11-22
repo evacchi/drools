@@ -47,6 +47,13 @@ import java.util.function.Supplier;
 import org.drools.compiler.builder.impl.resourcetypes.BPMNKnowledgeBuilder;
 import org.drools.compiler.builder.impl.resourcetypes.CMMNKnowledgeBuilder;
 import org.drools.compiler.builder.impl.resourcetypes.DRFKnowledgeBuilder;
+import org.drools.compiler.builder.impl.resourcetypes.DRLKnowledgeBuilder;
+import org.drools.compiler.builder.impl.resourcetypes.DSLRKnowledgeBuilder;
+import org.drools.compiler.builder.impl.resourcetypes.DTABLEKnowledgeBuilder;
+import org.drools.compiler.builder.impl.resourcetypes.GDSTKnowledgeBuilder;
+import org.drools.compiler.builder.impl.resourcetypes.SCGDKnowledgeBuilder;
+import org.drools.compiler.builder.impl.resourcetypes.TemplateKnowledgeBuilder;
+import org.drools.compiler.builder.impl.resourcetypes.XSDKnowledgeBuilder;
 import org.drools.compiler.compiler.AnnotationDeclarationError;
 import org.drools.compiler.compiler.BaseKnowledgeBuilderResultImpl;
 import org.drools.compiler.compiler.ConfigurableSeverityResult;
@@ -163,6 +170,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
+import static org.drools.compiler.builder.impl.resourcetypes.DRLKnowledgeBuilder.createDumpDrlFile;
 import static org.drools.core.impl.KnowledgeBaseImpl.registerFunctionClassAndInnerClasses;
 import static org.drools.core.util.StringUtils.isEmpty;
 import static org.drools.core.util.StringUtils.ucFirst;
@@ -197,7 +205,6 @@ public class KnowledgeBuilderImpl implements KnowledgeBuilder {
 
     private Resource resource;
 
-    private List<DSLTokenizedMappingFile> dslFiles;
 
 
     //This list of package level attributes is initialised with the PackageDescr's attributes added to the assembler.
@@ -220,6 +227,13 @@ public class KnowledgeBuilderImpl implements KnowledgeBuilder {
     private final BPMNKnowledgeBuilder bpmnPackage;
     private final CMMNKnowledgeBuilder cmmnPackage;
     private final DRFKnowledgeBuilder drfPackage;
+    private final DRLKnowledgeBuilder drlPackage;
+    private final DSLRKnowledgeBuilder dslrPackage;
+    private final DTABLEKnowledgeBuilder dtableKnowledgeBuilder;
+    private final TemplateKnowledgeBuilder templateKnowledgeBuilder;
+    private final XSDKnowledgeBuilder xsdKnowledgeBuilder;
+    private final GDSTKnowledgeBuilder gdstKnowledgeBuilder;
+    private final SCGDKnowledgeBuilder scgdKnowledgeBuilder;
 
 
     /**
@@ -286,6 +300,13 @@ public class KnowledgeBuilderImpl implements KnowledgeBuilder {
         bpmnPackage = new BPMNKnowledgeBuilder(this);
         cmmnPackage = new CMMNKnowledgeBuilder(this);
         drfPackage = new DRFKnowledgeBuilder(this);
+        drlPackage = new DRLKnowledgeBuilder(this);
+        dslrPackage = new DSLRKnowledgeBuilder(this);
+        dtableKnowledgeBuilder = new DTABLEKnowledgeBuilder(this);
+        templateKnowledgeBuilder = new TemplateKnowledgeBuilder(this);
+        xsdKnowledgeBuilder = new XSDKnowledgeBuilder(this);
+        gdstKnowledgeBuilder = new GDSTKnowledgeBuilder(this);
+        scgdKnowledgeBuilder = new SCGDKnowledgeBuilder(this);
 
         typeBuilder = new TypeDeclarationBuilder(this);
     }
@@ -317,6 +338,13 @@ public class KnowledgeBuilderImpl implements KnowledgeBuilder {
         bpmnPackage = new BPMNKnowledgeBuilder(this);
         cmmnPackage = new CMMNKnowledgeBuilder(this);
         drfPackage = new DRFKnowledgeBuilder(this);
+        drlPackage = new DRLKnowledgeBuilder(this);
+        dslrPackage = new DSLRKnowledgeBuilder(this);
+        dtableKnowledgeBuilder = new DTABLEKnowledgeBuilder(this);
+        templateKnowledgeBuilder = new TemplateKnowledgeBuilder(this);
+        xsdKnowledgeBuilder = new XSDKnowledgeBuilder(this);
+        gdstKnowledgeBuilder = new GDSTKnowledgeBuilder(this);
+        scgdKnowledgeBuilder = new SCGDKnowledgeBuilder(this);
 
         typeBuilder = new TypeDeclarationBuilder(this);
     }
@@ -370,42 +398,10 @@ public class KnowledgeBuilderImpl implements KnowledgeBuilder {
         this.resource = null;
     }
 
-    public void addPackageFromDecisionTable(Resource resource,
-                                            ResourceConfiguration configuration) throws DroolsParserException,
-            IOException {
-        this.resource = resource;
-        addPackage(decisionTableToPackageDescr(resource, configuration));
-        this.resource = null;
-    }
-
     PackageDescr decisionTableToPackageDescr(Resource resource,
                                              ResourceConfiguration configuration) throws DroolsParserException,
             IOException {
-        DecisionTableConfiguration dtableConfiguration = configuration instanceof DecisionTableConfiguration ?
-                (DecisionTableConfiguration) configuration :
-                null;
-
-        if (dtableConfiguration != null && !dtableConfiguration.getRuleTemplateConfigurations().isEmpty()) {
-            List<String> generatedDrls = DecisionTableFactory.loadFromInputStreamWithTemplates(resource, dtableConfiguration);
-            if (generatedDrls.size() == 1) {
-                return generatedDrlToPackageDescr(resource, generatedDrls.get(0));
-            }
-            CompositePackageDescr compositePackageDescr = null;
-            for (String generatedDrl : generatedDrls) {
-                PackageDescr packageDescr = generatedDrlToPackageDescr(resource, generatedDrl);
-                if (packageDescr != null) {
-                    if (compositePackageDescr == null) {
-                        compositePackageDescr = new CompositePackageDescr(resource, packageDescr);
-                    } else {
-                        compositePackageDescr.addPackageDescr(resource, packageDescr);
-                    }
-                }
-            }
-            return compositePackageDescr;
-        }
-
-        String generatedDrl = DecisionTableFactory.loadFromResource(resource, dtableConfiguration);
-        return generatedDrlToPackageDescr(resource, generatedDrl);
+        return dtableKnowledgeBuilder.decisionTableToPackageDescr(resource, configuration);
     }
 
     public void addPackageFromGuidedDecisionTable(Resource resource) throws DroolsParserException,
@@ -417,52 +413,10 @@ public class KnowledgeBuilderImpl implements KnowledgeBuilder {
 
     PackageDescr guidedDecisionTableToPackageDescr(Resource resource) throws DroolsParserException,
             IOException {
-        GuidedDecisionTableProvider guidedDecisionTableProvider = GuidedDecisionTableFactory.getGuidedDecisionTableProvider();
-        ResourceConversionResult conversionResult = guidedDecisionTableProvider.loadFromInputStream(resource.getInputStream());
-        return conversionResultToPackageDescr(resource, conversionResult);
+        return gdstKnowledgeBuilder.guidedDecisionTableToPackageDescr(resource);
     }
 
 
-    private PackageDescr generatedDrlToPackageDescr(Resource resource, String generatedDrl) throws DroolsParserException {
-        // dump the generated DRL if the dump dir was configured
-        if (this.configuration.getDumpDir() != null) {
-            dumpDrlGeneratedFromDTable(this.configuration.getDumpDir(), generatedDrl, resource.getSourcePath());
-        }
-
-        DrlParser parser = new DrlParser(configuration.getLanguageLevel());
-        PackageDescr pkg = parser.parse(resource, new StringReader(generatedDrl));
-        this.results.addAll(parser.getErrors());
-        if (pkg == null) {
-            addBuilderResult(new ParserError(resource, "Parser returned a null Package", 0, 0));
-        } else {
-            pkg.setResource(resource);
-        }
-        return parser.hasErrors() ? null : pkg;
-    }
-
-    PackageDescr generatedDslrToPackageDescr(Resource resource, String dslr) throws DroolsParserException {
-        return dslrReaderToPackageDescr(resource, new StringReader(dslr));
-    }
-
-    private void dumpDrlGeneratedFromDTable(File dumpDir, String generatedDrl, String srcPath) {
-        File dumpFile;
-        if (srcPath != null) {
-            dumpFile = createDumpDrlFile(dumpDir, srcPath, ".drl");
-        } else {
-            dumpFile = createDumpDrlFile(dumpDir, "decision-table-" + UUID.randomUUID(), ".drl");
-        }
-        try {
-            IoUtils.write(dumpFile, generatedDrl.getBytes(IoUtils.UTF8_CHARSET));
-        } catch (IOException ex) {
-            // nothing serious, just failure when writing the generated DRL to file, just log the exception and continue
-            logger.warn("Can't write the DRL generated from decision table to file " + dumpFile.getAbsolutePath() + "!\n" +
-                                Arrays.toString(ex.getStackTrace()));
-        }
-    }
-
-    protected static File createDumpDrlFile(File dumpDir, String fileName, String extension) {
-        return new File(dumpDir, fileName.replaceAll("[^a-zA-Z0-9\\.\\-_]+", "_") + extension);
-    }
 
     public void addPackageFromScoreCard(final Resource resource,
                                         final ResourceConfiguration configuration) throws DroolsParserException, IOException {
@@ -505,58 +459,25 @@ public class KnowledgeBuilderImpl implements KnowledgeBuilder {
         }
     }
 
-    public void addPackageFromTemplate(Resource resource) throws DroolsParserException,
-            IOException {
-        this.resource = resource;
-        addPackage(templateToPackageDescr(resource));
-        this.resource = null;
-    }
+//    public void addPackageFromTemplate(Resource resource) throws DroolsParserException,
+//            IOException {
+//        this.resource = resource;
+//        addPackage();
+//        this.resource = null;
+//    }
 
-    PackageDescr templateToPackageDescr(Resource resource) throws DroolsParserException,
-            IOException {
-        GuidedRuleTemplateProvider guidedRuleTemplateProvider = GuidedRuleTemplateFactory.getGuidedRuleTemplateProvider();
-        ResourceConversionResult conversionResult = guidedRuleTemplateProvider.loadFromInputStream(resource.getInputStream());
-        return conversionResultToPackageDescr(resource, conversionResult);
-    }
-
-    private PackageDescr conversionResultToPackageDescr(Resource resource, ResourceConversionResult resourceConversionResult)
-            throws DroolsParserException {
-        ResourceType resourceType = resourceConversionResult.getType();
-        if (ResourceType.DSLR.equals(resourceType)) {
-            return generatedDslrToPackageDescr(resource, resourceConversionResult.getContent());
-        } else if (ResourceType.DRL.equals(resourceType)) {
-            return generatedDrlToPackageDescr(resource, resourceConversionResult.getContent());
-        } else {
-            throw new RuntimeException("Converting generated " + resourceType + " into PackageDescr is not supported!");
-        }
-    }
 
     public void addPackageFromDrl(Resource resource) throws DroolsParserException,
             IOException {
         this.resource = resource;
-        addPackage(drlToPackageDescr(resource));
+        PackageDescr packageDescr = drlPackage.drlToPackageDescr(resource);
+        addPackage(packageDescr);
         this.resource = null;
     }
 
     PackageDescr drlToPackageDescr(Resource resource) throws DroolsParserException,
             IOException {
-        PackageDescr pkg;
-        boolean hasErrors = false;
-        if (resource instanceof DescrResource) {
-            pkg = (PackageDescr) ((DescrResource) resource).getDescr();
-        } else {
-            final DrlParser parser = new DrlParser(configuration.getLanguageLevel());
-            pkg = parser.parse(resource);
-            this.results.addAll(parser.getErrors());
-            if (pkg == null) {
-                addBuilderResult(new ParserError(resource, "Parser returned a null Package", 0, 0));
-            }
-            hasErrors = parser.hasErrors();
-        }
-        if (pkg != null) {
-            pkg.setResource(resource);
-        }
-        return hasErrors ? null : pkg;
+        return drlPackage.drlToPackageDescr(resource);
     }
 
     /**
@@ -586,28 +507,14 @@ public class KnowledgeBuilderImpl implements KnowledgeBuilder {
     public void addPackageFromXml(final Resource resource) throws DroolsParserException,
             IOException {
         this.resource = resource;
-        addPackage(xmlToPackageDescr(resource));
+        PackageDescr packageDescr = drlPackage.xmlToPackageDescr(resource);
+        addPackage(packageDescr);
         this.resource = null;
     }
 
     PackageDescr xmlToPackageDescr(Resource resource) throws DroolsParserException,
             IOException {
-        final XmlPackageReader xmlReader = new XmlPackageReader(this.configuration.getSemanticModules());
-        xmlReader.getParser().setClassLoader(this.rootClassLoader);
-
-        Reader reader = null;
-        try {
-            reader = resource.getReader();
-            xmlReader.read(reader);
-        } catch (final SAXException e) {
-            throw new DroolsParserException(e.toString(),
-                                            e.getCause());
-        } finally {
-            if (reader != null) {
-                reader.close();
-            }
-        }
-        return xmlReader.getPackageDescr();
+        return drlPackage.xmlToPackageDescr(resource);
     }
 
     /**
@@ -635,71 +542,17 @@ public class KnowledgeBuilderImpl implements KnowledgeBuilder {
     public void addPackageFromDslr(final Resource resource) throws DroolsParserException,
             IOException {
         this.resource = resource;
-        addPackage(dslrToPackageDescr(resource));
+        PackageDescr dslr = dslrPackage.dslrToPackageDescr(resource);
+        addPackage(dslr);
         this.resource = null;
     }
 
     PackageDescr dslrToPackageDescr(Resource resource) throws DroolsParserException,
             IOException {
-        return dslrReaderToPackageDescr(resource, resource.getReader());
+        return dslrPackage.dslrReaderToPackageDescr(resource, resource.getReader());
     }
 
-    private PackageDescr dslrReaderToPackageDescr(Resource resource, Reader dslrReader) throws DroolsParserException {
-        boolean hasErrors;
-        PackageDescr pkg;
 
-        DrlParser parser = new DrlParser(configuration.getLanguageLevel());
-        DefaultExpander expander = getDslExpander();
-
-        try {
-            if (expander == null) {
-                expander = new DefaultExpander();
-            }
-            String str = expander.expand(dslrReader);
-            if (expander.hasErrors()) {
-                for (ExpanderException error : expander.getErrors()) {
-                    error.setResource(resource);
-                    addBuilderResult(error);
-                }
-            }
-
-            pkg = parser.parse(resource, str);
-            this.results.addAll(parser.getErrors());
-            hasErrors = parser.hasErrors();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } finally {
-            if (dslrReader != null) {
-                try {
-                    dslrReader.close();
-                } catch (IOException e) {
-                }
-            }
-        }
-        return hasErrors ? null : pkg;
-    }
-
-    public void addDsl(Resource resource) throws IOException {
-        this.resource = resource;
-        DSLTokenizedMappingFile file = new DSLTokenizedMappingFile();
-
-        Reader reader = null;
-        try {
-            reader = resource.getReader();
-            if (!file.parseAndLoad(reader)) {
-                this.results.addAll(file.getErrors());
-            }
-            if (this.dslFiles == null) {
-                this.dslFiles = new ArrayList<DSLTokenizedMappingFile>();
-            }
-            this.dslFiles.add(file);
-        } finally {
-            if (reader != null) {
-                reader.close();
-            }
-            this.resource = null;
-        }
-    }
 
     /**
      * Add a ruleflow (.rfm) asset to this package.
@@ -732,24 +585,33 @@ public class KnowledgeBuilderImpl implements KnowledgeBuilder {
     public void addKnowledgeResource(Resource resource,
                                      ResourceType type,
                                      ResourceConfiguration configuration) {
+        this.resource = resource;
         try {
             ((InternalResource) resource).setResourceType(type);
             if (ResourceType.DRL.equals(type)) {
-                addPackageFromDrl(resource);
+                PackageDescr packageDescr = drlPackage.drlToPackageDescr(resource);
+                addPackage(packageDescr);
             } else if (ResourceType.GDRL.equals(type)) {
-                addPackageFromDrl(resource);
+                PackageDescr packageDescr = drlPackage.drlToPackageDescr(resource);
+                addPackage(packageDescr);
             } else if (ResourceType.RDRL.equals(type)) {
-                addPackageFromDrl(resource);
+                PackageDescr packageDescr = drlPackage.drlToPackageDescr(resource);
+                addPackage(packageDescr);
             } else if (ResourceType.DESCR.equals(type)) {
-                addPackageFromDrl(resource);
+                PackageDescr packageDescr = drlPackage.drlToPackageDescr(resource);
+                addPackage(packageDescr);
             } else if (ResourceType.DSLR.equals(type)) {
-                addPackageFromDslr(resource);
+                PackageDescr dslr = dslrPackage.dslrToPackageDescr(resource);
+                addPackage(dslr);
             } else if (ResourceType.RDSLR.equals(type)) {
-                addPackageFromDslr(resource);
+                PackageDescr dslr = dslrPackage.dslrToPackageDescr(resource);
+                addPackage(dslr);
             } else if (ResourceType.DSL.equals(type)) {
-                addDsl(resource);
+                dslrPackage.addDsl(resource);
             } else if (ResourceType.XDRL.equals(type)) {
-                addPackageFromXml(resource);
+//                addPackageFromXml(resource);
+                PackageDescr packageDescr = drlPackage.xmlToPackageDescr(resource);
+                addPackage(packageDescr);
             } else if (ResourceType.DRF.equals(type)) {
                 drfPackage.addProcessFromXml(resource);
                 drfPackage.getProcesses().forEach(kBase::addProcess); // this is pretty useless, could be delegated
@@ -766,21 +628,25 @@ public class KnowledgeBuilderImpl implements KnowledgeBuilder {
                 cmmnPackage.getBuilderResults().forEach(this::addBuilderResult);
 
             } else if (ResourceType.DTABLE.equals(type)) {
-                addPackageFromDecisionTable(resource, configuration);
+                PackageDescr packageDescr = dtableKnowledgeBuilder.decisionTableToPackageDescr(resource, configuration);
+                addPackage(packageDescr);
             } else if (ResourceType.PKG.equals(type)) {
                 addPackageFromInputStream(resource);
             } else if (ResourceType.CHANGE_SET.equals(type)) {
                 addPackageFromChangeSet(resource);
             } else if (ResourceType.XSD.equals(type)) {
-                addPackageFromXSD(resource, (JaxbConfigurationImpl) configuration);
+                xsdKnowledgeBuilder.addPackageFromXSD(resource, (JaxbConfigurationImpl) configuration);
             } else if (ResourceType.SCARD.equals(type)) {
                 addPackageFromScoreCard(resource, configuration);
             } else if (ResourceType.TDRL.equals(type)) {
-                addPackageFromDrl(resource);
+                PackageDescr packageDescr = drlPackage.drlToPackageDescr(resource);
+                addPackage(packageDescr);
             } else if (ResourceType.TEMPLATE.equals(type)) {
-                addPackageFromTemplate(resource);
+                PackageDescr packageDescr = templateKnowledgeBuilder.templateToPackageDescr(resource);
+                addPackage(packageDescr);
             } else if (ResourceType.GDST.equals(type)) {
-                addPackageFromGuidedDecisionTable(resource);
+                PackageDescr packageDescr = gdstKnowledgeBuilder.guidedDecisionTableToPackageDescr(resource);
+                addPackage(packageDescr);
             } else if (ResourceType.SCGD.equals(type)) {
                 addPackageFromGuidedScoreCard(resource);
             } else {
@@ -791,6 +657,8 @@ public class KnowledgeBuilderImpl implements KnowledgeBuilder {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+
+        this.resource = null;
     }
 
     @Deprecated
@@ -823,18 +691,6 @@ public class KnowledgeBuilderImpl implements KnowledgeBuilder {
         }
     }
 
-    void addPackageFromXSD(Resource resource,
-                           JaxbConfigurationImpl configuration) throws IOException {
-        if (configuration != null) {
-            String[] classes = DroolsJaxbHelperProviderImpl.addXsdModel(resource,
-                                                                        this,
-                                                                        configuration.getXjcOpts(),
-                                                                        configuration.getSystemId());
-            for (String cls : classes) {
-                configuration.getClasses().add(cls);
-            }
-        }
-    }
 
     void addPackageFromChangeSet(Resource resource) throws SAXException,
             IOException {
@@ -1918,20 +1774,6 @@ public class KnowledgeBuilderImpl implements KnowledgeBuilder {
         return packages.get(packageName);
     }
 
-    /**
-     * Returns an expander for DSLs (only if there is a DSL configured for this
-     * package).
-     */
-    public DefaultExpander getDslExpander() {
-        DefaultExpander expander = new DefaultExpander();
-        if (this.dslFiles == null || this.dslFiles.isEmpty()) {
-            return null;
-        }
-        for (DSLMappingFile file : this.dslFiles) {
-            expander.addDSLMapping(file.getMapping());
-        }
-        return expander;
-    }
 
     public Map<String, Class<?>> getGlobals() {
         return this.globals;

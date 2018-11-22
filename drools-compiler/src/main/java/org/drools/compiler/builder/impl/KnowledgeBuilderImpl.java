@@ -200,8 +200,6 @@ public class KnowledgeBuilderImpl implements KnowledgeBuilder {
 
     private List<DSLTokenizedMappingFile> dslFiles;
 
-    private final org.drools.compiler.compiler.ProcessBuilder processBuilder;
-
 
     //This list of package level attributes is initialised with the PackageDescr's attributes added to the assembler.
     //The package level attributes are inherited by individual rules not containing explicit overriding parameters.
@@ -219,6 +217,8 @@ public class KnowledgeBuilderImpl implements KnowledgeBuilder {
     private final TypeDeclarationBuilder typeBuilder;
 
     private Map<String, Object> builderCache;
+
+    private BPMNPackage bpmnPackage;
 
     /**
      * Use this when package is starting from scratch.
@@ -281,7 +281,7 @@ public class KnowledgeBuilderImpl implements KnowledgeBuilder {
             pkgRegistry.addImport(new ImportDescr(implDecl.getTarget()));
         }
 
-        processBuilder = ProcessBuilderFactory.newProcessBuilder(this);
+        bpmnPackage = new BPMNPackage(this);
         typeBuilder = new TypeDeclarationBuilder(this);
     }
 
@@ -309,7 +309,8 @@ public class KnowledgeBuilderImpl implements KnowledgeBuilder {
 
         this.kBase = kBase;
 
-        processBuilder = ProcessBuilderFactory.newProcessBuilder(this);
+        bpmnPackage = new BPMNPackage(this);
+
         typeBuilder = new TypeDeclarationBuilder(this);
     }
 
@@ -696,52 +697,29 @@ public class KnowledgeBuilderImpl implements KnowledgeBuilder {
     /**
      * Add a ruleflow (.rfm) asset to this package.
      */
+    @Deprecated
     public void addRuleFlow(Reader processSource) {
-        addProcessFromXml(processSource);
+        bpmnPackage.addProcessFromXml(processSource);
+        bpmnPackage.getProcesses().forEach(kBase::addProcess);
+        bpmnPackage.getBuilderResults().forEach(this::addBuilderResult);
     }
 
     public void addProcessFromXml(Resource resource) {
-        if (processBuilder == null) {
-            throw new RuntimeException("Unable to instantiate a process assembler");
-        }
-
         if (ResourceType.DRF.equals(resource.getResourceType())) {
             addBuilderResult(new DeprecatedResourceTypeWarning(resource, "RF"));
         }
-
-        this.resource = resource;
-
-        try {
-            List<Process> processes = processBuilder.addProcessFromXml(resource);
-            List<BaseKnowledgeBuilderResultImpl> errors = processBuilder.getErrors();
-            if (errors.isEmpty()) {
-                if (this.kBase != null && processes != null) {
-                    for (Process process : processes) {
-                        if (filterAccepts(ResourceChange.Type.PROCESS, process.getNamespace(), process.getId())) {
-                            this.kBase.addProcess(process);
-                        }
-                    }
-                }
-            } else {
-                this.results.addAll(errors);
-                errors.clear();
-            }
-        } catch (Exception e) {
-            if (e instanceof RuntimeException) {
-                throw (RuntimeException) e;
-            }
-            addBuilderResult(new ProcessLoadError(resource, "Unable to load process.", e));
-        }
-        this.results = getResults(this.results);
-        this.resource = null;
+        bpmnPackage.addProcessFromXml(resource);
+        bpmnPackage.getProcesses().forEach(kBase::addProcess);
+        bpmnPackage.getBuilderResults().forEach(this::addBuilderResult);
     }
 
     public ProcessBuilder getProcessBuilder() {
-        return processBuilder;
+        throw new IllegalArgumentException();
     }
 
     public void addProcessFromXml( Reader processSource) {
-        addProcessFromXml(new ReaderResource(processSource, ResourceType.DRF));
+        ReaderResource readerResource = new ReaderResource(processSource, ResourceType.DRF);
+        addProcessFromXml(readerResource);
     }
 
     public void addKnowledgeResource(Resource resource,
@@ -766,13 +744,22 @@ public class KnowledgeBuilderImpl implements KnowledgeBuilder {
             } else if (ResourceType.XDRL.equals(type)) {
                 addPackageFromXml(resource);
             } else if (ResourceType.DRF.equals(type)) {
-                addProcessFromXml(resource);
+                bpmnPackage.addProcessFromXml(resource);
+                bpmnPackage.getProcesses().forEach(kBase::addProcess); // this is pretty useless, could be delegated
+                bpmnPackage.getBuilderResults().forEach(this::addBuilderResult);
+
             } else if (ResourceType.BPMN2.equals(type)) {
                 BPMN2ProcessFactory.configurePackageBuilder(this);
-                addProcessFromXml(resource);
+                bpmnPackage.addProcessFromXml(resource);
+                bpmnPackage.getProcesses().forEach(kBase::addProcess); // this is pretty useless, could be delegated
+                bpmnPackage.getBuilderResults().forEach(this::addBuilderResult);
+
             } else if (ResourceType.CMMN.equals(type)) {
                 CMMNCaseFactory.configurePackageBuilder(this);
-                addProcessFromXml(resource);
+                bpmnPackage.addProcessFromXml(resource);
+                bpmnPackage.getProcesses().forEach(kBase::addProcess); // this is pretty useless, could be delegated
+                bpmnPackage.getBuilderResults().forEach(this::addBuilderResult);
+
             } else if (ResourceType.DTABLE.equals(type)) {
                 addPackageFromDecisionTable(resource, configuration);
             } else if (ResourceType.PKG.equals(type)) {
@@ -2052,9 +2039,7 @@ public class KnowledgeBuilderImpl implements KnowledgeBuilder {
 
     protected void resetProblems() {
         this.results.clear();
-        if (this.processBuilder != null) {
-            this.processBuilder.getErrors().clear();
-        }
+        bpmnPackage.getBuilderResults().clear();
     }
 
     public String getDefaultDialect() {
@@ -2184,8 +2169,8 @@ public class KnowledgeBuilderImpl implements KnowledgeBuilder {
             }
         }
 
-        if (processBuilder != null && processBuilder.getErrors() != null) {
-            Iterator<? extends KnowledgeBuilderResult> i = processBuilder.getErrors().iterator();
+        if (bpmnPackage != null) {
+            Iterator<? extends KnowledgeBuilderResult> i = bpmnPackage.getBuilderResults().iterator();
             while (i.hasNext()) {
                 if (resource.equals(i.next().getResource())) {
                     i.remove();

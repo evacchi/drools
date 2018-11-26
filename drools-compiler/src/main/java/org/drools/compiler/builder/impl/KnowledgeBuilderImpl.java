@@ -697,49 +697,25 @@ public class KnowledgeBuilderImpl implements KnowledgeBuilder {
      * Add a ruleflow (.rfm) asset to this package.
      */
     public void addRuleFlow(Reader processSource) {
-        addProcessFromXml(processSource);
+        addKnowledgeResource(
+                new ReaderResource(processSource, ResourceType.DRF),
+                ResourceType.DRF,
+                null);
     }
 
+    @Deprecated
     public void addProcessFromXml(Resource resource) {
-        if (processBuilder == null) {
-            throw new RuntimeException("Unable to instantiate a process assembler");
-        }
-
-        if (ResourceType.DRF.equals(resource.getResourceType())) {
-            addBuilderResult(new DeprecatedResourceTypeWarning(resource, "RF"));
-        }
-
-        this.resource = resource;
-
-        try {
-            List<Process> processes = processBuilder.addProcessFromXml(resource);
-            List<BaseKnowledgeBuilderResultImpl> errors = processBuilder.getErrors();
-            if (errors.isEmpty()) {
-                if (this.kBase != null && processes != null) {
-                    for (Process process : processes) {
-                        if (filterAccepts(ResourceChange.Type.PROCESS, process.getNamespace(), process.getId())) {
-                            this.kBase.addProcess(process);
-                        }
-                    }
-                }
-            } else {
-                this.results.addAll(errors);
-                errors.clear();
-            }
-        } catch (Exception e) {
-            if (e instanceof RuntimeException) {
-                throw (RuntimeException) e;
-            }
-            addBuilderResult(new ProcessLoadError(resource, "Unable to load process.", e));
-        }
-        this.results = getResults(this.results);
-        this.resource = null;
+        addKnowledgeResource(
+                resource,
+                resource.getResourceType(),
+                resource.getConfiguration());
     }
 
     public ProcessBuilder getProcessBuilder() {
         return processBuilder;
     }
 
+    @Deprecated
     public void addProcessFromXml( Reader processSource) {
         addProcessFromXml(new ReaderResource(processSource, ResourceType.DRF));
     }
@@ -765,14 +741,14 @@ public class KnowledgeBuilderImpl implements KnowledgeBuilder {
                 addDsl(resource);
             } else if (ResourceType.XDRL.equals(type)) {
                 addPackageFromXml(resource);
-            } else if (ResourceType.DRF.equals(type)) {
-                addProcessFromXml(resource);
-            } else if (ResourceType.BPMN2.equals(type)) {
-                BPMN2ProcessFactory.configurePackageBuilder(this);
-                addProcessFromXml(resource);
-            } else if (ResourceType.CMMN.equals(type)) {
-                CMMNCaseFactory.configurePackageBuilder(this);
-                addProcessFromXml(resource);
+//            } else if (ResourceType.DRF.equals(type)) {
+//                addProcessFromXml(resource);
+//            } else if (ResourceType.BPMN2.equals(type)) {
+//                BPMN2ProcessFactory.configurePackageBuilder(this);
+//                addProcessFromXml(resource);
+//            } else if (ResourceType.CMMN.equals(type)) {
+//                CMMNCaseFactory.configurePackageBuilder(this);
+//                addProcessFromXml(resource);
             } else if (ResourceType.DTABLE.equals(type)) {
                 addPackageFromDecisionTable(resource, configuration);
             } else if (ResourceType.PKG.equals(type)) {

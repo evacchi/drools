@@ -22,6 +22,7 @@ import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -30,6 +31,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -1647,10 +1649,35 @@ public class KnowledgeBaseImpl
     public Process getProcess( final String id ) {
         readLock();
         try {
-            return this.processes.get( id );
+            String pkgId = packageFromProcessId(id);
+            InternalKnowledgePackage kiePackage = (InternalKnowledgePackage) getKiePackage(pkgId);
+            Map<ResourceType, ResourceTypePackage> resourceTypePackages = kiePackage.getResourceTypePackages();
+            ResourceTypePackage drf = resourceTypePackages.get(ResourceType.DRF);
+            ResourceTypePackage bpmn2 = resourceTypePackages.get(ResourceType.BPMN2);
+            ResourceTypePackage cmmn = resourceTypePackages.get(ResourceType.CMMN);
+
+            return FORCE_GET(drf, id)
+                    .orElseGet(() -> FORCE_GET(bpmn2, id)
+                            .orElseGet(() -> FORCE_GET(cmmn, id)
+                                    .orElse(null)));
         } finally {
             readUnlock();
         }
+    }
+
+    private java.util.Optional<Process> FORCE_GET(ResourceTypePackage pkg, String id) {
+        try {
+            Method getRuleFlows = pkg.getClass().getMethod("getRuleFlows");
+            Map<String, Process> ruleFlows = (Map) getRuleFlows.invoke(pkg);
+            return Optional.ofNullable(ruleFlows.get(id));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private String packageFromProcessId( final String id ) {
+        int endIndex = id.lastIndexOf('.');
+        return endIndex > 0? id.substring(0, endIndex) : id;
     }
 
     public void addStatefulSession( StatefulKnowledgeSessionImpl wm ) {

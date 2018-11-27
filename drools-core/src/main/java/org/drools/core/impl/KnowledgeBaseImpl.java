@@ -22,7 +22,6 @@ import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -31,7 +30,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -141,7 +139,7 @@ public class KnowledgeBaseImpl
 
     protected Map<String, InternalKnowledgePackage> pkgs;
 
-    private Map<String, Process> processes;
+    private ProcessDelegate processes = new ProcessDelegate();
 
     private transient ClassLoader rootClassLoader;
 
@@ -205,7 +203,7 @@ public class KnowledgeBaseImpl
         this.rootClassLoader = this.config.getClassLoader();
 
         this.pkgs = new HashMap<String, InternalKnowledgePackage>();
-        this.processes = new HashMap<String, Process>();
+        this.processes = new ProcessDelegate();
         this.globals = new HashMap<String, Class<?>>();
 
         this.classTypeDeclaration = new HashMap<String, TypeDeclaration>();
@@ -299,10 +297,10 @@ public class KnowledgeBaseImpl
                     this.globals.remove( globalName );
                 }
             }
-            //and now the rule flows
-            for ( String processName : new ArrayList<String>(pkg.getRuleFlows().keySet()) ) {
-                internalRemoveProcess( processName );
-            }
+            ////and now the rule flows
+            //for ( String processName : new ArrayList<String>(pkg.getRuleFlows().keySet()) ) {
+            //    internalRemoveProcess( processName );
+            //}
             // removing the package itself from the list
             this.pkgs.remove( pkg.getName() );
 
@@ -455,7 +453,7 @@ public class KnowledgeBaseImpl
         this.id = (String) droolsStream.readObject();
         this.workingMemoryCounter.set(droolsStream.readInt());
 
-        this.processes = (Map<String, Process>) droolsStream.readObject();
+        this.processes = (ProcessDelegate) droolsStream.readObject();
         final String classNameFromStream = droolsStream.readUTF();
         try {
             Class cls = droolsStream.getParentClassLoader().loadClass(classNameFromStream);
@@ -921,12 +919,12 @@ public class KnowledgeBaseImpl
             }
 
             // add the flows to the RuleBase
-            if ( newPkg.getRuleFlows() != null ) {
-                final Map<String, Process> flows = newPkg.getRuleFlows();
-                for ( Process process : flows.values() ) {
-                    internalAddProcess( process );
-                }
-            }
+            // if ( newPkg.getRuleFlows() != null ) {
+            //     final Map<String, Process> flows = newPkg.getRuleFlows();
+            //     for ( Process process : flows.values() ) {
+            //         internalAddProcess( process );
+            //     }
+            // }
 
             if ( ! newPkg.getResourceTypePackages().isEmpty() ) {
                 KieWeavers weavers = ServiceRegistry.getInstance().get( KieWeavers.class );
@@ -1319,11 +1317,11 @@ public class KnowledgeBaseImpl
         }
 
         //Merge The Rule Flows
-        if (newPkg.getRuleFlows() != null) {
-            for (Process flow : newPkg.getRuleFlows().values()) {
-                pkg.addProcess(flow);
-            }
-        }
+        //if (newPkg.getRuleFlows() != null) {
+        //    for (Process flow : newPkg.getRuleFlows().values()) {
+        //        pkg.addProcess(flow);
+        //    }
+        //}
 
         if ( ! newPkg.getResourceTypePackages().isEmpty() ) {
             for ( ResourceTypePackage rtkKpg : newPkg.getResourceTypePackages().values() ) {
@@ -1635,7 +1633,7 @@ public class KnowledgeBaseImpl
         enqueueModification( () -> internalRemoveProcess( id ) );
     }
 
-    private void internalRemoveProcess( String id ) {
+    void internalRemoveProcess( String id ) {
         Process process = this.processes.get( id );
         if ( process == null ) {
             throw new IllegalArgumentException( "Process '" + id + "' does not exist for this Rule Base." );
@@ -1649,35 +1647,10 @@ public class KnowledgeBaseImpl
     public Process getProcess( final String id ) {
         readLock();
         try {
-            String pkgId = packageFromProcessId(id);
-            InternalKnowledgePackage kiePackage = (InternalKnowledgePackage) getKiePackage(pkgId);
-            Map<ResourceType, ResourceTypePackage> resourceTypePackages = kiePackage.getResourceTypePackages();
-            ResourceTypePackage drf = resourceTypePackages.get(ResourceType.DRF);
-            ResourceTypePackage bpmn2 = resourceTypePackages.get(ResourceType.BPMN2);
-            ResourceTypePackage cmmn = resourceTypePackages.get(ResourceType.CMMN);
-
-            return FORCE_GET(drf, id)
-                    .orElseGet(() -> FORCE_GET(bpmn2, id)
-                            .orElseGet(() -> FORCE_GET(cmmn, id)
-                                    .orElse(null)));
+            return this.processes.get( id );
         } finally {
             readUnlock();
         }
-    }
-
-    private java.util.Optional<Process> FORCE_GET(ResourceTypePackage pkg, String id) {
-        try {
-            Method getRuleFlows = pkg.getClass().getMethod("getRuleFlows");
-            Map<String, Process> ruleFlows = (Map) getRuleFlows.invoke(pkg);
-            return Optional.ofNullable(ruleFlows.get(id));
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private String packageFromProcessId( final String id ) {
-        int endIndex = id.lastIndexOf('.');
-        return endIndex > 0? id.substring(0, endIndex) : id;
     }
 
     public void addStatefulSession( StatefulKnowledgeSessionImpl wm ) {
@@ -1774,10 +1747,10 @@ public class KnowledgeBaseImpl
                 internalRemoveFunction(pkg.getName(), function.getName());
             }
 
-            List<Process> processesToBeRemoved = pkg.removeProcessesGeneratedFromResource(resource);
-            for (Process process : processesToBeRemoved) {
-                processes.remove(process.getId());
-            }
+            //List<Process> processesToBeRemoved = pkg.removeProcessesGeneratedFromResource(resource);
+            //for (Process process : processesToBeRemoved) {
+            //    processes.remove(process.getId());
+            //}
 
             List<TypeDeclaration> removedTypes = pkg.removeTypesGeneratedFromResource(resource);
             
@@ -1785,7 +1758,7 @@ public class KnowledgeBaseImpl
             
             modified |= !rulesToBeRemoved.isEmpty()
                         || !functionsToBeRemoved.isEmpty()
-                        || !processesToBeRemoved.isEmpty()
+                        //|| !processesToBeRemoved.isEmpty()
                         || !removedTypes.isEmpty()
                         || resourceTypePackageSomethingRemoved;
         }

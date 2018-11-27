@@ -59,8 +59,6 @@ public interface InternalKnowledgePackage extends KiePackage,
 
     Map<String, String> getGlobals();
 
-    Map<String, Process> getRuleFlows();
-
     Map<String, TypeDeclaration> getTypeDeclarations();
 
     Map<String, Function> getFunctions();
@@ -85,8 +83,6 @@ public interface InternalKnowledgePackage extends KiePackage,
 
     void addRule(RuleImpl rule);
 
-    void addProcess(Process process);
-
     void addTypeDeclaration(TypeDeclaration typeDecl);
 
     void addFactTemplate(FactTemplate factTemplate);
@@ -98,8 +94,6 @@ public interface InternalKnowledgePackage extends KiePackage,
     void addStaticImport(String functionImport);
 
     void removeFunction(String functionName);
-
-    void removeRuleFlow(String id);
 
     void removeRule(RuleImpl rule);
 
@@ -115,8 +109,6 @@ public interface InternalKnowledgePackage extends KiePackage,
     List<RuleImpl> removeRulesGeneratedFromResource(Resource resource);
 
     List<Function> removeFunctionsGeneratedFromResource(Resource resource);
-
-    List<Process> removeProcessesGeneratedFromResource(Resource resource);
 
     boolean removeFromResourceTypePackageGeneratedFromResource(Resource resource);
 

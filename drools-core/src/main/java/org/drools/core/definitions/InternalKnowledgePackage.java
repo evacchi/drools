@@ -3,7 +3,7 @@
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
@@ -11,7 +11,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
-*/
+ */
 
 package org.drools.core.definitions;
 
@@ -59,6 +59,8 @@ public interface InternalKnowledgePackage extends KiePackage,
 
     Map<String, String> getGlobals();
 
+    Map<String, Process> getRuleFlows();
+
     Map<String, TypeDeclaration> getTypeDeclarations();
 
     Map<String, Function> getFunctions();
@@ -83,6 +85,8 @@ public interface InternalKnowledgePackage extends KiePackage,
 
     void addRule(RuleImpl rule);
 
+    void addProcess(Process process);
+
     void addTypeDeclaration(TypeDeclaration typeDecl);
 
     void addFactTemplate(FactTemplate factTemplate);
@@ -94,6 +98,8 @@ public interface InternalKnowledgePackage extends KiePackage,
     void addStaticImport(String functionImport);
 
     void removeFunction(String functionName);
+
+    void removeRuleFlow(String id);
 
     void removeRule(RuleImpl rule);
 
@@ -109,6 +115,8 @@ public interface InternalKnowledgePackage extends KiePackage,
     List<RuleImpl> removeRulesGeneratedFromResource(Resource resource);
 
     List<Function> removeFunctionsGeneratedFromResource(Resource resource);
+
+    List<Process> removeProcessesGeneratedFromResource(Resource resource);
 
     boolean removeFromResourceTypePackageGeneratedFromResource(Resource resource);
 

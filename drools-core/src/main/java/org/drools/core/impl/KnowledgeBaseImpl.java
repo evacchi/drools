@@ -139,7 +139,7 @@ public class KnowledgeBaseImpl
 
     protected Map<String, InternalKnowledgePackage> pkgs;
 
-    private ProcessDelegate processes = new ProcessDelegate();
+    private ProcessDelegate processes;
 
     private transient ClassLoader rootClassLoader;
 
@@ -203,7 +203,7 @@ public class KnowledgeBaseImpl
         this.rootClassLoader = this.config.getClassLoader();
 
         this.pkgs = new HashMap<String, InternalKnowledgePackage>();
-        this.processes = new ProcessDelegate();
+        this.processes = new ProcessDelegate(this);
         this.globals = new HashMap<String, Class<?>>();
 
         this.classTypeDeclaration = new HashMap<String, TypeDeclaration>();
@@ -1640,7 +1640,8 @@ public class KnowledgeBaseImpl
         }
         this.eventSupport.fireBeforeProcessRemoved( process );
         this.processes.remove( id );
-        this.pkgs.get( process.getPackageName() ).removeRuleFlow( id );
+//        this.pkgs.get( process.getPackageName() ).removeRuleFlow( id );
+        this.processes.remove(id);
         this.eventSupport.fireAfterProcessRemoved( process );
     }
 

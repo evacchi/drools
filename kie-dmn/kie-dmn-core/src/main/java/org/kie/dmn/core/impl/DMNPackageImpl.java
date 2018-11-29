@@ -63,7 +63,24 @@ public class DMNPackageImpl implements DMNPackage, Externalizable {
         return ResourceType.DMN;
     }
 
-    public DMNModel addModel( String name, DMNModel model ) {
+    @Override
+    public DMNModel lookup( String name ) {
+        return getModel(name);
+    }
+
+    @Override
+    public void add(DMNModel processedResource) {
+        addModel(processedResource.getName(), processedResource);
+    }
+
+    @Override
+    public Iterable<? extends DMNModel> contents() {
+        return getAllModels().values();
+    }
+
+
+
+    public DMNModel addModel(String name, DMNModel model ) {
         return models.put( name, model );
     }
 
@@ -92,7 +109,7 @@ public class DMNPackageImpl implements DMNPackage, Externalizable {
     public boolean removeResource(Resource resource) {
         return models.entrySet().removeIf( kv -> resource.equals( kv.getValue().getResource() ) );
     }
-    
+
     @Override
     public void writeExternal(ObjectOutput out) throws IOException {
         out.writeObject( this.namespace );

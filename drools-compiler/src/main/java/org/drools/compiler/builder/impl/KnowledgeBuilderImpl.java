@@ -106,6 +106,7 @@ import org.drools.compiler.lang.descr.WindowDeclarationDescr;
 import org.drools.compiler.lang.dsl.DSLMappingFile;
 import org.drools.compiler.lang.dsl.DSLTokenizedMappingFile;
 import org.drools.compiler.lang.dsl.DefaultExpander;
+import org.drools.compiler.builder.AssemblerContext;
 import org.drools.compiler.rule.builder.RuleBuildContext;
 import org.drools.compiler.rule.builder.RuleBuilder;
 import org.drools.compiler.rule.builder.RuleConditionBuilder;
@@ -168,7 +169,8 @@ import static org.drools.core.impl.KnowledgeBaseImpl.registerFunctionClassAndInn
 import static org.drools.core.util.StringUtils.isEmpty;
 import static org.drools.core.util.StringUtils.ucFirst;
 
-public class KnowledgeBuilderImpl implements KnowledgeBuilder {
+public class KnowledgeBuilderImpl implements KnowledgeBuilder,
+                                             AssemblerContext {
 
     private static final String JAVA_ROOT = "src/main/java/";
 

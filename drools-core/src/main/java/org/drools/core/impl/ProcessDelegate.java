@@ -18,6 +18,7 @@
 package org.drools.core.impl;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -28,30 +29,41 @@ import org.kie.api.internal.io.ResourceTypePackage;
 import org.kie.api.io.ResourceType;
 
 public class ProcessDelegate {
-    private Map<String, Process> processes;
-    private KnowledgeBaseImpl parentBase;
+    private final KnowledgeBaseImpl parentBase;
 
-    private Map<String, Process> get() {
+    public ProcessDelegate(KnowledgeBaseImpl parentBase) {
+        this.parentBase = parentBase;
+    }
+
+//    private Map<String, Process> get() {
+//        ResourceTypePackage bpmn2 = getPackage();
+//        return EXTRACTMAP(bpmn2);
+//    }
+
+    private ResourceTypePackage<Process> getPackage() {
         InternalKnowledgePackage kiePackage = (InternalKnowledgePackage) parentBase.getKiePackage("$$PROCESS$$");
         Map<ResourceType, ResourceTypePackage> resourceTypePackages = kiePackage.getResourceTypePackages();
-        ResourceTypePackage bpmn2 = resourceTypePackages.get(ResourceType.BPMN2);
-        return EXTRACTMAP(bpmn2);
+        return resourceTypePackages.get(ResourceType.BPMN2);
     }
 
     public Collection<Process> values() {
-        return get().values();
+        ArrayList<Process> ps = new ArrayList<>();
+        for (Process process : getPackage().contents()) {
+            ps.add(process);
+        }
+        return ps;
     }
 
     public void put(String id, Process process) {
-        get();
+        getPackage().add(process);
     }
 
     public Process get(String id) {
-        return null;
+        return getPackage().lookup(id);
     }
 
     public void remove(String id) {
-
+        getPackage().remove(id);
     }
 
     private Map<String, Process> EXTRACTMAP(ResourceTypePackage pkg) {

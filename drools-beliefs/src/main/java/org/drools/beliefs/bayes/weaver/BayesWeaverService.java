@@ -41,7 +41,7 @@ public class BayesWeaverService implements KieWeaverService<BayesPackage> {
         Map<ResourceType, ResourceTypePackage> map = ((InternalKnowledgePackage)kiePkg).getResourceTypePackages();
         BayesPackage existing  = (BayesPackage) map.get( ResourceType.BAYES );
         if ( existing == null ) {
-            existing = new BayesPackage();
+            existing = new BayesPackage(kiePkg.getName());
             map.put(ResourceType.BAYES, existing);
         }
 

@@ -59,6 +59,7 @@ public interface InternalKnowledgePackage extends KiePackage,
 
     Map<String, String> getGlobals();
 
+    @Deprecated
     Map<String, Process> getRuleFlows();
 
     Map<String, TypeDeclaration> getTypeDeclarations();
@@ -85,6 +86,7 @@ public interface InternalKnowledgePackage extends KiePackage,
 
     void addRule(RuleImpl rule);
 
+    @Deprecated
     void addProcess(Process process);
 
     void addTypeDeclaration(TypeDeclaration typeDecl);
@@ -99,6 +101,7 @@ public interface InternalKnowledgePackage extends KiePackage,
 
     void removeFunction(String functionName);
 
+    @Deprecated
     void removeRuleFlow(String id);
 
     void removeRule(RuleImpl rule);

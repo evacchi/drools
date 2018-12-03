@@ -44,6 +44,7 @@ import org.drools.core.definitions.rule.impl.GlobalImpl;
 import org.drools.core.definitions.rule.impl.RuleImpl;
 import org.drools.core.factmodel.traits.TraitRegistry;
 import org.drools.core.facttemplates.FactTemplate;
+import org.drools.core.rule.Collect;
 import org.drools.core.rule.DialectRuntimeRegistry;
 import org.drools.core.rule.Function;
 import org.drools.core.rule.ImportDeclaration;
@@ -92,8 +93,6 @@ public class KnowledgePackageImpl
     private Map<String, String> globals;
 
     private Map<String, FactTemplate> factTemplates;
-
-    private Map<String, Process> ruleFlows;
 
     // private JavaDialectData packageCompilationData;
     private DialectRuntimeRegistry dialectRuntimeRegistry;
@@ -145,7 +144,6 @@ public class KnowledgePackageImpl
         this.name = name;
         this.accumulateFunctions = Collections.emptyMap();
         this.staticImports = Collections.emptySet();
-        this.ruleFlows = Collections.emptyMap();
         this.globals = Collections.emptyMap();
         this.factTemplates = Collections.emptyMap();
         this.functions = Collections.emptyMap();
@@ -255,7 +253,6 @@ public class KnowledgePackageImpl
         out.writeObject(this.functions);
         out.writeObject(this.accumulateFunctions);
         out.writeObject(this.factTemplates);
-        out.writeObject(this.ruleFlows);
         out.writeObject(this.globals);
         out.writeBoolean(this.valid);
         out.writeBoolean(this.needStreamMode);
@@ -303,7 +300,6 @@ public class KnowledgePackageImpl
         this.functions = (Map<String, Function>) in.readObject();
         this.accumulateFunctions = (Map<String, AccumulateFunction>) in.readObject();
         this.factTemplates = (Map) in.readObject();
-        this.ruleFlows = (Map) in.readObject();
         this.globals = (Map<String, String>) in.readObject();
         this.valid = in.readBoolean();
         this.needStreamMode = in.readBoolean();
@@ -485,11 +481,12 @@ public class KnowledgePackageImpl
      * Add a rule flow to this package.
      */
     public void addProcess(Process process) {
-        if (this.ruleFlows == Collections.EMPTY_MAP) {
-            this.ruleFlows = new HashMap<String, Process>();
+        ResourceTypePackage<Process> rtp = resourceTypePackages.get(ResourceType.BPMN2);
+        if (rtp == null) {
+            throw new UnsupportedOperationException();
+        } else {
+            rtp.add(process);
         }
-        this.ruleFlows.put(process.getId(),
-                           process);
     }
 
     /**
@@ -497,17 +494,26 @@ public class KnowledgePackageImpl
      * be Collections.EMPTY_MAP if none have been added.
      */
     public Map<String, Process> getRuleFlows() {
-        return this.ruleFlows;
+        ResourceTypePackage<Process> rtp = getResourceTypePackages().get(ResourceType.BPMN2);
+        if (rtp == null) {
+            return Collections.emptyMap();
+        }
+        Map<String, Process> ruleFlows = new HashMap<>();
+        for (Process ruleFlow: rtp.contents()) {
+            ruleFlows.put(ruleFlow.getId(), ruleFlow);
+        }
+        return ruleFlows;
     }
 
     /**
      * Rule flows can be removed by ID.
      */
     public void removeRuleFlow(String id) {
-        if (!this.ruleFlows.containsKey(id)) {
+        ResourceTypePackage rtp = getResourceTypePackages().get(ResourceType.BPMN2);
+        if (rtp == null || rtp.lookup(id) == null) {
             throw new IllegalArgumentException("The rule flow with id [" + id + "] is not part of this package.");
         }
-        this.ruleFlows.remove(id);
+        rtp.remove(id);
     }
 
     public void removeRule(RuleImpl rule) {
@@ -595,7 +601,7 @@ public class KnowledgePackageImpl
     public void clear() {
         this.rules.clear();
         this.dialectRuntimeRegistry.clear();
-        this.ruleFlows.clear();
+        //this.ruleFlows.clear();
         this.imports.clear();
         this.functions.clear();
         this.accumulateFunctions.clear();
@@ -777,12 +783,17 @@ public class KnowledgePackageImpl
     }
 
     private void removeProcess(Process process) {
-        ruleFlows.remove(process.getId());
+        ResourceTypePackage rtp = getResourceTypePackages().get(ResourceType.BPMN2);
+        if (rtp != null) rtp.remove(process.getId());
     }
 
     private List<Process> getProcessesGeneratedFromResource(Resource resource) {
+        ResourceTypePackage<Process> rtp = getResourceTypePackages().get(ResourceType.BPMN2);
+        if (rtp == null) {
+            return Collections.emptyList();
+        }
         List<Process> processesFromResource = new ArrayList<Process>();
-        for (Process process : ruleFlows.values()) {
+        for (Process process : rtp.contents()) {
             if (resource.equals(process.getResource())) {
                 processesFromResource.add(process);
             }

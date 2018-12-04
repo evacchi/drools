@@ -27,14 +27,14 @@ import org.kie.api.io.ResourceType;
 
 public class ProcessPackage implements ResourceTypePackage<Process> {
 
-    private final Map<Object, Process> ruleFlows = new HashMap<>();
+    private final Map<String, Process> ruleFlows = new HashMap<>();
     private final ResourceType resourceType;
 
     public ProcessPackage(ResourceType resourceType) {
         this.resourceType = resourceType;
     }
 
-    public Map<Object, Process> getRuleFlows() {
+    public Map<String, Process> getRuleFlows() {
         return this.ruleFlows;
     }
 
@@ -47,7 +47,6 @@ public class ProcessPackage implements ResourceTypePackage<Process> {
         return this.resourceType;
     }
 
-    @Override
     public String getNamespace() {
         return "$$PROCESS$$";
     }
@@ -56,13 +55,15 @@ public class ProcessPackage implements ResourceTypePackage<Process> {
         return ruleFlows.get(id);
     }
 
-    @Override
     public void add(Process processedResource) {
         getRuleFlows().put(processedResource.getId(), processedResource);
     }
 
-    @Override
     public Iterator<Process> iterator() {
         return getRuleFlows().values().iterator();
+    }
+
+    public void remove(String id) {
+        ruleFlows.remove(id);
     }
 }

@@ -64,7 +64,6 @@ public class DMNPackageImpl implements DMNPackage, Externalizable {
         return ResourceType.DMN;
     }
 
-    @Override
     public DMNModel lookup( String name ) {
         return getModel(name);
     }

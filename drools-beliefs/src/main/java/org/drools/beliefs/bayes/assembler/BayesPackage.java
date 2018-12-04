@@ -54,16 +54,6 @@ public class BayesPackage implements ResourceTypePackage<JunctionTree> {
     }
 
     @Override
-    public String getNamespace() {
-        return this.namespace;
-    }
-
-    @Override
-    public JunctionTree lookup(String id) {
-        return getJunctionTree(id);
-    }
-
-    @Override
     public void add(JunctionTree processedResource) {
         addJunctionTree(processedResource.getName(), processedResource);
     }

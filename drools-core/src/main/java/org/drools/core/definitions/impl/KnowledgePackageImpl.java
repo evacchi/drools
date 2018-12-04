@@ -261,7 +261,6 @@ public class KnowledgePackageImpl
         out.writeObject(this.entryPointsIds);
         out.writeObject(this.windowDeclarations);
         out.writeObject(this.traitRegistry);
-        out.writeObject(this.resourceTypePackages);
         // writing the whole stream as a byte array
         if (!isDroolsStream) {
             bytes.flush();
@@ -308,7 +307,6 @@ public class KnowledgePackageImpl
         this.entryPointsIds = (Set<String>) in.readObject();
         this.windowDeclarations = (Map<String, WindowDeclaration>) in.readObject();
         this.traitRegistry = (TraitRegistry) in.readObject();
-        this.resourceTypePackages = (ResourceTypePackageRegistry) in.readObject();
 
         in.setStore(null);
 
@@ -483,7 +481,7 @@ public class KnowledgePackageImpl
      */
     public void addProcess(Process process) {
         ResourceTypePackageRegistry rtps = getResourceTypePackages();
-        ResourceTypePackage<Process> rtp = (ResourceTypePackage<Process>) rtps.get(ResourceType.BPMN2);
+        ProcessPackage rtp = (ProcessPackage) rtps.get(ResourceType.BPMN2);
         if (rtp == null) {
             rtp = new ProcessPackage(ResourceType.BPMN2);
             rtps.put(ResourceType.BPMN2, rtp);
@@ -496,22 +494,15 @@ public class KnowledgePackageImpl
      * be Collections.EMPTY_MAP if none have been added.
      */
     public Map<String, Process> getRuleFlows() {
-        ResourceTypePackage<Process> rtp = (ResourceTypePackage<Process>) getResourceTypePackages().get(ResourceType.BPMN2);
-        if (rtp == null) {
-            return Collections.emptyMap();
-        }
-        Map<String, Process> ruleFlows = new HashMap<>();
-        for (Process ruleFlow: rtp) {
-            ruleFlows.put(ruleFlow.getId(), ruleFlow);
-        }
-        return ruleFlows;
+        ProcessPackage rtp = (ProcessPackage) getResourceTypePackages().get(ResourceType.BPMN2);
+        return rtp == null? Collections.emptyMap() : rtp.getRuleFlows();
     }
 
     /**
      * Rule flows can be removed by ID.
      */
     public void removeRuleFlow(String id) {
-        ResourceTypePackage<Process> rtp = (ResourceTypePackage<Process>) getResourceTypePackages().get(ResourceType.BPMN2);
+        ProcessPackage rtp = (ProcessPackage) getResourceTypePackages().get(ResourceType.BPMN2);
         if (rtp == null || rtp.lookup(id) == null) {
             throw new IllegalArgumentException("The rule flow with id [" + id + "] is not part of this package.");
         }
@@ -778,12 +769,12 @@ public class KnowledgePackageImpl
     }
 
     private void removeProcess(Process process) {
-        ResourceTypePackage<Process> rtp = (ResourceTypePackage<Process>) getResourceTypePackages().get(ResourceType.BPMN2);
+        ProcessPackage rtp = (ProcessPackage) getResourceTypePackages().get(ResourceType.BPMN2);
         if (rtp != null) rtp.remove(process.getId());
     }
 
     private List<Process> getProcessesGeneratedFromResource(Resource resource) {
-        ResourceTypePackage<Process> rtp = (ResourceTypePackage<Process>) getResourceTypePackages().get(ResourceType.BPMN2);
+        ProcessPackage rtp = (ProcessPackage) getResourceTypePackages().get(ResourceType.BPMN2);
         if (rtp == null) {
             return Collections.emptyList();
         }

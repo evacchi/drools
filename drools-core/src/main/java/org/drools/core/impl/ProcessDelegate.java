@@ -17,11 +17,8 @@
 
 package org.drools.core.impl;
 
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
 
 import org.drools.core.definitions.InternalKnowledgePackage;
 import org.kie.api.definition.process.Process;
@@ -35,20 +32,14 @@ public class ProcessDelegate {
         this.parentBase = parentBase;
     }
 
-//    private Map<String, Process> get() {
-//        ResourceTypePackage bpmn2 = getPackage();
-//        return EXTRACTMAP(bpmn2);
-//    }
-
     private ResourceTypePackage<Process> getPackage() {
         InternalKnowledgePackage kiePackage = (InternalKnowledgePackage) parentBase.getKiePackage("$$PROCESS$$");
-        Map<ResourceType, ResourceTypePackage> resourceTypePackages = kiePackage.getResourceTypePackages();
-        return resourceTypePackages.get(ResourceType.BPMN2);
+        return (ResourceTypePackage<Process>) kiePackage.getResourceTypePackages().get(ResourceType.BPMN2);
     }
 
     public Collection<Process> values() {
         ArrayList<Process> ps = new ArrayList<>();
-        for (Process process : getPackage().contents()) {
+        for (Process process : getPackage()) {
             ps.add(process);
         }
         return ps;
@@ -66,14 +57,4 @@ public class ProcessDelegate {
         getPackage().remove(id);
     }
 
-    private Map<String, Process> EXTRACTMAP(ResourceTypePackage pkg) {
-        if (pkg == null) return Collections.emptyMap();
-        try {
-            Method getRuleFlows = pkg.getClass().getMethod("getRuleFlows");
-            Map<String, Process> ruleFlows = (Map) getRuleFlows.invoke(pkg);
-            return ruleFlows;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
 }

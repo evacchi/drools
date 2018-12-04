@@ -40,6 +40,7 @@ import org.drools.core.common.DroolsObjectInputStream;
 import org.drools.core.common.DroolsObjectOutputStream;
 import org.drools.core.common.ProjectClassLoader;
 import org.drools.core.definitions.InternalKnowledgePackage;
+import org.drools.core.definitions.ResourceTypePackageRegistry;
 import org.drools.core.definitions.rule.impl.GlobalImpl;
 import org.drools.core.definitions.rule.impl.RuleImpl;
 import org.drools.core.factmodel.traits.TraitRegistry;
@@ -107,7 +108,7 @@ public class KnowledgePackageImpl
 
     private TraitRegistry traitRegistry;
 
-    private Map<ResourceType, ResourceTypePackage> resourceTypePackages;
+    private ResourceTypePackageRegistry resourceTypePackages;
 
     private Map<String, Object> cloningResources = new HashMap<>();
 
@@ -151,13 +152,10 @@ public class KnowledgePackageImpl
         this.classFieldAccessorStore = new ClassFieldAccessorStore();
         this.entryPointsIds = Collections.emptySet();
         this.windowDeclarations = Collections.emptyMap();
-        this.resourceTypePackages = Collections.emptyMap();
+        this.resourceTypePackages = new ResourceTypePackageRegistry();
     }
 
-    public Map<ResourceType, ResourceTypePackage> getResourceTypePackages() {
-        if (resourceTypePackages == Collections.EMPTY_MAP) {
-            resourceTypePackages = new HashMap<ResourceType, ResourceTypePackage>();
-        }
+    public ResourceTypePackageRegistry getResourceTypePackages() {
         return resourceTypePackages;
     }
 
@@ -307,7 +305,7 @@ public class KnowledgePackageImpl
         this.entryPointsIds = (Set<String>) in.readObject();
         this.windowDeclarations = (Map<String, WindowDeclaration>) in.readObject();
         this.traitRegistry = (TraitRegistry) in.readObject();
-        this.resourceTypePackages = (Map<ResourceType, ResourceTypePackage>) in.readObject();
+        this.resourceTypePackages = (ResourceTypePackageRegistry) in.readObject();
 
         in.setStore(null);
 
@@ -481,7 +479,7 @@ public class KnowledgePackageImpl
      * Add a rule flow to this package.
      */
     public void addProcess(Process process) {
-        ResourceTypePackage<Process> rtp = resourceTypePackages.get(ResourceType.BPMN2);
+        ResourceTypePackage<Process> rtp = (ResourceTypePackage<Process>) getResourceTypePackages().get(ResourceType.BPMN2);
         if (rtp == null) {
             throw new UnsupportedOperationException();
         } else {
@@ -494,12 +492,12 @@ public class KnowledgePackageImpl
      * be Collections.EMPTY_MAP if none have been added.
      */
     public Map<String, Process> getRuleFlows() {
-        ResourceTypePackage<Process> rtp = getResourceTypePackages().get(ResourceType.BPMN2);
+        ResourceTypePackage<Process> rtp = (ResourceTypePackage<Process>) getResourceTypePackages().get(ResourceType.BPMN2);
         if (rtp == null) {
             return Collections.emptyMap();
         }
         Map<String, Process> ruleFlows = new HashMap<>();
-        for (Process ruleFlow: rtp.contents()) {
+        for (Process ruleFlow: rtp) {
             ruleFlows.put(ruleFlow.getId(), ruleFlow);
         }
         return ruleFlows;
@@ -509,7 +507,7 @@ public class KnowledgePackageImpl
      * Rule flows can be removed by ID.
      */
     public void removeRuleFlow(String id) {
-        ResourceTypePackage rtp = getResourceTypePackages().get(ResourceType.BPMN2);
+        ResourceTypePackage<Process> rtp = (ResourceTypePackage<Process>) getResourceTypePackages().get(ResourceType.BPMN2);
         if (rtp == null || rtp.lookup(id) == null) {
             throw new IllegalArgumentException("The rule flow with id [" + id + "] is not part of this package.");
         }
@@ -601,7 +599,6 @@ public class KnowledgePackageImpl
     public void clear() {
         this.rules.clear();
         this.dialectRuntimeRegistry.clear();
-        //this.ruleFlows.clear();
         this.imports.clear();
         this.functions.clear();
         this.accumulateFunctions.clear();
@@ -689,22 +686,16 @@ public class KnowledgePackageImpl
         List<RuleImpl> rulesToBeRemoved = removeRulesGeneratedFromResource(resource);
         List<TypeDeclaration> typesToBeRemoved = removeTypesGeneratedFromResource(resource);
         List<Function> functionsToBeRemoved = removeFunctionsGeneratedFromResource(resource);
-        List<Process> processesToBeRemoved = removeProcessesGeneratedFromResource(resource);
         boolean resourceTypePackageSomethingRemoved = removeFromResourceTypePackageGeneratedFromResource(resource);
         return !rulesToBeRemoved.isEmpty()
                 || !typesToBeRemoved.isEmpty()
                 || !functionsToBeRemoved.isEmpty()
-                || !processesToBeRemoved.isEmpty()
                 || resourceTypePackageSomethingRemoved;
     }
 
     @Override
     public boolean removeFromResourceTypePackageGeneratedFromResource(Resource resource) {
-        boolean somethingWasRemoved = false;
-        for (ResourceTypePackage rtp : resourceTypePackages.values()) {
-            somethingWasRemoved = rtp.removeResource(resource) || somethingWasRemoved;
-        }
-        return somethingWasRemoved;
+        return resourceTypePackages.remove(resource);
     }
 
     public List<TypeDeclaration> removeTypesGeneratedFromResource(Resource resource) {
@@ -783,17 +774,17 @@ public class KnowledgePackageImpl
     }
 
     private void removeProcess(Process process) {
-        ResourceTypePackage rtp = getResourceTypePackages().get(ResourceType.BPMN2);
+        ResourceTypePackage<Process> rtp = (ResourceTypePackage<Process>) getResourceTypePackages().get(ResourceType.BPMN2);
         if (rtp != null) rtp.remove(process.getId());
     }
 
     private List<Process> getProcessesGeneratedFromResource(Resource resource) {
-        ResourceTypePackage<Process> rtp = getResourceTypePackages().get(ResourceType.BPMN2);
+        ResourceTypePackage<Process> rtp = (ResourceTypePackage<Process>) getResourceTypePackages().get(ResourceType.BPMN2);
         if (rtp == null) {
             return Collections.emptyList();
         }
         List<Process> processesFromResource = new ArrayList<Process>();
-        for (Process process : rtp.contents()) {
+        for (Process process : rtp) {
             if (resource.equals(process.getResource())) {
                 processesFromResource.add(process);
             }

@@ -918,20 +918,10 @@ public class KnowledgeBaseImpl
                 internalAddRule( rule );
             }
 
-            // add the flows to the RuleBase
-            // if ( newPkg.getRuleFlows() != null ) {
-            //     final Map<String, Process> flows = newPkg.getRuleFlows();
-            //     for ( Process process : flows.values() ) {
-            //         internalAddProcess( process );
-            //     }
-            // }
-
             if ( ! newPkg.getResourceTypePackages().isEmpty() ) {
                 KieWeavers weavers = ServiceRegistry.getInstance().get( KieWeavers.class );
                 for ( ResourceTypePackage rtkKpg : newPkg.getResourceTypePackages().values() ) {
-                    ResourceType rt = rtkKpg.getResourceType();
-                    KieWeaverService factory = weavers.getWeavers().get( rt );
-                    factory.weave( this, newPkg, rtkKpg );
+                    weavers.weave( this, newPkg, rtkKpg );
                 }
             }
 
@@ -1316,20 +1306,10 @@ public class KnowledgeBaseImpl
             pkg.addRule((RuleImpl)newRule);
         }
 
-        //Merge The Rule Flows
-        //if (newPkg.getRuleFlows() != null) {
-        //    for (Process flow : newPkg.getRuleFlows().values()) {
-        //        pkg.addProcess(flow);
-        //    }
-        //}
-
         if ( ! newPkg.getResourceTypePackages().isEmpty() ) {
             for ( ResourceTypePackage rtkKpg : newPkg.getResourceTypePackages().values() ) {
-                ResourceType rt = rtkKpg.getResourceType();
                 KieWeavers weavers = ServiceRegistry.getInstance().get(KieWeavers.class);
-
-                KieWeaverService weaver = weavers.getWeavers().get(rt);
-                weaver.merge( this, pkg, rtkKpg );
+               weavers.merge( this, pkg, rtkKpg );
             }
         }
     }
@@ -1630,19 +1610,15 @@ public class KnowledgeBaseImpl
     }
 
     public void removeProcess( final String id ) {
-        enqueueModification( () -> internalRemoveProcess( id ) );
-    }
-
-    void internalRemoveProcess( String id ) {
-        Process process = this.processes.get( id );
-        if ( process == null ) {
-            throw new IllegalArgumentException( "Process '" + id + "' does not exist for this Rule Base." );
-        }
-        this.eventSupport.fireBeforeProcessRemoved( process );
-        this.processes.remove( id );
-//        this.pkgs.get( process.getPackageName() ).removeRuleFlow( id );
-        this.processes.remove(id);
-        this.eventSupport.fireAfterProcessRemoved( process );
+        enqueueModification( () -> {
+            Process process = this.processes.get( id );
+            if ( process == null ) {
+                throw new IllegalArgumentException( "Process '" + id + "' does not exist for this Rule Base." );
+            }
+            this.eventSupport.fireBeforeProcessRemoved( process );
+            this.processes.remove( id );
+            this.eventSupport.fireAfterProcessRemoved( process );
+        } );
     }
 
     public Process getProcess( final String id ) {
@@ -1748,18 +1724,12 @@ public class KnowledgeBaseImpl
                 internalRemoveFunction(pkg.getName(), function.getName());
             }
 
-            //List<Process> processesToBeRemoved = pkg.removeProcessesGeneratedFromResource(resource);
-            //for (Process process : processesToBeRemoved) {
-            //    processes.remove(process.getId());
-            //}
-
             List<TypeDeclaration> removedTypes = pkg.removeTypesGeneratedFromResource(resource);
             
             boolean resourceTypePackageSomethingRemoved = pkg.removeFromResourceTypePackageGeneratedFromResource( resource );
             
             modified |= !rulesToBeRemoved.isEmpty()
                         || !functionsToBeRemoved.isEmpty()
-                        //|| !processesToBeRemoved.isEmpty()
                         || !removedTypes.isEmpty()
                         || resourceTypePackageSomethingRemoved;
         }

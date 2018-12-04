@@ -34,9 +34,7 @@ import org.drools.core.ruleunit.RuleUnitDescriptionLoader;
 import org.kie.api.definition.KiePackage;
 import org.kie.api.definition.process.Process;
 import org.kie.api.definition.type.FactType;
-import org.kie.api.internal.io.ResourceTypePackage;
 import org.kie.api.io.Resource;
-import org.kie.api.io.ResourceType;
 import org.kie.api.runtime.rule.AccumulateFunction;
 import org.kie.soup.project.datamodel.commons.types.TypeResolver;
 
@@ -55,7 +53,7 @@ public interface InternalKnowledgePackage extends KiePackage,
 
     void setError(String summary);
 
-    Map<ResourceType, ResourceTypePackage> getResourceTypePackages();
+    ResourceTypePackageRegistry getResourceTypePackages();
 
     Map<String, String> getGlobals();
 
@@ -119,6 +117,7 @@ public interface InternalKnowledgePackage extends KiePackage,
 
     List<Function> removeFunctionsGeneratedFromResource(Resource resource);
 
+    @Deprecated
     List<Process> removeProcessesGeneratedFromResource(Resource resource);
 
     boolean removeFromResourceTypePackageGeneratedFromResource(Resource resource);

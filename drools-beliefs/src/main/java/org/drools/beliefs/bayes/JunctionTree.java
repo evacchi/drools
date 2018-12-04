@@ -17,12 +17,12 @@ package org.drools.beliefs.bayes;
 
 import org.drools.beliefs.graph.Graph;
 import org.drools.beliefs.graph.GraphNode;
-import org.drools.compiler.builder.CompiledResource;
+import org.kie.api.internal.assembler.ProcessedResource;
 import org.kie.api.io.Resource;
 
 import java.util.List;
 
-public class JunctionTree implements CompiledResource {
+public class JunctionTree implements ProcessedResource {
     private Graph<BayesVariable>    graph;
     private JunctionTreeClique      root;
     private JunctionTreeClique[]    jtNodes;

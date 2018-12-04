@@ -118,9 +118,9 @@ import static org.drools.core.util.ClassUtils.areNullSafeEquals;
 import static org.drools.core.util.ClassUtils.convertClassToResourcePath;
 
 public class KnowledgeBaseImpl
-    implements
-    InternalKnowledgeBase,
-    Externalizable {
+        implements
+        InternalKnowledgeBase,
+        Externalizable {
 
     protected static final transient Logger logger = LoggerFactory.getLogger(KnowledgeBaseImpl.class);
 
@@ -139,7 +139,7 @@ public class KnowledgeBaseImpl
 
     protected Map<String, InternalKnowledgePackage> pkgs;
 
-    private ProcessDelegate processes;
+    private Map<String, Process> processes;
 
     private transient ClassLoader rootClassLoader;
 
@@ -168,7 +168,7 @@ public class KnowledgeBaseImpl
     private transient Map<Integer, SegmentMemory.Prototype> segmentProtos = new ConcurrentHashMap<Integer, SegmentMemory.Prototype>();
 
     private KieComponentFactory kieComponentFactory;
-    
+
     // This is just a hack, so spring can find the list of generated classes
     public List<List<String>> jaxbClasses;
 
@@ -203,7 +203,7 @@ public class KnowledgeBaseImpl
         this.rootClassLoader = this.config.getClassLoader();
 
         this.pkgs = new HashMap<String, InternalKnowledgePackage>();
-        this.processes = new ProcessDelegate(this);
+        this.processes = new HashMap<String, Process>();
         this.globals = new HashMap<String, Class<?>>();
 
         this.classTypeDeclaration = new HashMap<String, TypeDeclaration>();
@@ -264,7 +264,7 @@ public class KnowledgeBaseImpl
             kieBaseListeners.remove( listener );
         }
     }
-    
+
     public Collection<KieBaseEventListener> getKieBaseEventListeners() {
         return Collections.unmodifiableCollection( kieBaseListeners );
     }
@@ -278,7 +278,7 @@ public class KnowledgeBaseImpl
             final InternalKnowledgePackage pkg = this.pkgs.get( packageName );
             if (pkg == null) {
                 throw new IllegalArgumentException( "Package name '" + packageName +
-                                                    "' does not exist for this Rule Base." );
+                                                            "' does not exist for this Rule Base." );
             }
             this.eventSupport.fireBeforePackageRemoved( pkg );
 
@@ -297,10 +297,10 @@ public class KnowledgeBaseImpl
                     this.globals.remove( globalName );
                 }
             }
-            ////and now the rule flows
-            //for ( String processName : new ArrayList<String>(pkg.getRuleFlows().keySet()) ) {
-            //    internalRemoveProcess( processName );
-            //}
+            //and now the rule flows
+            for ( String processName : new ArrayList<String>(pkg.getRuleFlows().keySet()) ) {
+                internalRemoveProcess( processName );
+            }
             // removing the package itself from the list
             this.pkgs.remove( pkg.getName() );
 
@@ -318,7 +318,7 @@ public class KnowledgeBaseImpl
         InternalKnowledgePackage p = getPackage(packageName);
         return p == null ? null : p.getRule( ruleName );
     }
-    
+
     public Query getQuery(String packageName,
                           String queryName) {
         return getPackage(packageName).getRule( queryName );
@@ -409,7 +409,7 @@ public class KnowledgeBaseImpl
      * A custom ObjectInputStream, able to resolve classes against the bytecode in the PackageCompilationData, is used to restore the Rules.
      */
     public void readExternal(final ObjectInput in) throws IOException,
-                                                          ClassNotFoundException {
+            ClassNotFoundException {
         // PackageCompilationData must be restored before Rules as it has the ClassLoader needed to resolve the generated code references in Rules
         DroolsObjectInput droolsStream;
         boolean isDrools = in instanceof DroolsObjectInputStream;
@@ -453,7 +453,7 @@ public class KnowledgeBaseImpl
         this.id = (String) droolsStream.readObject();
         this.workingMemoryCounter.set(droolsStream.readInt());
 
-        this.processes = (ProcessDelegate) droolsStream.readObject();
+        this.processes = (Map<String, Process>) droolsStream.readObject();
         final String classNameFromStream = droolsStream.readUTF();
         try {
             Class cls = droolsStream.getParentClassLoader().loadClass(classNameFromStream);
@@ -480,7 +480,7 @@ public class KnowledgeBaseImpl
         this.reteooBuilder = (ReteooBuilder) droolsStream.readObject();
         this.reteooBuilder.setRuleBase(this);
         this.rete = (Rete) droolsStream.readObject();
-        
+
         this.resolvedReleaseId = (ReleaseId) droolsStream.readObject();
 
         ( (DroolsObjectInputStream) droolsStream ).bindAllExtractors(this);
@@ -564,7 +564,7 @@ public class KnowledgeBaseImpl
 
         droolsStream.writeObject(this.reteooBuilder);
         droolsStream.writeObject(this.rete);
-        
+
         droolsStream.writeObject(this.resolvedReleaseId);
 
         if (!isDrools) {
@@ -719,7 +719,7 @@ public class KnowledgeBaseImpl
         clonedPkgs.sort(Comparator.comparing( (InternalKnowledgePackage p) -> p.getRules().size() ).reversed().thenComparing( InternalKnowledgePackage::getName ));
         enqueueModification( () -> internalAddPackages( clonedPkgs ) );
     }
-    
+
     @Override
     public Future<KiePackage> addPackage( final KiePackage newPkg ) {
         InternalKnowledgePackage clonedPkg = ((InternalKnowledgePackage)newPkg).deepCloneIfAlreadyInUse(rootClassLoader);
@@ -918,6 +918,14 @@ public class KnowledgeBaseImpl
                 internalAddRule( rule );
             }
 
+            // add the flows to the RuleBase
+            if ( newPkg.getRuleFlows() != null ) {
+                final Map<String, Process> flows = newPkg.getRuleFlows();
+                for ( Process process : flows.values() ) {
+                    internalAddProcess( process );
+                }
+            }
+
             if ( ! newPkg.getResourceTypePackages().isEmpty() ) {
                 KieWeavers weavers = ServiceRegistry.getInstance().get( KieWeavers.class );
                 for ( ResourceTypePackage rtkKpg : newPkg.getResourceTypePackages().values() ) {
@@ -1096,12 +1104,12 @@ public class KnowledgeBaseImpl
 
         if ( ! areNullSafeEquals( existingDecl.getFormat(),
                                   newDecl.getFormat() ) ||
-             ! areNullSafeEquals( existingDecl.getObjectType(),
-                                  newDecl.getObjectType() ) ||
-             ! areNullSafeEquals( existingDecl.getTypeClassName(),
-                                  newDecl.getTypeClassName() ) ||
-             ! areNullSafeEquals( existingDecl.getTypeName(),
-                                  newDecl.getTypeName() ) ) {
+                ! areNullSafeEquals( existingDecl.getObjectType(),
+                                     newDecl.getObjectType() ) ||
+                ! areNullSafeEquals( existingDecl.getTypeClassName(),
+                                     newDecl.getTypeClassName() ) ||
+                ! areNullSafeEquals( existingDecl.getTypeName(),
+                                     newDecl.getTypeName() ) ) {
 
             throw new RuntimeException( "Unable to merge Type Declaration for class '" + existingDecl.getTypeName() + "'" );
 
@@ -1130,13 +1138,13 @@ public class KnowledgeBaseImpl
 
         if ( newDecl.getExpirationPolicy() == Policy.TIME_HARD ) {
             if (existingDecl.getExpirationPolicy() == Policy.TIME_SOFT ||
-                newDecl.getExpirationOffset() > existingDecl.getExpirationOffset()) {
+                    newDecl.getExpirationOffset() > existingDecl.getExpirationOffset()) {
                 existingDecl.setExpirationOffset( newDecl.getExpirationOffset() );
                 existingDecl.setExpirationType( Policy.TIME_HARD );
             }
         } else {
             if (existingDecl.getExpirationPolicy() == Policy.TIME_SOFT &&
-                newDecl.getExpirationOffset() > existingDecl.getExpirationOffset()) {
+                    newDecl.getExpirationOffset() > existingDecl.getExpirationOffset()) {
                 existingDecl.setExpirationOffset( newDecl.getExpirationOffset() );
             }
         }
@@ -1164,8 +1172,8 @@ public class KnowledgeBaseImpl
         existingDecl.setRole( mergeLeft( existingDecl.getTypeName(),
                                          "Unable to merge @role attribute for type declaration of class:",
                                          isSet(existingDecl.getSetMask(), TypeDeclaration.ROLE_BIT)
-                                         && newDecl.getRole() != Role.Type.FACT
-                                         ? existingDecl.getRole() : null,
+                                                 && newDecl.getRole() != Role.Type.FACT
+                                                 ? existingDecl.getRole() : null,
                                          newDecl.getRole(),
                                          true,
                                          false ) );
@@ -1221,7 +1229,7 @@ public class KnowledgeBaseImpl
         // Merge imports
         final Map<String, ImportDeclaration> imports = pkg.getImports();
         imports.putAll(newPkg.getImports());
-        
+
         // Merge static imports
         for (String staticImport : newPkg.getStaticImports()) {
             pkg.addStaticImport(staticImport);
@@ -1252,7 +1260,7 @@ public class KnowledgeBaseImpl
             }
         } catch (ClassNotFoundException e) {
             throw new RuntimeException( "Unable to resolve class '" + lastType +
-                                        "' for global '" + lastIdent + "'" );
+                                                "' for global '" + lastIdent + "'" );
         }
 
         // merge entry point declarations
@@ -1280,7 +1288,7 @@ public class KnowledgeBaseImpl
             // add window declarations
             for ( WindowDeclaration window : newPkg.getWindowDeclarations().values() ) {
                 if ( !pkg.getWindowDeclarations().containsKey( window.getName() ) ||
-                     pkg.getWindowDeclarations().get( window.getName() ).equals( window ) ) {
+                        pkg.getWindowDeclarations().get( window.getName() ).equals( window ) ) {
                     pkg.addWindowDeclaration( window );
                 } else {
                     throw new RuntimeException( "Unable to merge two conflicting window declarations for window named: "+window.getName() );
@@ -1306,10 +1314,17 @@ public class KnowledgeBaseImpl
             pkg.addRule((RuleImpl)newRule);
         }
 
+        //Merge The Rule Flows
+        if (newPkg.getRuleFlows() != null) {
+            for (Process flow : newPkg.getRuleFlows().values()) {
+                pkg.addProcess(flow);
+            }
+        }
+
         if ( ! newPkg.getResourceTypePackages().isEmpty() ) {
+            KieWeavers weavers = ServiceRegistry.getInstance().get(KieWeavers.class);
             for ( ResourceTypePackage rtkKpg : newPkg.getResourceTypePackages().values() ) {
-                KieWeavers weavers = ServiceRegistry.getInstance().get(KieWeavers.class);
-               weavers.merge( this, pkg, rtkKpg );
+                weavers.merge( this, pkg, rtkKpg );
             }
         }
     }
@@ -1529,15 +1544,15 @@ public class KnowledgeBaseImpl
             final InternalKnowledgePackage pkg = pkgs.get( packageName );
             if (pkg == null) {
                 throw new IllegalArgumentException( "Package name '" + packageName +
-                                                    "' does not exist for this Rule Base." );
+                                                            "' does not exist for this Rule Base." );
             }
 
             RuleImpl rule = pkg.getRule( ruleName );
             if (rule == null) {
                 throw new IllegalArgumentException( "Rule name '" + ruleName +
-                                                    "' does not exist in the Package '" +
-                                                    packageName +
-                                                    "'." );
+                                                            "' does not exist in the Package '" +
+                                                            packageName +
+                                                            "'." );
             }
 
             this.eventSupport.fireBeforeRuleRemoved(rule);
@@ -1572,15 +1587,15 @@ public class KnowledgeBaseImpl
         final InternalKnowledgePackage pkg = this.pkgs.get( packageName );
         if (pkg == null) {
             throw new IllegalArgumentException( "Package name '" + packageName +
-                                                "' does not exist for this Rule Base." );
+                                                        "' does not exist for this Rule Base." );
         }
 
         Function function = pkg.getFunctions().get( functionName );
         if (function == null) {
             throw new IllegalArgumentException( "function name '" + packageName +
-                                                "' does not exist in the Package '" +
-                                                packageName +
-                                                "'." );
+                                                        "' does not exist in the Package '" +
+                                                        packageName +
+                                                        "'." );
         }
 
         this.eventSupport.fireBeforeFunctionRemoved( pkg, functionName );
@@ -1610,15 +1625,18 @@ public class KnowledgeBaseImpl
     }
 
     public void removeProcess( final String id ) {
-        enqueueModification( () -> {
-            Process process = this.processes.get( id );
-            if ( process == null ) {
-                throw new IllegalArgumentException( "Process '" + id + "' does not exist for this Rule Base." );
-            }
-            this.eventSupport.fireBeforeProcessRemoved( process );
-            this.processes.remove( id );
-            this.eventSupport.fireAfterProcessRemoved( process );
-        } );
+        enqueueModification( () -> internalRemoveProcess( id ) );
+    }
+
+    private void internalRemoveProcess( String id ) {
+        Process process = this.processes.get( id );
+        if ( process == null ) {
+            throw new IllegalArgumentException( "Process '" + id + "' does not exist for this Rule Base." );
+        }
+        this.eventSupport.fireBeforeProcessRemoved( process );
+        this.processes.remove( id );
+        this.pkgs.get( process.getPackageName() ).removeRuleFlow( id );
+        this.eventSupport.fireAfterProcessRemoved( process );
     }
 
     public Process getProcess( final String id ) {
@@ -1724,14 +1742,20 @@ public class KnowledgeBaseImpl
                 internalRemoveFunction(pkg.getName(), function.getName());
             }
 
+            List<Process> processesToBeRemoved = pkg.removeProcessesGeneratedFromResource(resource);
+            for (Process process : processesToBeRemoved) {
+                processes.remove(process.getId());
+            }
+
             List<TypeDeclaration> removedTypes = pkg.removeTypesGeneratedFromResource(resource);
-            
+
             boolean resourceTypePackageSomethingRemoved = pkg.removeFromResourceTypePackageGeneratedFromResource( resource );
-            
+
             modified |= !rulesToBeRemoved.isEmpty()
-                        || !functionsToBeRemoved.isEmpty()
-                        || !removedTypes.isEmpty()
-                        || resourceTypePackageSomethingRemoved;
+                    || !functionsToBeRemoved.isEmpty()
+                    || !processesToBeRemoved.isEmpty()
+                    || !removedTypes.isEmpty()
+                    || resourceTypePackageSomethingRemoved;
         }
         return modified;
     }
@@ -1762,7 +1786,7 @@ public class KnowledgeBaseImpl
     }
 
     public InternalKieContainer getKieContainer() {
-       return this.kieContainer;
+        return this.kieContainer;
     }
 
     public RuleUnitDescriptionRegistry getRuleUnitDescriptionRegistry() {

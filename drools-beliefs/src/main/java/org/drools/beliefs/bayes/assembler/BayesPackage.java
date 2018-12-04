@@ -21,6 +21,7 @@ import org.kie.api.io.ResourceType;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 public class BayesPackage implements ResourceTypePackage<JunctionTree> {
@@ -68,7 +69,7 @@ public class BayesPackage implements ResourceTypePackage<JunctionTree> {
     }
 
     @Override
-    public Iterable<? extends JunctionTree> contents() {
-        return null;
+    public Iterator<JunctionTree> iterator() {
+        return trees.values().iterator();
     }
 }

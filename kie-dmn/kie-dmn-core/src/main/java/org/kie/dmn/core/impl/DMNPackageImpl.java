@@ -23,6 +23,7 @@ import java.io.ObjectOutput;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -74,11 +75,9 @@ public class DMNPackageImpl implements DMNPackage, Externalizable {
     }
 
     @Override
-    public Iterable<? extends DMNModel> contents() {
-        return getAllModels().values();
+    public Iterator<DMNModel> iterator() {
+        return getAllModels().values().iterator();
     }
-
-
 
     public DMNModel addModel(String name, DMNModel model ) {
         return models.put( name, model );

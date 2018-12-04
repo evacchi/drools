@@ -40,6 +40,7 @@ import org.drools.core.common.DroolsObjectInputStream;
 import org.drools.core.common.DroolsObjectOutputStream;
 import org.drools.core.common.ProjectClassLoader;
 import org.drools.core.definitions.InternalKnowledgePackage;
+import org.drools.core.definitions.ProcessPackage;
 import org.drools.core.definitions.ResourceTypePackageRegistry;
 import org.drools.core.definitions.rule.impl.GlobalImpl;
 import org.drools.core.definitions.rule.impl.RuleImpl;
@@ -60,7 +61,9 @@ import org.kie.api.definition.rule.Global;
 import org.kie.api.definition.rule.Query;
 import org.kie.api.definition.rule.Rule;
 import org.kie.api.definition.type.FactType;
+import org.kie.api.internal.assembler.KieAssemblers;
 import org.kie.api.internal.io.ResourceTypePackage;
+import org.kie.api.internal.utils.ServiceRegistry;
 import org.kie.api.io.Resource;
 import org.kie.api.io.ResourceType;
 import org.kie.api.runtime.rule.AccumulateFunction;
@@ -479,12 +482,13 @@ public class KnowledgePackageImpl
      * Add a rule flow to this package.
      */
     public void addProcess(Process process) {
-        ResourceTypePackage<Process> rtp = (ResourceTypePackage<Process>) getResourceTypePackages().get(ResourceType.BPMN2);
+        ResourceTypePackageRegistry rtps = getResourceTypePackages();
+        ResourceTypePackage<Process> rtp = (ResourceTypePackage<Process>) rtps.get(ResourceType.BPMN2);
         if (rtp == null) {
-            throw new UnsupportedOperationException();
-        } else {
-            rtp.add(process);
+            rtp = new ProcessPackage(ResourceType.BPMN2);
+            rtps.put(ResourceType.BPMN2, rtp);
         }
+        rtp.add(process);
     }
 
     /**

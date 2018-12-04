@@ -17,6 +17,16 @@
 
 package org.drools.compiler.builder;
 
-public class ResourceCompiler {
+import java.util.Collection;
 
+import org.kie.api.internal.assembler.ProcessedResource;
+import org.kie.internal.builder.KnowledgeBuilderError;
+
+public interface ResourceProcessor<C extends ProcessedResource> {
+
+    void process();
+
+    C getProcessedResource();
+
+    Collection<? extends KnowledgeBuilderError> getErrors();
 }

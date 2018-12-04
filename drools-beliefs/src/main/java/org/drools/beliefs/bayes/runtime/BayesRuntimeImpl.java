@@ -20,6 +20,7 @@ import org.drools.beliefs.bayes.JunctionTree;
 import org.drools.beliefs.bayes.assembler.BayesPackage;
 import org.drools.core.common.InternalKnowledgeRuntime;
 import org.drools.core.definitions.InternalKnowledgePackage;
+import org.drools.core.definitions.ResourceTypePackageRegistry;
 import org.kie.api.internal.io.ResourceTypePackage;
 
 import org.kie.api.io.ResourceType;
@@ -56,7 +57,7 @@ public class BayesRuntimeImpl implements BayesRuntime {
 
 
         InternalKnowledgePackage kpkg = (InternalKnowledgePackage) runtime.getKieBase().getKiePackage( cls.getPackage().getName() );
-        Map<ResourceType, ResourceTypePackage> map = kpkg.getResourceTypePackages();
+        ResourceTypePackageRegistry map = kpkg.getResourceTypePackages();
         BayesPackage bayesPkg  = (BayesPackage) map.get( ResourceType.BAYES );
         JunctionTree jtree =  bayesPkg.getJunctionTree(cls.getSimpleName());
 

@@ -54,6 +54,4 @@ public interface AssemblerContext {
     InternalKnowledgeBase getKnowledgeBase();
 
     KnowledgeBuilderErrors getErrors();
-
-    PackageRegistry getOrCreatePackageRegistry(PackageDescr packageDescr);
 }

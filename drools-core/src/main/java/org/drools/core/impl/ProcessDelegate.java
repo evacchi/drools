@@ -21,20 +21,30 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 import org.drools.core.definitions.InternalKnowledgePackage;
+import org.drools.core.definitions.ProcessPackage;
+import org.drools.core.definitions.impl.KnowledgePackageImpl;
 import org.kie.api.definition.process.Process;
 import org.kie.api.internal.io.ResourceTypePackage;
 import org.kie.api.io.ResourceType;
 
 public class ProcessDelegate {
+
+    public static final String PACKAGE_NAME = "$$PROCESS$$";
     private final KnowledgeBaseImpl parentBase;
+    private KnowledgePackageImpl processPackage;
 
     public ProcessDelegate(KnowledgeBaseImpl parentBase) {
         this.parentBase = parentBase;
     }
 
     private ResourceTypePackage<Process> getPackage() {
-        InternalKnowledgePackage kiePackage = (InternalKnowledgePackage) parentBase.getKiePackage("$$PROCESS$$");
-        return (ResourceTypePackage<Process>) kiePackage.getResourceTypePackages().get(ResourceType.BPMN2);
+        processPackage = (KnowledgePackageImpl) parentBase.getKiePackage(PACKAGE_NAME);
+        if (processPackage == null) {
+            processPackage = new KnowledgePackageImpl(PACKAGE_NAME);
+            parentBase.addPackage(processPackage);
+        }
+        return processPackage.getResourceTypePackages()
+                .computeIfAbsent(ResourceType.BPMN2, ProcessPackage::new);
     }
 
     public Collection<Process> values() {
@@ -56,5 +66,4 @@ public class ProcessDelegate {
     public void remove(String id) {
         getPackage().remove(id);
     }
-
 }

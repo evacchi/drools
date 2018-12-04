@@ -17,39 +17,39 @@
 
 package org.drools.compiler.builder;
 
-import java.util.Map;
+import java.util.Collection;
 
-import org.drools.compiler.compiler.PackageRegistry;
-import org.drools.compiler.lang.descr.PackageDescr;
-import org.drools.core.definitions.InternalKnowledgePackage;
 import org.kie.api.internal.assembler.KieAssemblerService;
+import org.kie.api.internal.assembler.ProcessedResource;
 import org.kie.api.internal.io.ResourceTypePackage;
 import org.kie.api.io.Resource;
 import org.kie.api.io.ResourceConfiguration;
 import org.kie.api.io.ResourceType;
+import org.kie.internal.builder.AssemblerContext;
+import org.kie.internal.builder.KnowledgeBuilderError;
 
-public abstract class AbstractAssemblerService<T extends ResourceTypePackage<U>, U extends CompiledResource> implements KieAssemblerService {
+public abstract class AbstractAssemblerService<T extends ResourceTypePackage<U>, U extends ProcessedResource> implements KieAssemblerService {
 
     protected abstract T createPackage(String namespace);
-    protected abstract U compile(AssemblerContext ctx, Resource resource);
+
+    protected abstract ResourceProcessor<U> createResourceProcessor(Resource resource);
 
     @Override
     public final void addResource(Object kbuilder, Resource resource, ResourceType type, ResourceConfiguration configuration) throws Exception {
-
         AssemblerContext kb = (AssemblerContext) kbuilder;
+        ResourceProcessor<U> processor = createResourceProcessor(resource);
+        processor.process();
+        Collection<? extends KnowledgeBuilderError> errors = processor.getErrors();
 
-        U compiled = compile(kb, resource);
-
-        PackageRegistry pkgReg = kb.getOrCreatePackageRegistry(new PackageDescr(compiled.getNamespace() ) );
-
-        InternalKnowledgePackage kpkgs = pkgReg.getPackage();
-
-        Map<ResourceType, ResourceTypePackage> rpkg = kpkgs.getResourceTypePackages();
-        T bpkg = (T) rpkg.get(getResourceType());
-        if ( bpkg == null ) {
-            bpkg = createPackage(compiled.getNamespace());
-            rpkg.put(getResourceType(), bpkg);
+        if (errors.isEmpty()) {
+            U compiledResource = processor.getProcessedResource();
+            kb.computeIfAbsent(
+                    getResourceType(),
+                    compiledResource.getNamespace(),
+                    resourceType -> createPackage(compiledResource.getNamespace()))
+                    .add(compiledResource);
+        } else {
+            errors.forEach(kb::reportError);
         }
-        bpkg.add(compiled);
     }
 }

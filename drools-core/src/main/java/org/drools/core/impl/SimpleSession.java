@@ -152,13 +152,7 @@ public class SimpleSession extends AbstractRuntime implements InternalWorkingMem
     /**
      * The eventSupport
      */
-    protected RuleRuntimeEventSupport ruleRuntimeEventSupport;
-
-    protected RuleEventListenerSupport ruleEventListenerSupport;
-
-    protected AgendaEventSupport agendaEventSupport;
-
-    protected List<KieBaseEventListener> kieBaseEventListeners;
+    private SessionEventSupport eventSupport;
 
     /**
      * The <code>RuleBase</code> with which this memory is associated.
@@ -289,9 +283,11 @@ public class SimpleSession extends AbstractRuntime implements InternalWorkingMem
                           final InternalAgenda agenda) {
         this.id = id;
         this.handleFactory = handleFactory;
-        this.ruleRuntimeEventSupport = workingMemoryEventSupport;
-        this.agendaEventSupport = agendaEventSupport;
-        this.ruleEventListenerSupport = ruleEventListenerSupport;
+        this.eventSupport = new SessionEventSupport(
+                workingMemoryEventSupport,
+                agendaEventSupport,
+                kBase,
+                ruleEventListenerSupport);
 
         this.propagationIdCounter = new AtomicLong(propagationContext);
         init(config, environment, propagationContext);
@@ -315,7 +311,6 @@ public class SimpleSession extends AbstractRuntime implements InternalWorkingMem
 
         this.propagationIdCounter = new AtomicLong(propagationContext);
 
-        this.kieBaseEventListeners = new LinkedList<KieBaseEventListener>();
         this.lock = new ReentrantLock();
 
         this.timerService = TimerServiceFactory.getTimerService(this.config);
@@ -366,11 +361,13 @@ public class SimpleSession extends AbstractRuntime implements InternalWorkingMem
     }
 
     public Collection<RuleRuntimeEventListener> getRuleRuntimeEventListeners() {
-        return Collections.unmodifiableCollection(ruleRuntimeEventSupport.getEventListeners());
+//        return Collections.unmodifiableCollection(ruleRuntimeEventSupport.getEventListeners());
+        return Collections.emptyList();
     }
 
     public Collection<AgendaEventListener> getAgendaEventListeners() {
-        return Collections.unmodifiableCollection(this.agendaEventSupport.getEventListeners());
+//        return Collections.unmodifiableCollection(this.agendaEventSupport.getEventListeners());
+        return Collections.emptyList();
     }
 
     public KieBase getKieBase() {
@@ -396,13 +393,13 @@ public class SimpleSession extends AbstractRuntime implements InternalWorkingMem
         for (AsyncReceiveNode.AsyncReceiveMemory receiveMemory : this.receiveNodeMemories) {
             receiveMemory.dispose();
         }
-
-        this.ruleRuntimeEventSupport.clear();
-        this.ruleEventListenerSupport.clear();
-        this.agendaEventSupport.clear();
-        for (KieBaseEventListener listener : kieBaseEventListeners) {
-            this.kBase.removeEventListener(listener);
-        }
+//
+//        this.ruleRuntimeEventSupport.clear();
+//        this.ruleEventListenerSupport.clear();
+//        this.agendaEventSupport.clear();
+//        for (KieBaseEventListener listener : kieBaseEventListeners) {
+//            this.kBase.removeEventListener(listener);
+//        }
 
         if (processRuntime != null) {
             this.processRuntime.dispose();
@@ -606,10 +603,7 @@ public class SimpleSession extends AbstractRuntime implements InternalWorkingMem
         this.agenda.reset();
 
         this.globalResolver.clear();
-        this.kieBaseEventListeners.clear();
-        this.ruleRuntimeEventSupport.clear();
-        this.ruleEventListenerSupport.clear();
-        this.agendaEventSupport.clear();
+        this.eventSupport.clear();
 
         this.handleFactory.clear(0, 0);
         this.propagationIdCounter.set(0);
@@ -655,58 +649,8 @@ public class SimpleSession extends AbstractRuntime implements InternalWorkingMem
         // this.workItemManager.clear();
     }
 
-    public void setRuleRuntimeEventSupport(RuleRuntimeEventSupport ruleRuntimeEventSupport) {
-        this.ruleRuntimeEventSupport = ruleRuntimeEventSupport;
-    }
-
-    public void setAgendaEventSupport(AgendaEventSupport agendaEventSupport) {
-        this.agendaEventSupport = agendaEventSupport;
-    }
-
     public boolean isSequential() {
         return this.sequential;
-    }
-
-    public void addEventListener(final RuleRuntimeEventListener listener) {
-        this.ruleRuntimeEventSupport.addEventListener(listener);
-    }
-
-    public void removeEventListener(final RuleRuntimeEventListener listener) {
-        this.ruleRuntimeEventSupport.removeEventListener(listener);
-    }
-
-    public void addEventListener(final AgendaEventListener listener) {
-        this.agendaEventSupport.addEventListener(listener);
-    }
-
-    public void removeEventListener(final AgendaEventListener listener) {
-        this.agendaEventSupport.removeEventListener(listener);
-    }
-
-    public void addEventListener(KieBaseEventListener listener) {
-        this.kBase.addEventListener(listener);
-        this.kieBaseEventListeners.add(listener);
-    }
-
-    public Collection<KieBaseEventListener> getKieBaseEventListeners() {
-        return Collections.unmodifiableCollection(kieBaseEventListeners);
-    }
-
-    public void removeEventListener(KieBaseEventListener listener) {
-        this.kBase.removeEventListener(listener);
-        this.kieBaseEventListeners.remove(listener);
-    }
-
-    public RuleEventListenerSupport getRuleEventSupport() {
-        return ruleEventListenerSupport;
-    }
-
-    public void addEventListener(final RuleEventListener listener) {
-        this.ruleEventListenerSupport.addEventListener(listener);
-    }
-
-    public void removeEventListener(final RuleEventListener listener) {
-        this.ruleEventListenerSupport.removeEventListener(listener);
     }
 
     public FactHandleFactory getFactHandleFactory() {
@@ -1141,14 +1085,6 @@ public class SimpleSession extends AbstractRuntime implements InternalWorkingMem
 
     public NodeMemories getNodeMemories() {
         return nodeMemories;
-    }
-
-    public RuleRuntimeEventSupport getRuleRuntimeEventSupport() {
-        return this.ruleRuntimeEventSupport;
-    }
-
-    public AgendaEventSupport getAgendaEventSupport() {
-        return this.agendaEventSupport;
     }
 
     /**
@@ -1683,6 +1619,76 @@ public class SimpleSession extends AbstractRuntime implements InternalWorkingMem
     @Override
     public String toString() {
         return "KieSession[" + id + "]";
+    }
+
+    // event support
+
+    @Override
+    public RuleRuntimeEventSupport getRuleRuntimeEventSupport() {
+        return eventSupport.getRuleRuntimeEventSupport();
+    }
+
+    @Override
+    public AgendaEventSupport getAgendaEventSupport() {
+        return eventSupport.getAgendaEventSupport();
+    }
+
+    @Override
+    public void setRuleRuntimeEventSupport(RuleRuntimeEventSupport ruleRuntimeEventSupport) {
+        eventSupport.setRuleRuntimeEventSupport(ruleRuntimeEventSupport);
+    }
+
+    @Override
+    public void setAgendaEventSupport(AgendaEventSupport agendaEventSupport) {
+        eventSupport.setAgendaEventSupport(agendaEventSupport);
+    }
+
+    @Override
+    public void addEventListener(RuleRuntimeEventListener listener) {
+        eventSupport.addEventListener(listener);
+    }
+
+    @Override
+    public void removeEventListener(RuleRuntimeEventListener listener) {
+        eventSupport.removeEventListener(listener);
+    }
+
+    @Override
+    public void addEventListener(AgendaEventListener listener) {
+        eventSupport.addEventListener(listener);
+    }
+
+    @Override
+    public void removeEventListener(AgendaEventListener listener) {
+        eventSupport.removeEventListener(listener);
+    }
+
+    @Override
+    public void addEventListener(KieBaseEventListener listener) {
+        eventSupport.addEventListener(listener);
+    }
+
+    @Override
+    public Collection<KieBaseEventListener> getKieBaseEventListeners() {
+        return eventSupport.getKieBaseEventListeners();
+    }
+
+    @Override
+    public void removeEventListener(KieBaseEventListener listener) {
+        eventSupport.removeEventListener(listener);
+    }
+
+    @Override
+    public RuleEventListenerSupport getRuleEventSupport() {
+        return eventSupport.getRuleEventSupport();
+    }
+
+    public void addEventListener(RuleEventListener listener) {
+        eventSupport.addEventListener(listener);
+    }
+
+    public void removeEventListener(RuleEventListener listener) {
+        eventSupport.removeEventListener(listener);
     }
 
     ///////////////////////////////////////////////////////////////////////////

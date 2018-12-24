@@ -54,7 +54,7 @@ public class TruthMaintenanceSystem {
 
     public TruthMaintenanceSystem() {}
 
-    public TruthMaintenanceSystem(StatefulKnowledgeSessionImpl wm,
+    public TruthMaintenanceSystem(InternalWorkingMemory wm,
                                   InternalWorkingMemoryEntryPoint ep) {
         this.ep = ep;
 

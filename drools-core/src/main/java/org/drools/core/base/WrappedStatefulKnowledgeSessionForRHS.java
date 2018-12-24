@@ -88,7 +88,7 @@ public final class WrappedStatefulKnowledgeSessionForRHS
 
 	public WrappedStatefulKnowledgeSessionForRHS(WorkingMemory workingMemory) {
 		super();
-		this.delegate = (StatefulKnowledgeSessionImpl) workingMemory;
+		this.delegate = null;// (StatefulKnowledgeSessionImpl) workingMemory;
 	}
 	
 	@Override

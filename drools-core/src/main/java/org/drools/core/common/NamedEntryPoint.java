@@ -52,7 +52,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static java.util.Arrays.asList;
-import static org.drools.core.reteoo.PropertySpecificUtil.*;
+import static org.drools.core.reteoo.PropertySpecificUtil.allSetBitMask;
+import static org.drools.core.reteoo.PropertySpecificUtil.calculatePositiveMask;
 
 public class NamedEntryPoint
         implements
@@ -76,7 +77,7 @@ public class NamedEntryPoint
     protected EntryPointId     entryPoint;
     protected EntryPointNode entryPointNode;
 
-    protected final StatefulKnowledgeSessionImpl wm;
+    protected final InternalWorkingMemory wm;
 
     protected FactHandleFactory         handleFactory;
     protected PropagationContextFactory pctxFactory;
@@ -89,7 +90,7 @@ public class NamedEntryPoint
 
     public NamedEntryPoint(EntryPointId entryPoint,
                            EntryPointNode entryPointNode,
-                           StatefulKnowledgeSessionImpl wm) {
+                           InternalWorkingMemoryActions wm) {
         this(entryPoint,
              entryPointNode,
              wm,
@@ -98,7 +99,7 @@ public class NamedEntryPoint
 
     public NamedEntryPoint(EntryPointId entryPoint,
                            EntryPointNode entryPointNode,
-                           StatefulKnowledgeSessionImpl wm,
+                           InternalWorkingMemoryActions wm,
                            ReentrantLock lock) {
         this.entryPoint = entryPoint;
         this.entryPointNode = entryPointNode;

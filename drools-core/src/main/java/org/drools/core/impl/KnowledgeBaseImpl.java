@@ -39,6 +39,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.stream.Collectors;
 
 import org.drools.core.RuleBaseConfiguration;
 import org.drools.core.SessionConfiguration;
@@ -109,6 +110,7 @@ import org.kie.api.runtime.KieSession;
 import org.kie.api.runtime.KieSessionConfiguration;
 import org.kie.api.runtime.KieSessionsPool;
 import org.kie.api.runtime.StatelessKieSession;
+import org.kie.internal.runtime.StatefulKnowledgeSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -154,7 +156,7 @@ public class KnowledgeBaseImpl
 
     private KieBaseEventSupport eventSupport = new KieBaseEventSupport(this);
 
-    private transient final Set<StatefulKnowledgeSessionImpl> statefulSessions = ConcurrentHashMap.newKeySet();
+    private transient final Set<StatefulKnowledgeSession> statefulSessions = ConcurrentHashMap.newKeySet();
 
     // lock for entire rulebase, used for dynamic updates
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
@@ -617,7 +619,7 @@ public class KnowledgeBaseImpl
         return this.id;
     }
 
-    public void disposeStatefulSession(StatefulKnowledgeSessionImpl statefulSession) {
+    public void disposeStatefulSession(StatefulKnowledgeSession statefulSession) {
         this.statefulSessions.remove(statefulSession);
         if (kieContainer != null) {
             kieContainer.disposeSession( statefulSession );
@@ -1660,7 +1662,7 @@ public class KnowledgeBaseImpl
     private static final InternalWorkingMemory[] EMPTY_WMS = new InternalWorkingMemory[0];
 
     public Collection<InternalWorkingMemory> getWorkingMemories() {
-        return Collections.unmodifiableSet( statefulSessions );
+        return statefulSessions.stream().map(InternalWorkingMemory.class::cast).collect(Collectors.toList());
     }
 
     public RuleBaseConfiguration getConfiguration() {

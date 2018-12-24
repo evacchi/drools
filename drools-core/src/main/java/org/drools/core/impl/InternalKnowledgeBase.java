@@ -49,6 +49,7 @@ import org.kie.api.definition.KiePackage;
 import org.kie.api.definition.process.Process;
 import org.kie.api.io.Resource;
 import org.kie.api.runtime.Environment;
+import org.kie.internal.runtime.StatefulKnowledgeSession;
 
 public interface InternalKnowledgeBase extends KieBase {
 
@@ -93,7 +94,7 @@ public interface InternalKnowledgeBase extends KieBase {
 
     ClassLoader getRootClassLoader();
 
-    void disposeStatefulSession(StatefulKnowledgeSessionImpl statefulSession);
+    void disposeStatefulSession(StatefulKnowledgeSession statefulSession);
 
     TripleStore getTripleStore();
 

@@ -66,8 +66,6 @@ public interface InternalWorkingMemory
     
     EntryPointNode getEntryPointNode();
 
-    EntryPoint getEntryPoint(String name);
-
     /**
      * Looks for the fact handle associated to the given object
      * by looking up the object IDENTITY (==), even if rule base

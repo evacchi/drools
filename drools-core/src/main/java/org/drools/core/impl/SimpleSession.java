@@ -340,10 +340,6 @@ public class SimpleSession extends AbstractRuntime implements InternalWorkingMem
         }
     }
 
-    public WorkingMemoryEntryPoint getEntryPoint(String name) {
-        return getWorkingMemoryEntryPoint(name);
-    }
-
     public Collection<? extends org.kie.api.runtime.rule.EntryPoint> getEntryPoints() {
         return this.entryPoints.values();
     }
@@ -1306,7 +1302,7 @@ public class SimpleSession extends AbstractRuntime implements InternalWorkingMem
         return workItemManager;
     }
 
-    public WorkingMemoryEntryPoint getWorkingMemoryEntryPoint(String name) {
+    public WorkingMemoryEntryPoint getEntryPoint(String name) {
         return this.entryPoints.get(name);
     }
 

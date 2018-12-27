@@ -245,7 +245,7 @@ public interface WorkingMemory extends WorkingMemoryEntryPoint {
      * @param id the id of the entry point, as defined in the rules file
      * @return
      */
-    WorkingMemoryEntryPoint getWorkingMemoryEntryPoint( String id );
+    WorkingMemoryEntryPoint getEntryPoint( String id );
     
     /**
      * Returns the session clock instance associated with this session

@@ -648,7 +648,7 @@ public class NamedEntryPoint
     }
 
     public WorkingMemoryEntryPoint getWorkingMemoryEntryPoint(String name) {
-        return this.wm.getWorkingMemoryEntryPoint( name );
+        return this.wm.getEntryPoint( name );
     }
 
     public ObjectTypeConfigurationRegistry getObjectTypeConfigurationRegistry() {

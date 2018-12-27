@@ -153,7 +153,7 @@ public class EnabledTest {
         AgendaEventListener ael = mock(AgendaEventListener.class);
         KieSession ksession = kc.newKieSession();
         try {
-            ksession.addEventListener(ael);
+            ksession.getKieRuntimeEventManager().addEventListener(ael);
             ksession.insert(new MyFact("R1", null));
             assertEquals(1, ksession.fireAllRules());
             ksession.dispose();
@@ -165,7 +165,7 @@ public class EnabledTest {
             ael = mock(AgendaEventListener.class);
             ksession.dispose();
             ksession = kc.newKieSession();
-            ksession.addEventListener(ael);
+            ksession.getKieRuntimeEventManager().addEventListener(ael);
             ksession.insert(new MyFact("R2", null));
             assertEquals(1, ksession.fireAllRules());
             ksession.dispose();

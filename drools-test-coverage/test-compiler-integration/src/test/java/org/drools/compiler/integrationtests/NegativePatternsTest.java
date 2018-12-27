@@ -119,7 +119,7 @@ public class NegativePatternsTest {
         final KieBase kbase = KieBaseUtil.getKieBaseFromKieModuleFromDrl("subnetwork-test", kieBaseTestConfiguration, drl);
         ksession = kbase.newKieSession(KieSessionTestConfiguration.STATEFUL_PSEUDO.getKieSessionConfiguration(), null);
         firedRulesListener = new TrackingAgendaEventListener();
-        ksession.addEventListener(firedRulesListener);
+        ksession.getKieRuntimeEventManager().addEventListener(firedRulesListener);
     }
 
     @After

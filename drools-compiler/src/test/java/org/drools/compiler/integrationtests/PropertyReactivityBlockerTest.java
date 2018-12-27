@@ -106,7 +106,7 @@ public class PropertyReactivityBlockerTest extends CommonTestMethodBase {
         KieSession ksession = new KieHelper(PropertySpecificOption.ALWAYS).addContent(drl, ResourceType.DRL)
                 .build()
                 .newKieSession();
-        ksession.addEventListener(new DebugAgendaEventListener());
+        ksession.getKieRuntimeEventManager().addEventListener(new DebugAgendaEventListener());
         System.out.println(drl);
         ReteDumper.dumpRete(ksession);
 
@@ -234,7 +234,7 @@ public class PropertyReactivityBlockerTest extends CommonTestMethodBase {
         
         System.out.println(drl);
         ReteDumper.dumpRete(ksession);
-        ksession.addEventListener(new DebugAgendaEventListener());
+        ksession.getKieRuntimeEventManager().addEventListener(new DebugAgendaEventListener());
 
         List<String> list = new ArrayList<String>();
         ksession.setGlobal("list", list);

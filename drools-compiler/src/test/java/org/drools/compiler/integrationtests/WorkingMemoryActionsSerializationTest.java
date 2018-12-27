@@ -107,7 +107,7 @@ public class WorkingMemoryActionsSerializationTest {
 
         ksession = kbase.newKieSession();
 
-        ksession.addEventListener(new DefaultAgendaEventListener() {
+        ksession.getKieRuntimeEventManager().addEventListener(new DefaultAgendaEventListener() {
             @Override
             public void afterMatchFired(final AfterMatchFiredEvent event) {
                 final String name = event.getMatch().getRule().getName();

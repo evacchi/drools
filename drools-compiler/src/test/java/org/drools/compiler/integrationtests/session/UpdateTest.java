@@ -477,7 +477,7 @@ public class UpdateTest extends CommonTestMethodBase {
         final KieSession ksession = kbase.newKieSession();
 
         final org.kie.api.event.rule.AgendaEventListener ael = mock(org.kie.api.event.rule.AgendaEventListener.class);
-        ksession.addEventListener(ael);
+        ksession.getKieRuntimeEventManager().addEventListener(ael);
 
         ksession.insert(new Person("Bob", 19));
         ksession.insert(new Cheese("brie", 10));

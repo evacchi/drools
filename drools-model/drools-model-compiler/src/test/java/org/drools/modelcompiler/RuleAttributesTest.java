@@ -338,7 +338,7 @@ public class RuleAttributesTest extends BaseModelTest {
         KieSession ksession = getKieSession( str );
 
         final OrderListener listener = new OrderListener();
-        ksession.addEventListener(listener);
+        ksession.getKieRuntimeEventManager().addEventListener(listener);
 
         // first test - we try to fire rule in agenda group which has auto focus
         // disable, we won't succeed

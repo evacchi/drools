@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.kie.api.KieServices;
+import org.kie.api.event.KieRuntimeEventManager;
 import org.kie.api.event.rule.DebugAgendaEventListener;
 import org.kie.api.event.rule.DebugRuleRuntimeEventListener;
 import org.kie.api.logger.KieRuntimeLogger;
@@ -49,11 +50,12 @@ public class HelloWorldExample {
         ksession.setGlobal( "list", new ArrayList<Object>() );
 
         // The application can also setup listeners
-        ksession.addEventListener( new DebugAgendaEventListener() );
-        ksession.addEventListener( new DebugRuleRuntimeEventListener() );
+        KieRuntimeEventManager kieRuntimeEventManager = ksession.getKieRuntimeEventManager();
+        kieRuntimeEventManager.addEventListener(new DebugAgendaEventListener() );
+        kieRuntimeEventManager.addEventListener(new DebugRuleRuntimeEventListener() );
 
         // Set up a file based audit logger
-        KieRuntimeLogger logger = KieServices.get().getLoggers().newFileLogger( ksession, "./target/helloworld" );
+        KieRuntimeLogger logger = KieServices.get().getLoggers().newFileLogger(kieRuntimeEventManager, "./target/helloworld" );
 
         // To set up a ThreadedFileLogger, so that the audit view reflects events whilst debugging,
         // uncomment the next line

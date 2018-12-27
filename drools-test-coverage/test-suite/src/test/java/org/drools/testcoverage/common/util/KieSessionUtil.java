@@ -62,11 +62,11 @@ public final class KieSessionUtil {
         final KieContainer container = KieServices.Factory.get().newKieContainer(releaseId);
 
         if (stateful) {
-            return (name == null) ? new Session(container.newKieSession(), stateful, persisted) :
-                                    new Session(container.newKieSession(name), stateful, persisted);
+            return (name == null) ? new Session(container.newKieSession().getKieRuntimeEventManager(), stateful, persisted) :
+                                    new Session(container.newKieSession(name).getKieRuntimeEventManager(), stateful, persisted);
         } else {
-            return (name == null) ? new Session(container.newStatelessKieSession(), stateful, persisted) :
-                                    new Session(container.newStatelessKieSession(name), stateful, persisted);
+            return (name == null) ? new Session(container.newStatelessKieSession().getKieRuntimeEventManager(), stateful, persisted) :
+                                    new Session(container.newStatelessKieSession(name).getKieRuntimeEventManager(), stateful, persisted);
         }
     }
 

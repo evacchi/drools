@@ -61,8 +61,8 @@ public class RuleRuntimeEventSupportTest {
 
         };
 
-        wm.addEventListener( workingMemoryListener );
-        assertEquals(1, wm.getRuleRuntimeEventListeners().size() );
+        wm.getKieRuntimeEventManager().addEventListener( workingMemoryListener );
+        assertEquals(1, wm.getKieRuntimeEventManager().getRuleRuntimeEventListeners().size() );
 
         final Cheese stilton = new Cheese( "stilton",
                                            15 );

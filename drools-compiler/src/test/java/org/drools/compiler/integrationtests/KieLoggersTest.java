@@ -53,7 +53,7 @@ public class KieLoggersTest {
         
         // create the builder
         KieSession ksession = getKieSession( dt );
-        KieRuntimeLogger logger = KieServices.Factory.get().getLoggers().newConsoleLogger( ksession );
+        KieRuntimeLogger logger = KieServices.Factory.get().getLoggers().newConsoleLogger( ksession.getKieRuntimeEventManager() );
 
         ksession.insert( new Message("Hello World") );
         int fired = ksession.fireAllRules();
@@ -89,7 +89,7 @@ public class KieLoggersTest {
         int fired = ksession.fireAllRules();
         assertEquals(1, fired);
 
-        KieRuntimeLogger logger = ksession.getLogger();
+        KieRuntimeLogger logger = ksession.getKieRuntimeEventManager().getLogger();
         assertNotNull(logger);
         logger.close();
     }
@@ -108,10 +108,10 @@ public class KieLoggersTest {
         
         // create the builder
         StatelessKieSession ksession = getStatelessKieSession(dt);
-        KieRuntimeLogger logger = KieServices.Factory.get().getLoggers().newConsoleLogger( ksession );
+        KieRuntimeLogger logger = KieServices.Factory.get().getLoggers().newConsoleLogger( ksession.getKieRuntimeEventManager() );
 
         AgendaEventListener ael = mock( AgendaEventListener.class );
-        ksession.addEventListener( ael );
+        ksession.getKieRuntimeEventManager().addEventListener( ael );
         
         ksession.execute( new Message("Hello World") );
         
@@ -148,7 +148,7 @@ public class KieLoggersTest {
         StatelessKieSession ksession = kieContainer.newStatelessKieSession("KSession1");
         ksession.execute( new Message("Hello World") );
 
-        KieRuntimeLogger logger = ksession.getLogger();
+        KieRuntimeLogger logger = ksession.getKieRuntimeEventManager().getLogger();
         assertNotNull(logger);
         logger.close();
     }
@@ -173,7 +173,7 @@ public class KieLoggersTest {
         if( file.exists() ) {
             file.delete();
         }
-        KieRuntimeLogger logger = KieServices.Factory.get().getLoggers().newFileLogger( ksession,
+        KieRuntimeLogger logger = KieServices.Factory.get().getLoggers().newFileLogger( ksession.getKieRuntimeEventManager(),
                                                                                         fileName );
 
         ksession.insert(new Message("Hello World"));
@@ -211,7 +211,7 @@ public class KieLoggersTest {
         }
 
         // Setting maxEventsInMemory to 0 makes all events to be immediately flushed to the file
-        KieRuntimeLogger logger = KieServices.Factory.get().getLoggers().newFileLogger( ksession, fileName, 0 );
+        KieRuntimeLogger logger = KieServices.Factory.get().getLoggers().newFileLogger( ksession.getKieRuntimeEventManager(), fileName, 0 );
 
         ksession.insert(new Message("Hello World"));
         int fired = ksession.fireAllRules();

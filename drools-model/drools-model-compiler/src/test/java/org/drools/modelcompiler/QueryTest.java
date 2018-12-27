@@ -454,7 +454,7 @@ public class QueryTest extends BaseModelTest {
         FactType locationType = ksession.getKieBase().getFactType("org.test", "Location");
 
         final TrackingAgendaEventListener listener = new TrackingAgendaEventListener();
-        ksession.addEventListener(listener);
+        ksession.getKieRuntimeEventManager().addEventListener(listener);
 
         final Person peter = new Person("Peter");
         peter.setLikes("steak");

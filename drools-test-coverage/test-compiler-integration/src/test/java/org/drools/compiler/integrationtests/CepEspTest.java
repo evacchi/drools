@@ -791,7 +791,7 @@ public class CepEspTest extends AbstractCepEspTest {
             clock.setStartupTime(1000);
 
             final AgendaEventListener ael = mock(AgendaEventListener.class);
-            ksession.addEventListener(ael);
+            ksession.getKieRuntimeEventManager().addEventListener(ael);
 
             final StockTick tick1 = new StockTick(1, "DROO", 50, 0, 3);
             final StockTick tick2 = new StockTick(2, "ACME", 10, 4, 3);
@@ -1319,7 +1319,7 @@ public class CepEspTest extends AbstractCepEspTest {
                                                                            "org/drools/compiler/integrationtests/test_CEP_CollectWithWindows.drl");
         final KieSession ksession = kbase.newKieSession(KieSessionTestConfiguration.STATEFUL_PSEUDO.getKieSessionConfiguration(), null);
         try {
-            final WorkingMemoryFileLogger logger = new WorkingMemoryFileLogger(ksession);
+            final WorkingMemoryFileLogger logger = new WorkingMemoryFileLogger(ksession.getKieRuntimeEventManager());
             final File testTmpDir = new File("target/test-tmp/");
             testTmpDir.mkdirs();
             logger.setFileName("target/test-tmp/testCollectWithWindows-audit");
@@ -1642,7 +1642,7 @@ public class CepEspTest extends AbstractCepEspTest {
         final KieSession ksession = kbase.newKieSession();
         try {
             final AgendaEventListener ael = mock(AgendaEventListener.class);
-            ksession.addEventListener(ael);
+            ksession.getKieRuntimeEventManager().addEventListener(ael);
 
             ksession.fireAllRules();
 
@@ -1699,7 +1699,7 @@ public class CepEspTest extends AbstractCepEspTest {
         final KieSession ksession = kbase.newKieSession(KieSessionTestConfiguration.STATEFUL_PSEUDO.getKieSessionConfiguration(), null);
         try {
             final AgendaEventListener ael = mock(AgendaEventListener.class);
-            ksession.addEventListener(ael);
+            ksession.getKieRuntimeEventManager().addEventListener(ael);
 
             final SessionPseudoClock clock = ksession.getSessionClock();
             clock.advanceTime(1000000, TimeUnit.MILLISECONDS);
@@ -1757,7 +1757,7 @@ public class CepEspTest extends AbstractCepEspTest {
         final KieSession ksession = kbase.newKieSession();
         try {
             final AgendaEventListener ael = mock(AgendaEventListener.class);
-            ksession.addEventListener(ael);
+            ksession.getKieRuntimeEventManager().addEventListener(ael);
 
             ksession.insert(new StockTick(1, "RHT", 10, 1000));
             ksession.insert(new StockTick(2, "RHT", 10, 1000));
@@ -2948,7 +2948,7 @@ public class CepEspTest extends AbstractCepEspTest {
                 e.printStackTrace();
                 fail(e.getMessage());
             }
-            ks.addEventListener(new DebugAgendaEventListener());
+            ks.getKieRuntimeEventManager().addEventListener(new DebugAgendaEventListener());
 
             final ArrayList list = new ArrayList();
             ks.setGlobal("list", list);
@@ -5325,7 +5325,7 @@ public class CepEspTest extends AbstractCepEspTest {
         final KieBase kbase = KieBaseUtil.getKieBaseFromKieModuleFromDrl("cep-esp-test", kieBaseTestConfiguration, drl);
         final KieSession kieSession = kbase.newKieSession(KieSessionTestConfiguration.STATEFUL_PSEUDO.getKieSessionConfiguration(), null);
         try {
-            kieSession.addEventListener(new DefaultAgendaEventListener() {
+            kieSession.getKieRuntimeEventManager().addEventListener(new DefaultAgendaEventListener() {
                 public void agendaGroupPopped(final AgendaGroupPoppedEvent event) {
                     if (event.getAgendaGroup().getName().equals("rf-grp0")) {
                         event.getKieRuntime().getAgenda().getAgendaGroup("rf-grp1").setFocus();

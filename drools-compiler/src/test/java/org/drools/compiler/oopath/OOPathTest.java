@@ -575,7 +575,7 @@ public class OOPathTest {
                                              .build()
                                              .newKieSession();
         
-        ksession.addEventListener(new DefaultRuleRuntimeEventListener() {
+        ksession.getKieRuntimeEventManager().addEventListener(new DefaultRuleRuntimeEventListener() {
             @Override
             public void objectDeleted(ObjectDeletedEvent event) {
                 System.out.println(event.getOldObject() + " -> " + "_");
@@ -681,7 +681,7 @@ public class OOPathTest {
                                              .build()
                                              .newKieSession();
         
-        ksession.addEventListener(new DefaultRuleRuntimeEventListener() {
+        ksession.getKieRuntimeEventManager().addEventListener(new DefaultRuleRuntimeEventListener() {
             @Override
             public void objectDeleted(ObjectDeletedEvent event) {
                 System.out.println(event.getOldObject() + " -> " + "_");
@@ -783,7 +783,7 @@ public class OOPathTest {
                                              .build()
                                              .newKieSession();
         
-        ksession.addEventListener(new DefaultRuleRuntimeEventListener() {
+        ksession.getKieRuntimeEventManager().addEventListener(new DefaultRuleRuntimeEventListener() {
             @Override
             public void objectDeleted(ObjectDeletedEvent event) {
                 System.out.println(event.getOldObject() + " -> " + "_");

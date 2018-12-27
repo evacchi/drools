@@ -78,7 +78,7 @@ public class BindTest {
         final KieSession ksession = kbase.newKieSession();
         try {
             final RuleRuntimeEventListener wmel = mock(RuleRuntimeEventListener.class);
-            ksession.addEventListener(wmel);
+            ksession.getKieRuntimeEventManager().addEventListener(wmel);
 
             final Person bigCheese = new Person("big cheese");
             final Cheese cheddar = new Cheese("cheddar", 15);

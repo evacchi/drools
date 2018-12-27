@@ -125,7 +125,7 @@ public class StrictAnnotationTest extends CommonTestMethodBase {
                     list.add("activated");
                 }
             };
-            ksession.addEventListener(agendaEventListener);
+            ksession.getKieRuntimeEventManager().addEventListener(agendaEventListener);
 
             ksession.insert("test");
             assertEquals(2, list.size());

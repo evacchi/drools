@@ -1006,7 +1006,7 @@ public class AccumulateTest {
         final KieSession ksession = kbase.newKieSession();
         try {
             final AgendaEventListener ael = mock(AgendaEventListener.class);
-            ksession.addEventListener(ael);
+            ksession.getKieRuntimeEventManager().addEventListener(ael);
 
             final Cheese[] cheese = new Cheese[]{
                     new Cheese("stilton", 10),
@@ -1898,7 +1898,7 @@ public class AccumulateTest {
         final KieSession ksession = kbase.newKieSession();
         try {
             final AgendaEventListener ael = mock(AgendaEventListener.class);
-            ksession.addEventListener(ael);
+            ksession.getKieRuntimeEventManager().addEventListener(ael);
 
             final Cheese[] cheese = new Cheese[]{
                     new Cheese("stilton", 10),
@@ -2670,7 +2670,7 @@ public class AccumulateTest {
         final KieSession ksession = kc.newKieSession();
         try {
             final AgendaEventListener ael = mock(AgendaEventListener.class);
-            ksession.addEventListener(ael);
+            ksession.getKieRuntimeEventManager().addEventListener(ael);
 
             ksession.insert("x");
             ksession.fireAllRules();

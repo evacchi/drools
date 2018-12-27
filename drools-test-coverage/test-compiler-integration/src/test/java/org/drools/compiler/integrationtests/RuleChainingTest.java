@@ -106,8 +106,8 @@ public class RuleChainingTest {
             final RuleRuntimeEventListener wml = Mockito.mock(RuleRuntimeEventListener.class);
             final AgendaEventListener ael = Mockito.mock(AgendaEventListener.class);
 
-            ksession.addEventListener(wml);
-            ksession.addEventListener(ael);
+            ksession.getKieRuntimeEventManager().addEventListener(wml);
+            ksession.getKieRuntimeEventManager().addEventListener(ael);
 
             final int fired = ksession.fireAllRules();
             assertEquals(3, fired);

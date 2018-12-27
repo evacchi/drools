@@ -1373,7 +1373,7 @@ public class IncrementalCompilationTest {
         final KieContainer kc = ks.newKieContainer(releaseId1);
 
         final StatelessKieSession statelessKieSession = kc.newStatelessKieSession();
-        final KieRuntimeLogger kieRuntimeLogger = ks.getLoggers().newConsoleLogger(statelessKieSession);
+        final KieRuntimeLogger kieRuntimeLogger = ks.getLoggers().newConsoleLogger(statelessKieSession.getKieRuntimeEventManager());
 
         final List<Command> cmds = new ArrayList<>();
         cmds.add(CommandFactory.newInsertElements(new ArrayList()));
@@ -2710,7 +2710,7 @@ public class IncrementalCompilationTest {
         final KieContainer kc = ks.newKieContainer(releaseId1);
         final KieSession ksession = kc.newKieSession();
         final List<String> fired = new ArrayList<>();
-        ksession.addEventListener(new DefaultAgendaEventListener() {
+        ksession.getKieRuntimeEventManager().addEventListener(new DefaultAgendaEventListener() {
             @Override
             public void afterMatchFired(final AfterMatchFiredEvent event) {
                 fired.add(event.getMatch().getRule().getName());

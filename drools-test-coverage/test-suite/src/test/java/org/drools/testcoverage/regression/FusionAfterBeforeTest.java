@@ -77,7 +77,7 @@ public class FusionAfterBeforeTest {
 
         final KieSession ksession = kieBase.newKieSession(ksconf, null);
         final TrackingAgendaEventListener listener = new TrackingAgendaEventListener();
-        ksession.addEventListener(listener);
+        ksession.getKieRuntimeEventManager().addEventListener(listener);
 
         final EntryPoint stream = ksession.getEntryPoint("EventStream");
         SessionPseudoClock clock = ksession.getSessionClock();

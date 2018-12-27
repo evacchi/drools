@@ -1062,7 +1062,7 @@ public class DynamicRulesTest extends CommonTestMethodBase {
 
 
         final AgendaEventListener alistener = mock( AgendaEventListener.class );
-        ksession.addEventListener( alistener );
+        ksession.getKieRuntimeEventManager().addEventListener( alistener );
 
         // pattern does not match, so do not activate
         ksession.insert( new Person( "toni" ) );
@@ -1168,7 +1168,7 @@ public class DynamicRulesTest extends CommonTestMethodBase {
         KieSession ksession = kbase.newKieSession();
 
         AgendaEventListener ael = mock( AgendaEventListener.class );
-        ksession.addEventListener( ael );
+        ksession.getKieRuntimeEventManager().addEventListener( ael );
         
         ksession.fireAllRules();
         verify( ael, never() ).afterMatchFired( any( AfterMatchFiredEvent.class ) );
@@ -1202,7 +1202,7 @@ public class DynamicRulesTest extends CommonTestMethodBase {
         KieSession session = createKnowledgeSession( kbase );
 
         AgendaEventListener ael = mock( AgendaEventListener.class );
-        session.addEventListener( ael );
+        session.getKieRuntimeEventManager().addEventListener( ael );
 
         for ( int i = 0; i < 5; i++ ) {
             session.insert( new Cheese() );

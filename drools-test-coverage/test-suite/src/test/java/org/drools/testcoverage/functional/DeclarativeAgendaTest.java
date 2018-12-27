@@ -49,7 +49,7 @@ public class DeclarativeAgendaTest {
         final KieSession ksession = kbase.newKieSession();
 
         OrderListener listener = new OrderListener();
-        ksession.addEventListener(listener);
+        ksession.getKieRuntimeEventManager().addEventListener(listener);
 
         // first run - just run rules without any blocking
         final FactHandle fireRules = ksession.insert("fireRules");
@@ -62,16 +62,16 @@ public class DeclarativeAgendaTest {
         }
 
         // second run - add blocker rule
-        ksession.removeEventListener(listener);
+        ksession.getKieRuntimeEventManager().removeEventListener(listener);
         listener = new OrderListener();
-        ksession.addEventListener(listener);
+        ksession.getKieRuntimeEventManager().addEventListener(listener);
         ksession.fireAllRules();
         Assertions.assertThat(listener.size()).isEqualTo(0);
 
         // third run
-        ksession.removeEventListener(listener);
+        ksession.getKieRuntimeEventManager().removeEventListener(listener);
         listener = new OrderListener();
-        ksession.addEventListener(listener);
+        ksession.getKieRuntimeEventManager().addEventListener(listener);
         ksession.delete(fireBlockerRule);
         ksession.fireAllRules();
         Assertions.assertThat(listener.size()).isEqualTo(1);
@@ -81,16 +81,16 @@ public class DeclarativeAgendaTest {
         }
 
         // fourth run
-        ksession.removeEventListener(listener);
+        ksession.getKieRuntimeEventManager().removeEventListener(listener);
         listener = new OrderListener();
-        ksession.addEventListener(listener);
+        ksession.getKieRuntimeEventManager().addEventListener(listener);
         ksession.fireAllRules();
         Assertions.assertThat(listener.size()).isEqualTo(0);
 
         // fifth run
-        ksession.removeEventListener(listener);
+        ksession.getKieRuntimeEventManager().removeEventListener(listener);
         listener = new OrderListener();
-        ksession.addEventListener(listener);
+        ksession.getKieRuntimeEventManager().addEventListener(listener);
         ksession.update(fireRules, "fireRules");
         ksession.fireAllRules();
         Assertions.assertThat(listener.size()).isEqualTo(2);
@@ -110,7 +110,7 @@ public class DeclarativeAgendaTest {
         final KieSession ksession = kbase.newKieSession();
 
         OrderListener listener = new OrderListener();
-        ksession.addEventListener(listener);
+        ksession.getKieRuntimeEventManager().addEventListener(listener);
 
         // first run
         ksession.insert("startAgenda");
@@ -125,9 +125,9 @@ public class DeclarativeAgendaTest {
 
         // second run
         ksession.delete(fireBlockerRule);
-        ksession.removeEventListener(listener);
+        ksession.getKieRuntimeEventManager().removeEventListener(listener);
         listener = new OrderListener();
-        ksession.addEventListener(listener);
+        ksession.getKieRuntimeEventManager().addEventListener(listener);
         ksession.fireAllRules();
 
         Assertions.assertThat(listener.size()).isEqualTo(1); // BZ 1038076
@@ -174,7 +174,7 @@ public class DeclarativeAgendaTest {
         final KieSession ksession = kbase.newKieSession();
 
         final OrderListener listener = new OrderListener();
-        ksession.addEventListener(listener);
+        ksession.getKieRuntimeEventManager().addEventListener(listener);
 
         // first run
         ksession.insert("fireRules");
@@ -205,7 +205,7 @@ public class DeclarativeAgendaTest {
         final KieSession ksession = kbase.newKieSession();
 
         final OrderListener listener = new OrderListener();
-        ksession.addEventListener(listener);
+        ksession.getKieRuntimeEventManager().addEventListener(listener);
 
         // fires only sales1 rule, sales2 rule activation is canceled by
         // salesCancel rule
@@ -232,7 +232,7 @@ public class DeclarativeAgendaTest {
         final KieSession ksession = kbase.newKieSession();
 
         OrderListener listener = new OrderListener();
-        ksession.addEventListener(listener);
+        ksession.getKieRuntimeEventManager().addEventListener(listener);
 
         // first run - with cancelling rule, it should cancel activation of
         // sales1
@@ -247,9 +247,9 @@ public class DeclarativeAgendaTest {
         }
 
         // second run
-        ksession.removeEventListener(listener);
+        ksession.getKieRuntimeEventManager().removeEventListener(listener);
         listener = new OrderListener();
-        ksession.addEventListener(listener);
+        ksession.getKieRuntimeEventManager().addEventListener(listener);
 
         ksession.update(fireCancelRule, "fireCancelRule");
         ksession.update(fireRules, "fireRules");

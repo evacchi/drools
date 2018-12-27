@@ -108,7 +108,7 @@ public class DynamicEvalTest {
 
         loadPackages( ResourceFactory.newByteArrayResource( test.getBytes() ), ResourceType.DRL );
         ((KnowledgeBaseImpl)session.getKieBase()).addPackages(kbuilder.getKnowledgePackages());
-        session.addEventListener( new DebugRuleRuntimeEventListener( ) );
+        session.getKieRuntimeEventManager().addEventListener( new DebugRuleRuntimeEventListener( ) );
 
         int fired = session.fireAllRules(); // 1
         System.out.println(fired);
@@ -155,7 +155,7 @@ public class DynamicEvalTest {
 
         loadPackages( ResourceFactory.newByteArrayResource( test.getBytes() ), ResourceType.DRL );
         ((KnowledgeBaseImpl)session.getKieBase()).addPackages(kbuilder.getKnowledgePackages());
-        session.addEventListener( new DebugRuleRuntimeEventListener( ) );
+        session.getKieRuntimeEventManager().addEventListener( new DebugRuleRuntimeEventListener( ) );
 
         session.insert( "go" );
         session.insert( 5 );

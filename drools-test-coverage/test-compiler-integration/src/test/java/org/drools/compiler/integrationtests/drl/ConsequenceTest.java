@@ -210,7 +210,7 @@ public class ConsequenceTest {
             // create working memory mock listener
             final RuleRuntimeEventListener wml = Mockito.mock(RuleRuntimeEventListener.class);
 
-            ksession.addEventListener(wml);
+            ksession.getKieRuntimeEventManager().addEventListener(wml);
 
             final FactHandle personFH = ksession.insert(new Person("Toni"));
             final FactHandle petFH = ksession.insert(new Pet("Toni"));

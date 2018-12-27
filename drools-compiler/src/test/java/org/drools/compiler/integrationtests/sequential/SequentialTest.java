@@ -300,7 +300,7 @@ public class SequentialTest extends CommonTestMethodBase {
 
         final List list = new ArrayList();
 
-        ksession.addEventListener( new AgendaEventListener() {
+        ksession.getKieRuntimeEventManager().addEventListener( new AgendaEventListener() {
 
             public void matchCancelled( MatchCancelledEvent event ) {
                 assertNotNull( event.getKieRuntime() );
@@ -354,7 +354,7 @@ public class SequentialTest extends CommonTestMethodBase {
 
         } );
 
-        ksession.addEventListener( new RuleRuntimeEventListener() {
+        ksession.getKieRuntimeEventManager().addEventListener( new RuleRuntimeEventListener() {
 
             public void objectInserted( ObjectInsertedEvent event ) {
                 assertNotNull( event.getKieRuntime() );

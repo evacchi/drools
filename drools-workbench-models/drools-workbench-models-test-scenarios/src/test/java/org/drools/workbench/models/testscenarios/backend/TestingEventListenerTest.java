@@ -38,7 +38,7 @@ public class TestingEventListenerTest extends RuleUnit {
         TestingEventListener ls = new TestingEventListener();
         //TestingEventListener.stubOutRules(set, session.getRuleBase(), true);
 
-        session.addEventListener(ls);
+        session.getKieRuntimeEventManager().addEventListener(ls);
 
         session.insert(new Cheese());
         session.fireAllRules(ls.getAgendaFilter(set,
@@ -71,7 +71,7 @@ public class TestingEventListenerTest extends RuleUnit {
         TestingEventListener ls = new TestingEventListener();
         //TestingEventListener.stubOutRules(set, session.getRuleBase(), false);
 
-        session.addEventListener(ls);
+        session.getKieRuntimeEventManager().addEventListener(ls);
 
         session.insert(new Cheese());
         session.fireAllRules(ls.getAgendaFilter(set,
@@ -96,7 +96,7 @@ public class TestingEventListenerTest extends RuleUnit {
         TestingEventListener ls = new TestingEventListener();
         //TestingEventListener.stubOutRules(set, session.getRuleBase(), false);
 
-        session.addEventListener(ls);
+        session.getKieRuntimeEventManager().addEventListener(ls);
 
         session.insert(new Cheese());
 

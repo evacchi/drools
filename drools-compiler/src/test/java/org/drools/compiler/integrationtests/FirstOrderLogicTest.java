@@ -426,7 +426,7 @@ public class FirstOrderLogicTest extends CommonTestMethodBase {
         KieBase kbase = loadKnowledgeBase("test_Exists_JBRULES_2810.drl");
         KieSession ksession = createKnowledgeSession(kbase);
 
-        WorkingMemoryConsoleLogger logger = new WorkingMemoryConsoleLogger( ksession );
+        WorkingMemoryConsoleLogger logger = new WorkingMemoryConsoleLogger( ksession.getKieRuntimeEventManager() );
         ksession.fireAllRules();
         ksession.dispose();
     }
@@ -885,7 +885,7 @@ public class FirstOrderLogicTest extends CommonTestMethodBase {
         final KieSession ksession = createKnowledgeSession(kbase);
 
         final AgendaEventListener al = mock( AgendaEventListener.class );
-        ksession.addEventListener( al );
+        ksession.getKieRuntimeEventManager().addEventListener( al );
 
         ksession.insert( new FactA( "a" ) );
         ksession.insert( new FactB( "b" ) );
@@ -916,7 +916,7 @@ public class FirstOrderLogicTest extends CommonTestMethodBase {
         final KieSession ksession = createKnowledgeSession(kbase);
 
         final AgendaEventListener al = mock( AgendaEventListener.class );
-        ksession.addEventListener( al );
+        ksession.getKieRuntimeEventManager().addEventListener( al );
 
         ksession.insert( new FactA( "a" ) );
         ksession.insert( new FactB( "b" ) );

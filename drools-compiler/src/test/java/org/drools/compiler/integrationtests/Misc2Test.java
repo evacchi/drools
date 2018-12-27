@@ -452,7 +452,7 @@ public class Misc2Test extends CommonTestMethodBase {
             }
         };
 
-        ksession.addEventListener( agendaEventListener );
+        ksession.getKieRuntimeEventManager().addEventListener( agendaEventListener );
 
         FactHandle fact1 = ksession.insert( new Person( "Mario", 38 ) );
         ( (InternalAgenda) ksession.getAgenda() ).activateRuleFlowGroup( "test" );
@@ -2818,14 +2818,14 @@ public class Misc2Test extends CommonTestMethodBase {
             }
         };
 
-        ksession.addEventListener( agendaEventListener );
+        ksession.getKieRuntimeEventManager().addEventListener( agendaEventListener );
 
         ksession.execute( "1" );
         ksession.execute( "2" );
 
         assertEquals( 2, firings.size() );
 
-        ksession.removeEventListener( agendaEventListener );
+        ksession.getKieRuntimeEventManager().removeEventListener( agendaEventListener );
 
         ksession.execute( "3" );
 
@@ -3737,7 +3737,7 @@ public class Misc2Test extends CommonTestMethodBase {
         final List cancelled = new ArrayList();
         final List fired = new ArrayList();
 
-        ks.addEventListener( new DefaultAgendaEventListener() {
+        ks.getKieRuntimeEventManager().addEventListener( new DefaultAgendaEventListener() {
 
             public void matchCreated( MatchCreatedEvent event ) {
                 created.add( event.getMatch().getRule().getName() );
@@ -3806,7 +3806,7 @@ public class Misc2Test extends CommonTestMethodBase {
         final List cancelled = new ArrayList();
         final List fired = new ArrayList();
 
-        ks.addEventListener( new DefaultAgendaEventListener() {
+        ks.getKieRuntimeEventManager().addEventListener( new DefaultAgendaEventListener() {
 
             public void matchCreated( MatchCreatedEvent event ) {
                 created.add( event.getMatch().getRule().getName() );
@@ -3870,7 +3870,7 @@ public class Misc2Test extends CommonTestMethodBase {
                      "end";
         KieBase kb = loadKnowledgeBaseFromString( drl );
         KieSession ks = kb.newKieSession();
-        ks.addEventListener( new DebugAgendaEventListener() );
+        ks.getKieRuntimeEventManager().addEventListener( new DebugAgendaEventListener() );
 
         ks.fireAllRules();
 
@@ -3910,7 +3910,7 @@ public class Misc2Test extends CommonTestMethodBase {
                      "end";
         KieBase kb = loadKnowledgeBaseFromString( drl );
         KieSession ks = kb.newKieSession();
-        ks.addEventListener( new DebugAgendaEventListener() );
+        ks.getKieRuntimeEventManager().addEventListener( new DebugAgendaEventListener() );
 
         ks.fireAllRules();
 
@@ -4753,7 +4753,7 @@ public class Misc2Test extends CommonTestMethodBase {
 
         final AtomicInteger i = new AtomicInteger( 0 );
 
-        ksession.addEventListener( new DefaultAgendaEventListener() {
+        ksession.getKieRuntimeEventManager().addEventListener( new DefaultAgendaEventListener() {
             public void matchCreated( MatchCreatedEvent event ) {
                 i.incrementAndGet();
             }

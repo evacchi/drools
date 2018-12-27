@@ -32,6 +32,7 @@ import org.drools.core.event.DefaultRuleRuntimeEventListener;
 import org.junit.Test;
 import org.kie.api.KieBase;
 import org.kie.api.command.Command;
+import org.kie.api.event.KieRuntimeEventManager;
 import org.kie.api.io.ResourceType;
 import org.kie.api.runtime.KieContainer;
 import org.kie.api.runtime.KieContainerSessionsPool;
@@ -267,17 +268,18 @@ public class SessionsPoolTest {
     public void testListenersReset() {
         final KieContainerSessionsPool pool = getKieContainer().newKieSessionsPool( 1 );
         KieSession ksession = pool.newKieSession();
+        KieRuntimeEventManager em = ksession.getKieRuntimeEventManager();
         try {
-            ksession.addEventListener(new DefaultAgendaEventListener());
-            ksession.addEventListener(new DefaultRuleRuntimeEventListener());
+            em.addEventListener(new DefaultAgendaEventListener());
+            em.addEventListener(new DefaultRuleRuntimeEventListener());
             ((RuleEventManager) ksession).addEventListener(new RuleEventListener() {});
         } finally {
             ksession.dispose();
         }
         ksession = pool.newKieSession();
         try {
-            Assertions.assertThat(ksession.getAgendaEventListeners()).hasSize(0);
-            Assertions.assertThat(ksession.getRuleRuntimeEventListeners()).hasSize(0);
+            Assertions.assertThat(em.getAgendaEventListeners()).hasSize(0);
+            Assertions.assertThat(em.getRuleRuntimeEventListeners()).hasSize(0);
             Assertions.assertThat(((EventSupport) ksession).getRuleEventSupport().getEventListeners()).hasSize(0);
         } finally {
             ksession.dispose();

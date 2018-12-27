@@ -100,7 +100,7 @@ public class JpaOptLockPersistentStatefulSessionTest {
         PersistableRunner sscs1 = (PersistableRunner) ((CommandBasedStatefulKnowledgeSession) ksession1).getRunner();
         OptimisticLockRetryInterceptor interceptor1 = new OptimisticLockRetryInterceptor();
         sscs1.addInterceptor(interceptor1);
-        ksession1.addEventListener(new DefaultRuleRuntimeEventListener() {
+        ksession1.getKieRuntimeEventManager().addEventListener(new DefaultRuleRuntimeEventListener() {
 
             public void objectInserted(ObjectInsertedEvent event) {
                 attempts.incrementAndGet();

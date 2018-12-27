@@ -60,7 +60,7 @@ public abstract class AbstractCepEspTest {
             final StockTick st3 = new StockTick(2, "RHT", 15, 20);
 
             final AgendaEventListener ael1 = mock(AgendaEventListener.class);
-            ksession.addEventListener(ael1);
+            ksession.getKieRuntimeEventManager().addEventListener(ael1);
             final EntryPoint ep1 = ksession.getEntryPoint("stocktick stream");
 
             final FactHandle fh1 = ep1.insert(st1);

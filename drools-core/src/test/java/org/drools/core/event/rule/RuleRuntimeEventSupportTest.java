@@ -57,7 +57,7 @@ public class RuleRuntimeEventSupportTest {
 
         };
 
-        ksession.addEventListener( eventListener );
+        ksession.getKieRuntimeEventManager().addEventListener( eventListener );
 
         final Cheese stilton = new Cheese( "stilton",
                                      15 );
@@ -106,8 +106,8 @@ public class RuleRuntimeEventSupportTest {
 
         };
 
-        ksession.addEventListener( eventListener );
-        ksession.removeEventListener( eventListener );
+        ksession.getKieRuntimeEventManager().addEventListener( eventListener );
+        ksession.getKieRuntimeEventManager().removeEventListener( eventListener );
 
         final Cheese stilton = new Cheese( "stilton",
                                      15 );

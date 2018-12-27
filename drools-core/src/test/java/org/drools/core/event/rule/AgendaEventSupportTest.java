@@ -173,9 +173,9 @@ public class AgendaEventSupportTest {
                 agendaList.add( event ); 
             }
         };
-        ksession.addEventListener( agendaEventListener );
+        ksession.getKieRuntimeEventManager().addEventListener( agendaEventListener );
         
-        assertEquals( 1, ksession.getAgendaEventListeners().size() );
+        assertEquals( 1, ksession.getKieRuntimeEventManager().getAgendaEventListeners().size() );
 
         // assert the cheese fact
         final Cheese cheddar = new Cheese( "cheddar",

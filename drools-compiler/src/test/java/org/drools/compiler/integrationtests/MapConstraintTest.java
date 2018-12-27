@@ -116,7 +116,7 @@ public class MapConstraintTest extends CommonTestMethodBase {
         final KieSession ksession = createKnowledgeSession(kbase);
 
         final org.kie.api.event.rule.AgendaEventListener ael = mock(org.kie.api.event.rule.AgendaEventListener.class);
-        ksession.addEventListener(ael);
+        ksession.getKieRuntimeEventManager().addEventListener(ael);
         new WorkingMemoryConsoleLogger((WorkingMemory) ksession);
 
         final Map addresses = new HashMap();

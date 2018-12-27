@@ -330,7 +330,7 @@ public class ScenarioRunnerTest extends RuleUnit {
         ScenarioRunner run = new ScenarioRunner(ksession);
         run.run(sc);
 
-        verify(ksession).addEventListener(any(TestingEventListener.class));
+        verify(ksession).getKieRuntimeEventManager().addEventListener(any(TestingEventListener.class));
         assertEquals(2,
                      sc.getRules().size());
         assertTrue(sc.getRules().contains("foo"));

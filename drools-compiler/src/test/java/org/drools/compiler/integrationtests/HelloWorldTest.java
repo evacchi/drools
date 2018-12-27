@@ -54,8 +54,8 @@ public class HelloWorldTest extends CommonTestMethodBase {
         KieSession ksession = createKnowledgeSession(kbase);
         File testTmpDir = new File("target/test-tmp/");
         testTmpDir.mkdirs();
-        KieRuntimeLogger logger = KnowledgeRuntimeLoggerFactory.newFileLogger( ksession, "target/test-tmp/testHelloWorld" );
-        ksession.getAgendaEventListeners().size();
+        KieRuntimeLogger logger = KnowledgeRuntimeLoggerFactory.newFileLogger( ksession.getKieRuntimeEventManager(), "target/test-tmp/testHelloWorld" );
+        ksession.getKieRuntimeEventManager().getAgendaEventListeners().size();
         // go !
         Message message = new Message();
         message.setMessage("Hello World");
@@ -86,7 +86,7 @@ public class HelloWorldTest extends CommonTestMethodBase {
         KieSession ksession = createKnowledgeSession(kbase);
         File testTmpDir = new File("target/test-tmp/");
         testTmpDir.mkdirs();
-        KieRuntimeLogger logger = KnowledgeRuntimeLoggerFactory.newFileLogger( ksession, "target/test-tmp/testHelloWorldDebug" );
+        KieRuntimeLogger logger = KnowledgeRuntimeLoggerFactory.newFileLogger( ksession.getKieRuntimeEventManager(), "target/test-tmp/testHelloWorldDebug" );
         // go !
         Message message = new Message();
         message.setMessage("Hello World");

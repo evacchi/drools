@@ -19,6 +19,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.kie.api.KieBase;
 import org.kie.api.command.Command;
+import org.kie.api.event.KieRuntimeEventManager;
 import org.kie.api.event.process.ProcessEventListener;
 import org.kie.api.event.rule.RuleRuntimeEventListener;
 import org.kie.api.logger.KieRuntimeLogger;
@@ -215,6 +216,11 @@ public class ExternalSheetListenerTest {
                 }
 
                 @Override
+                public KieRuntimeEventManager getKieRuntimeEventManager() {
+                    return null;
+                }
+
+                @Override
                 public void halt() {
 
                 }
@@ -321,57 +327,7 @@ public class ExternalSheetListenerTest {
                 }
 
                 @Override
-                public KieRuntimeLogger getLogger() {
-                    return null;
-                }
-
-                @Override
-                public void addEventListener(ProcessEventListener listener) {
-
-                }
-
-                @Override
-                public void removeEventListener(ProcessEventListener listener) {
-
-                }
-
-                @Override
-                public Collection<ProcessEventListener> getProcessEventListeners() {
-                    return null;
-                }
-
-                @Override
                 public org.kie.api.runtime.process.WorkItemManager getWorkItemManager() {
-                    return null;
-                }
-
-                @Override
-                public void addEventListener(RuleRuntimeEventListener listener) {
-
-                }
-
-                @Override
-                public void removeEventListener(RuleRuntimeEventListener listener) {
-
-                }
-
-                @Override
-                public Collection<RuleRuntimeEventListener> getRuleRuntimeEventListeners() {
-                    return null;
-                }
-
-                @Override
-                public void addEventListener(org.kie.api.event.rule.AgendaEventListener listener) {
-
-                }
-
-                @Override
-                public void removeEventListener(org.kie.api.event.rule.AgendaEventListener listener) {
-
-                }
-
-                @Override
-                public Collection<org.kie.api.event.rule.AgendaEventListener> getAgendaEventListeners() {
                     return null;
                 }
 

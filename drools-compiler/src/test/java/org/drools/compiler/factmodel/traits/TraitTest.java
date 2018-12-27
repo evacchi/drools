@@ -1430,7 +1430,7 @@ public class TraitTest extends CommonTestMethodBase {
 
 
         AgendaEventListener ael = mock( AgendaEventListener.class );
-        ksession.addEventListener( ael );
+        ksession.getKieRuntimeEventManager().addEventListener( ael );
 
         Person student = new Person( "student", 18 );
         ksession.insert( student );
@@ -3972,7 +3972,7 @@ public class TraitTest extends CommonTestMethodBase {
 
         KieSession ksession = getSessionFromString(drl);
         TraitFactory.setMode( mode, ksession.getKieBase() );
-        ksession.addEventListener( new DebugAgendaEventListener(  ) );
+        ksession.getKieRuntimeEventManager().addEventListener( new DebugAgendaEventListener(  ) );
 
         ksession.insert( new TraitableFoo( "xx", 0, null ) );
         ksession.fireAllRules();
@@ -4587,7 +4587,7 @@ public class TraitTest extends CommonTestMethodBase {
 
         final ArrayList list = new ArrayList();
 
-        ksession.addEventListener( new RuleRuntimeEventListener() {
+        ksession.getKieRuntimeEventManager().addEventListener( new RuleRuntimeEventListener() {
             public void objectInserted( org.kie.api.event.rule.ObjectInsertedEvent objectInsertedEvent ) { }
             public void objectUpdated( org.kie.api.event.rule.ObjectUpdatedEvent objectUpdatedEvent ) { }
             public void objectDeleted( org.kie.api.event.rule.ObjectDeletedEvent objectRetractedEvent ) {
@@ -4765,7 +4765,7 @@ public class TraitTest extends CommonTestMethodBase {
         ksession.setGlobal( "list", list );
 
         CountingWorkingMemoryEventListener cwm = new CountingWorkingMemoryEventListener();
-        ksession.addEventListener( cwm );
+        ksession.getKieRuntimeEventManager().addEventListener( cwm );
 
         ksession.fireAllRules();
 
@@ -4854,7 +4854,7 @@ public class TraitTest extends CommonTestMethodBase {
         ksession.setGlobal( "list", list );
 
         CountingWorkingMemoryEventListener cwm = new CountingWorkingMemoryEventListener();
-        ksession.addEventListener( cwm );
+        ksession.getKieRuntimeEventManager().addEventListener( cwm );
 
         ksession.fireAllRules();
 

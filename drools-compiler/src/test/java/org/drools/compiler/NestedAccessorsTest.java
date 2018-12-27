@@ -184,7 +184,7 @@ public class NestedAccessorsTest extends CommonTestMethodBase {
         final KieBase kbase = loadKnowledgeBaseFromString(rule);
         final KieSession ksession = createKnowledgeSession(kbase);
         final org.kie.api.event.rule.AgendaEventListener ael = mock(org.kie.api.event.rule.AgendaEventListener.class);
-        ksession.addEventListener(ael);
+        ksession.getKieRuntimeEventManager().addEventListener(ael);
 
         final Cheesery c1 = new Cheesery();
         c1.addCheese(new Cheese("stilton", 20));

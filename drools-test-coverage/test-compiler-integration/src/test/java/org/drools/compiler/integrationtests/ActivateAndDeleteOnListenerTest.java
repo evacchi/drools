@@ -101,7 +101,7 @@ public class ActivateAndDeleteOnListenerTest {
 
         final KieSession ksession = getSessionWithEagerActivation(drl);
         try {
-            ksession.addEventListener(listener);
+            ksession.getKieRuntimeEventManager().addEventListener(listener);
 
             // go !
             final Alarm alarm = new Alarm();
@@ -152,7 +152,7 @@ public class ActivateAndDeleteOnListenerTest {
                     list.add("cancelled");
                 }
             };
-            ksession.addEventListener(agendaEventListener);
+            ksession.getKieRuntimeEventManager().addEventListener(agendaEventListener);
 
             ksession.insert("test");
             assertEquals(0, list.size());
@@ -198,7 +198,7 @@ public class ActivateAndDeleteOnListenerTest {
                     list.add("activated");
                 }
             };
-            ksession.addEventListener(agendaEventListener);
+            ksession.getKieRuntimeEventManager().addEventListener(agendaEventListener);
 
             ksession.insert("test");
             assertEquals(0, list.size());
@@ -238,7 +238,7 @@ public class ActivateAndDeleteOnListenerTest {
                     list.add(event.getMatch().getRule().getName());
                 }
             };
-            ksession.addEventListener(agendaEventListener);
+            ksession.getKieRuntimeEventManager().addEventListener(agendaEventListener);
 
             ksession.insert("test");
             assertEquals(0, list.size());
@@ -283,7 +283,7 @@ public class ActivateAndDeleteOnListenerTest {
                     list.add(event.getMatch().getRule().getName());
                 }
             };
-            ksession.addEventListener(agendaEventListener);
+            ksession.getKieRuntimeEventManager().addEventListener(agendaEventListener);
 
             ksession.insert("test");
             assertEquals(0, list.size());
@@ -316,7 +316,7 @@ public class ActivateAndDeleteOnListenerTest {
                     list.add("activated");
                 }
             };
-            ksession.addEventListener(agendaEventListener);
+            ksession.getKieRuntimeEventManager().addEventListener(agendaEventListener);
 
             ksession.insert(Boolean.TRUE);
             assertEquals(0, list.size());

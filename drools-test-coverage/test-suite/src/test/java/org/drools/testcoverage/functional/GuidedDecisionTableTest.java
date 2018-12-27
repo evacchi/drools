@@ -526,7 +526,7 @@ public class GuidedDecisionTableTest {
         kSession = kBase.newKieSession();
 
         rulesFired = new TrackingAgendaEventListener();
-        kSession.addEventListener(rulesFired);
+        kSession.getKieRuntimeEventManager().addEventListener(rulesFired);
         rulesFired.clear();
     }
 }

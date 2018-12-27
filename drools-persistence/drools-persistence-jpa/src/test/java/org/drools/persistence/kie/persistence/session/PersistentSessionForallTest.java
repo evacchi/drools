@@ -123,7 +123,7 @@ public class PersistentSessionForallTest {
     @Test
     public void testNotMatchedCombination() {
         TrackingAgendaEventListener listener = new TrackingAgendaEventListener();
-        kieSession.addEventListener(listener);
+        kieSession.getKieRuntimeEventManager().addEventListener(listener);
 
         Person owner = new Person("cat lady"); 
         Pet dog = new Pet(Pet.PetType.dog, owner);

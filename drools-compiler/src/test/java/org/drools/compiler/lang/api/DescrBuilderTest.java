@@ -459,7 +459,7 @@ public class DescrBuilderTest extends CommonTestMethodBase {
         
         KieSession ksession = kbase.newKieSession();
         AgendaEventListener ael = mock( AgendaEventListener.class );
-        ksession.addEventListener( ael );
+        ksession.getKieRuntimeEventManager().addEventListener( ael );
         
         ksession.insert( new StockTick(1, "RHT", 80, 1 ) );
         ksession.insert( new StockTick(2, "RHT", 100, 10 ) );

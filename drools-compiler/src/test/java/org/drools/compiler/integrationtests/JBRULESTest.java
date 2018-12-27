@@ -203,7 +203,7 @@ public class JBRULESTest extends CommonTestMethodBase {
         final KieSession ksession = createKnowledgeSession(kbase);
 
         final org.kie.api.event.rule.AgendaEventListener ael = mock(org.kie.api.event.rule.AgendaEventListener.class);
-        ksession.addEventListener(ael);
+        ksession.getKieRuntimeEventManager().addEventListener(ael);
 
         final int rulesFired = ksession.fireAllRules();
         assertEquals(2, rulesFired);

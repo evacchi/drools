@@ -85,26 +85,26 @@ public class ListenersTest {
     public void testRegisterAgendaEventListenerStateful() throws Exception {
         kieSession.insert("test");
         kieSession.fireAllRules();
-        checkThatListenerFired(kieSession.getAgendaEventListeners());
+        checkThatListenerFired(kieSession.getKieRuntimeEventManager().getAgendaEventListeners());
     }
 
     @Test
     public void testRegisterRuleRuntimeEventListenerStateful() throws Exception {
         kieSession.insert("test");
         kieSession.fireAllRules();
-        checkThatListenerFired(kieSession.getRuleRuntimeEventListeners());
+        checkThatListenerFired(kieSession.getKieRuntimeEventManager().getRuleRuntimeEventListeners());
     }
 
     @Test
     public void testRegisterAgendaEventListenerStateless() throws Exception {
         statelessKieSession.execute(KieServices.Factory.get().getCommands().newInsert("test"));
-        checkThatListenerFired(statelessKieSession.getAgendaEventListeners());
+        checkThatListenerFired(statelessKieSession.getKieRuntimeEventManager().getAgendaEventListeners());
     }
 
     @Test
     public void testRegisterRuleEventListenerStateless() throws Exception {
         statelessKieSession.execute(KieServices.Factory.get().getCommands().newInsert("test"));
-        checkThatListenerFired(statelessKieSession.getRuleRuntimeEventListeners());
+        checkThatListenerFired(statelessKieSession.getKieRuntimeEventManager().getRuleRuntimeEventListeners());
     }
 
     private void checkThatListenerFired(Collection listeners) {

@@ -95,10 +95,10 @@ public class TestScenarioKSessionWrapper {
 
     private void resetEventListener() {
         if (eventListener != null) {
-            this.ksession.removeEventListener(eventListener); //remove the old
+            this.ksession.getKieRuntimeEventManager().removeEventListener(eventListener); //remove the old
         }
         eventListener = new TestingEventListener();
-        this.ksession.addEventListener(eventListener);
+        this.ksession.getKieRuntimeEventManager().addEventListener(eventListener);
         this.ruleFiredVerifier.setFireCounter(eventListener.getFiringCounts());
     }
 

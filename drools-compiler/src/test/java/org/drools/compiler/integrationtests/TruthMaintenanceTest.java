@@ -1006,7 +1006,7 @@ public class TruthMaintenanceTest extends CommonTestMethodBase {
         final KieSession session = createKnowledgeSession(kbase);
         try {
             RuleRuntimeEventListener wmel = mock( RuleRuntimeEventListener.class );
-            session.addEventListener( wmel );
+            session.getKieRuntimeEventManager().addEventListener( wmel );
 
             Person bob = new Person( "bob" );
             bob.setStatus( "hungry" );
@@ -1219,7 +1219,7 @@ public class TruthMaintenanceTest extends CommonTestMethodBase {
             ksession.setGlobal("partiallyCovered", partiallyCovered);
             ksession.setGlobal("notCovered", notCovered);
 
-            KieRuntimeLogger logger = KnowledgeRuntimeLoggerFactory.newFileLogger(ksession, "target/test");
+            KieRuntimeLogger logger = KnowledgeRuntimeLoggerFactory.newFileLogger(ksession.getKieRuntimeEventManager(), "target/test");
 
             // Using 4 IntervalRequirement objects that never change during the execution of the test
             // Staffing required at interval 100

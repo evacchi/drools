@@ -1673,7 +1673,7 @@ public class TimerAndCalendarTest {
                     }
                 }
             };
-            ksession.addEventListener(agendaEventListener);
+            ksession.getKieRuntimeEventManager().addEventListener(agendaEventListener);
 
             final List list = new ArrayList();
             ksession.setGlobal("list", list);

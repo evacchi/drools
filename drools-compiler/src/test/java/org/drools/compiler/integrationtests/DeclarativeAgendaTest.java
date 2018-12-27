@@ -684,7 +684,7 @@ public class DeclarativeAgendaTest extends CommonTestMethodBase {
 
         final List cancelled = new ArrayList();
 
-        ksession.addEventListener( new AgendaEventListener() {
+        ksession.getKieRuntimeEventManager().addEventListener( new AgendaEventListener() {
 
             public void beforeMatchFired(BeforeMatchFiredEvent event) {
             }

@@ -303,7 +303,7 @@ public class StreamsTest {
         final KieSession ksession = kbase.newKieSession();
         try {
             final org.kie.api.event.rule.AgendaEventListener ael = mock(org.kie.api.event.rule.AgendaEventListener.class);
-            ksession.addEventListener(ael);
+            ksession.getKieRuntimeEventManager().addEventListener(ael);
 
             final EntryPoint ep1 = ksession.getEntryPoint("ep1");
             final EntryPoint ep2 = ksession.getEntryPoint("ep2");
@@ -343,7 +343,7 @@ public class StreamsTest {
         final KieSession ksession = kbase.newKieSession();
         try {
             final org.kie.api.event.rule.AgendaEventListener ael = mock(org.kie.api.event.rule.AgendaEventListener.class);
-            ksession.addEventListener(ael);
+            ksession.getKieRuntimeEventManager().addEventListener(ael);
 
             final EntryPoint ep1 = ksession.getEntryPoint("ep1");
 
@@ -403,7 +403,7 @@ public class StreamsTest {
         final KieSession ksession = kbase.newKieSession(KieSessionTestConfiguration.STATEFUL_PSEUDO.getKieSessionConfiguration(), null);
         try {
             final RuleRuntimeEventListener wml = mock(RuleRuntimeEventListener.class);
-            ksession.addEventListener(wml);
+            ksession.getKieRuntimeEventManager().addEventListener(wml);
 
             final PseudoClockScheduler clock = ksession.getSessionClock();
 
@@ -448,9 +448,9 @@ public class StreamsTest {
         final KieSession ksession = kbase.newKieSession(KieSessionTestConfiguration.STATEFUL_PSEUDO.getKieSessionConfiguration(), null);
         try {
             final RuleRuntimeEventListener wml = mock(RuleRuntimeEventListener.class);
-            ksession.addEventListener(wml);
+            ksession.getKieRuntimeEventManager().addEventListener(wml);
             final AgendaEventListener ael = mock(AgendaEventListener.class);
-            ksession.addEventListener(ael);
+            ksession.getKieRuntimeEventManager().addEventListener(ael);
 
             final PseudoClockScheduler clock = ksession.getSessionClock();
 
@@ -556,7 +556,7 @@ public class StreamsTest {
         final KieSession ksession = kbase.newKieSession();
         try {
             final AgendaEventListener ael = mock(AgendaEventListener.class);
-            ksession.addEventListener(ael);
+            ksession.getKieRuntimeEventManager().addEventListener(ael);
 
             final EntryPoint ep = ksession.getEntryPoint("ticks");
             ep.insert(new StockTick(1, "ACME", 20, 1000)); // not in the window
@@ -604,7 +604,7 @@ public class StreamsTest {
         final KieSession ksession = kbase.newKieSession();
         try {
             final AgendaEventListener ael = mock(AgendaEventListener.class);
-            ksession.addEventListener(ael);
+            ksession.getKieRuntimeEventManager().addEventListener(ael);
 
             final EntryPoint ep = ksession.getEntryPoint("data");
             ep.insert(10d);
@@ -641,7 +641,7 @@ public class StreamsTest {
         final KieSession ksession = kbase.newKieSession();
         try {
             final AgendaEventListener ael = mock(AgendaEventListener.class);
-            ksession.addEventListener(ael);
+            ksession.getKieRuntimeEventManager().addEventListener(ael);
 
             final StockTick st1 = new StockTick(1, "RHT", 10, 1000);
             ksession.insert(st1);
@@ -722,7 +722,7 @@ public class StreamsTest {
         final KieBase kbase = KieBaseUtil.getKieBaseFromKieModuleFromDrl("stream-test", kieBaseTestConfiguration, drl);
         final KieSession ksession = kbase.newKieSession();
         try {
-            ksession.addEventListener(new org.kie.api.event.rule.DebugAgendaEventListener());
+            ksession.getKieRuntimeEventManager().addEventListener(new org.kie.api.event.rule.DebugAgendaEventListener());
 
             final FactType eventType = kbase.getFactType("org.drools.compiler.test", "Event");
 

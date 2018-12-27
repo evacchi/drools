@@ -151,36 +151,36 @@ public class Session implements CommandExecutor, KieRuntimeEventManager {
     @Override
     public KieRuntimeLogger getLogger() {
         if (stateful) {
-            return getStateful().getLogger();
+            return getStateful().getKieRuntimeEventManager().getLogger();
         } else {
-            return getStateless().getLogger();
+            return getStateless().getKieRuntimeEventManager().getLogger();
         }
     }
 
     @Override
     public void addEventListener(RuleRuntimeEventListener listener) {
         if (stateful) {
-            getStateful().addEventListener(listener);
+            getStateful().getKieRuntimeEventManager().addEventListener(listener);
         } else {
-            getStateless().addEventListener(listener);
+            getStateless().getKieRuntimeEventManager().addEventListener(listener);
         }
     }
 
     @Override
     public void removeEventListener(RuleRuntimeEventListener listener) {
         if (stateful) {
-            getStateful().removeEventListener(listener);
+            getStateful().getKieRuntimeEventManager().removeEventListener(listener);
         } else {
-            getStateless().removeEventListener(listener);
+            getStateless().getKieRuntimeEventManager().removeEventListener(listener);
         }
     }
 
     @Override
     public Collection<RuleRuntimeEventListener> getRuleRuntimeEventListeners() {
         if (stateful) {
-            return getStateful().getRuleRuntimeEventListeners();
+            return getStateful().getKieRuntimeEventManager().getRuleRuntimeEventListeners();
         } else {
-            return getStateless().getRuleRuntimeEventListeners();
+            return getStateless().getKieRuntimeEventManager().getRuleRuntimeEventListeners();
         }
     }
 }

@@ -127,7 +127,7 @@ public class PseudoClockEventsTest extends CommonTestMethodBase {
         ksessionConfig.setOption(ClockTypeOption.get("pseudo"));
         ksessionConfig.setProperty("keep.reference", "true");
         final KieSession ksession = kbase.newKieSession(ksessionConfig, null);
-        ksession.addEventListener(agendaEventListener);
+        ksession.getKieRuntimeEventManager().addEventListener(agendaEventListener);
 
         PseudoClockScheduler clock = (PseudoClockScheduler) ksession.<SessionClock>getSessionClock();
 

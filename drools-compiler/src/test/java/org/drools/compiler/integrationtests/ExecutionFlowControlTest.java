@@ -808,7 +808,7 @@ public class ExecutionFlowControlTest extends CommonTestMethodBase {
             }
         };
 
-        ksession.addEventListener( l );
+        ksession.getKieRuntimeEventManager().addEventListener( l );
 
         final Cheese stilton = new Cheese( "stilton", 15 );
         final FactHandle stiltonHandle = ksession.insert( stilton );
@@ -887,7 +887,7 @@ public class ExecutionFlowControlTest extends CommonTestMethodBase {
                                  list );
         
         final AtomicBoolean fired = new AtomicBoolean(false);
-        ksession.addEventListener(new org.kie.api.event.rule.DefaultAgendaEventListener() {
+        ksession.getKieRuntimeEventManager().addEventListener(new org.kie.api.event.rule.DefaultAgendaEventListener() {
             @Override
             public void afterMatchFired(AfterMatchFiredEvent event) {
                 synchronized( fired ) {

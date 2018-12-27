@@ -273,14 +273,14 @@ public class Sudoku extends AbstractSudokuGridModel implements SudokuGridModel {
      */
     public void setCellValues(Integer[][] cellValues) {
         if (session != null) {
-            session.removeEventListener(workingMemoryListener);
+            session.getKieRuntimeEventManager().removeEventListener(workingMemoryListener);
             session.dispose();
             steppingFactHandle = null;
         }
         
         this.session = kc.newKieSession("SudokuKS");
         session.setGlobal("explain", explain);
-        session.addEventListener(workingMemoryListener);
+        session.getKieRuntimeEventManager().addEventListener(workingMemoryListener);
 
         Setting s000 = new Setting(0, 0, 0);
         FactHandle fh000 = this.session.insert(s000);

@@ -59,7 +59,7 @@ public class UnwantedStringConversionTest {
 
         final KieSession ksession = kieBase.newKieSession();
         final TrackingAgendaEventListener listener = new TrackingAgendaEventListener();
-        ksession.addEventListener(listener);
+        ksession.getKieRuntimeEventManager().addEventListener(listener);
         final Message message = new Message();
         final SomeEntity someEntity = new SomeEntity("1.5");
         message.setSomeEntity(someEntity);

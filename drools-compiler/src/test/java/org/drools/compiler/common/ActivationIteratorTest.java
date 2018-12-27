@@ -702,7 +702,7 @@ public class ActivationIteratorTest extends CommonTestMethodBase {
                 list.add("activated");
             }
         };
-        ksession.addEventListener(agendaEventListener);
+        ksession.getKieRuntimeEventManager().addEventListener(agendaEventListener);
 
         ksession.insert("test");
 
@@ -742,7 +742,7 @@ public class ActivationIteratorTest extends CommonTestMethodBase {
                 list.add("activated");
             }
         };
-        ksession.addEventListener(agendaEventListener);
+        ksession.getKieRuntimeEventManager().addEventListener(agendaEventListener);
 
         ksession.insert("test");
         ((InternalWorkingMemory) ksession).flushPropagations();

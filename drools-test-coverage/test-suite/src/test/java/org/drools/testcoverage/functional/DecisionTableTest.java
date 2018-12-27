@@ -212,7 +212,7 @@ public class DecisionTableTest {
         KieSession session = kbase.newKieSession();
 
         final TrackingAgendaEventListener rulesFired = new TrackingAgendaEventListener();
-        session.addEventListener(rulesFired);
+        session.getKieRuntimeEventManager().addEventListener(rulesFired);
         rulesFired.clear();
 
         // eval test 1
@@ -229,7 +229,7 @@ public class DecisionTableTest {
 
         // eval test 2
         session = kbase.newKieSession();
-        session.addEventListener(rulesFired);
+        session.getKieRuntimeEventManager().addEventListener(rulesFired);
         rulesFired.clear();
         final Subject inge = new Subject("Inge");
         inge.setAge(7);
@@ -249,7 +249,7 @@ public class DecisionTableTest {
 
         // eval test 3, will run four times, there are four combinations
         session = kbase.newKieSession();
-        session.addEventListener(rulesFired);
+        session.getKieRuntimeEventManager().addEventListener(rulesFired);
         rulesFired.clear();
         final Subject karl = new Subject("Karl");
         karl.setSex("male");
@@ -267,7 +267,7 @@ public class DecisionTableTest {
 
         // eval test 4
         session = kbase.newKieSession();
-        session.addEventListener(rulesFired);
+        session.getKieRuntimeEventManager().addEventListener(rulesFired);
         rulesFired.clear();
         final Subject gerda = new Subject("Gerda");
         gerda.setSex("female");
@@ -284,7 +284,7 @@ public class DecisionTableTest {
 
         // eval test 5 - simple binding
         session = kbase.newKieSession();
-        session.addEventListener(rulesFired);
+        session.getKieRuntimeEventManager().addEventListener(rulesFired);
         rulesFired.clear();
         final List<Sample> results = new ArrayList<>();
         session.setGlobal("results", results);
@@ -311,7 +311,7 @@ public class DecisionTableTest {
         KieSession session = kbase.newKieSession();
 
         final OrderListener listener = new OrderListener();
-        session.addEventListener(listener);
+        session.getKieRuntimeEventManager().addEventListener(listener);
 
         final Subject lili = new Subject("Lili");
         lili.setAge(100);
@@ -340,7 +340,7 @@ public class DecisionTableTest {
 
         final KieSession ksession = kbase.newKieSession();
         final TrackingAgendaEventListener listener = new TrackingAgendaEventListener();
-        ksession.addEventListener(listener);
+        ksession.getKieRuntimeEventManager().addEventListener(listener);
 
         final Person peter = new Person("Peter");
         peter.setLikes("steak");
@@ -398,7 +398,7 @@ public class DecisionTableTest {
 
         final KieSession ksession = kbase.newKieSession();
         final TrackingAgendaEventListener listener = new TrackingAgendaEventListener();
-        ksession.addEventListener(listener);
+        ksession.getKieRuntimeEventManager().addEventListener(listener);
 
         final Person peter = new Person("Peter");
         peter.setLikes("steak");
@@ -457,7 +457,7 @@ public class DecisionTableTest {
 
         final KieSession ksession = kbase.newKieSession();
         final OrderListener listener = new OrderListener();
-        ksession.addEventListener(listener);
+        ksession.getKieRuntimeEventManager().addEventListener(listener);
         ksession.insert("something");
         ksession.fireAllRules();
         Assertions.assertThat(listener.size()).as("Wrong number of rules fired").isEqualTo(3);
@@ -473,7 +473,7 @@ public class DecisionTableTest {
         final KieBase kbase = KieBaseUtil.getKieBaseFromResources(kieBaseTestConfiguration, agendaGroupDecisionTable);
         final KieSession ksession = kbase.newKieSession();
         final OrderListener listener = new OrderListener();
-        ksession.addEventListener(listener);
+        ksession.getKieRuntimeEventManager().addEventListener(listener);
         ksession.insert("lockOnActive");
         ksession.fireAllRules();
         Assertions.assertThat(listener.size()).isEqualTo(3);
@@ -493,7 +493,7 @@ public class DecisionTableTest {
         final KieBase kbase = KieBaseUtil.getKieBaseFromResources(kieBaseTestConfiguration, agendaGroupDecisionTable);
         final KieSession ksession = kbase.newKieSession();
         final OrderListener listener = new OrderListener();
-        ksession.addEventListener(listener);
+        ksession.getKieRuntimeEventManager().addEventListener(listener);
 
         // first test - we try to fire rule in agenda group which has auto focus
         // disable, we won't succeed
@@ -521,7 +521,7 @@ public class DecisionTableTest {
         final KieBase kbase = KieBaseUtil.getKieBaseFromResources(kieBaseTestConfiguration, agendaGroupDecisionTable);
         final KieSession ksession = kbase.newKieSession();
         final TrackingAgendaEventListener listener = new TrackingAgendaEventListener();
-        ksession.addEventListener(listener);
+        ksession.getKieRuntimeEventManager().addEventListener(listener);
 
         // only one rule from activation group may fire
         ksession.insert("activationGroup");

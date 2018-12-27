@@ -64,7 +64,7 @@ public class AgendaFilterTest extends CommonTestMethodBase {
         final KieSession ksession = createKnowledgeSession(kbase);
 
         final org.kie.api.event.rule.AgendaEventListener ael = mock(org.kie.api.event.rule.AgendaEventListener.class);
-        ksession.addEventListener(ael);
+        ksession.getKieRuntimeEventManager().addEventListener(ael);
 
         final int rules = ksession.fireAllRules(agendaFilter);
         assertEquals(1, rules);

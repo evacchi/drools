@@ -40,7 +40,7 @@ public class RuleRuntimeEventTest extends CommonTestMethodBase {
         final KieSession wm = createKnowledgeSession(kbase);
 
         final RuleRuntimeEventListener wmel = mock(RuleRuntimeEventListener.class);
-        wm.addEventListener(wmel);
+        wm.getKieRuntimeEventManager().addEventListener(wmel);
 
         final Cheese stilton = new Cheese("stilton", 15);
 

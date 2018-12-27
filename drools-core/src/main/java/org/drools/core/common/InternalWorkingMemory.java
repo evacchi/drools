@@ -97,15 +97,7 @@ public interface InternalWorkingMemory
     TimerService getTimerService();
 
     InternalKnowledgeRuntime getKnowledgeRuntime();
-    
-    /**
-     * Returns a map of channel Id->Channel of all channels in
-     * this working memory
-     * 
-     * @return
-     */
-    Map< String, Channel> getChannels();
-    
+
     Collection< ? extends EntryPoint> getEntryPoints();
 
     SessionConfiguration getSessionConfiguration();

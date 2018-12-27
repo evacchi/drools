@@ -39,7 +39,7 @@ public class UnregisterChannelCommand
     public Void execute(Context context) {
         KieSession ksession = ((RegistryContext) context).lookup( KieSession.class );
 
-        ksession.unregisterChannel( name );
+        ksession.getChannelManager().unregisterChannel( name );
 
         return null;
     }

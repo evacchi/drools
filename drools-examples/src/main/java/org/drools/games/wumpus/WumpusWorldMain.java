@@ -35,14 +35,14 @@ public class WumpusWorldMain {
         final KieSession serverKsession = kc.newKieSession( "WumpusMainKS");
         final KieSession clientKsession = kc.newKieSession("WumpusClientKS");
 
-        serverKsession.getChannels().put( "sensors", new Channel() {
+        serverKsession.getChannelManager().getChannels().put( "sensors", new Channel() {
             public void send(Object object) {
                 clientKsession.insert( object );
                 clientKsession.fireAllRules();
             }
         } );
 
-        clientKsession.getChannels().put( "commands", new Channel() {
+        clientKsession.getChannelManager().getChannels().put( "commands", new Channel() {
             public void send(Object object) {
                 serverKsession.insert( object );
                 serverKsession.fireAllRules();

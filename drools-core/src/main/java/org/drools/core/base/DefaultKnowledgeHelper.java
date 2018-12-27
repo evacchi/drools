@@ -505,11 +505,11 @@ public class DefaultKnowledgeHelper<T extends ModedAssertion<T>>
     }
 
     public Channel getChannel(String id) {
-        return this.workingMemory.getChannels().get(id);
+        return this.workingMemory.getChannelManager().getChannels().get(id);
     }
 
     public Map<String, Channel> getChannels() {
-        return Collections.unmodifiableMap( this.workingMemory.getChannels() );
+        return Collections.unmodifiableMap( this.workingMemory.getChannelManager().getChannels() );
     }
 
     private InternalFactHandle getFactHandleFromWM(final Object object) {

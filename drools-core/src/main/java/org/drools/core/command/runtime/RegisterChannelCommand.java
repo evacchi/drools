@@ -43,7 +43,7 @@ public class RegisterChannelCommand
     public Void execute(Context context) {
         KieSession ksession = ((RegistryContext) context).lookup( KieSession.class );
 
-        ksession.registerChannel( name,
+        ksession.getChannelManager().registerChannel( name,
                                   channel );
 
         return null;

@@ -61,6 +61,7 @@ import org.kie.api.internal.runtime.beliefs.Mode;
 import org.kie.api.logger.KieRuntimeLogger;
 import org.kie.api.runtime.Calendars;
 import org.kie.api.runtime.Channel;
+import org.kie.api.runtime.ChannelManager;
 import org.kie.api.runtime.Environment;
 import org.kie.api.runtime.Globals;
 import org.kie.api.runtime.KieRuntime;
@@ -109,6 +110,11 @@ public final class WrappedStatefulKnowledgeSessionForRHS
 	}
 
 	// -- then just delegate
+
+	@Override
+	public ChannelManager getChannelManager() {
+		return delegate.getChannelManager();
+	}
 
 	@Override
 	public EventSupport getEventSupport() {
@@ -293,13 +299,13 @@ public final class WrappedStatefulKnowledgeSessionForRHS
 //		return delegate.startProcess(processId, correlationKey, parameters);
 //	}
 
-	public void registerChannel(String name, Channel channel) {
-		delegate.registerChannel(name, channel);
-	}
-
-	public void unregisterChannel(String name) {
-		delegate.unregisterChannel(name);
-	}
+//	public void registerChannel(String name, Channel channel) {
+//		delegate.registerChannel(name, channel);
+//	}
+//
+//	public void unregisterChannel(String name) {
+//		delegate.unregisterChannel(name);
+//	}
 	
 	public void setEndOperationListener(EndOperationListener listener) {
 		delegate.setEndOperationListener(listener);
@@ -583,10 +589,6 @@ public final class WrappedStatefulKnowledgeSessionForRHS
 
 	public int fireAllRules(AgendaFilter agendaFilter, int fireLimit) {
 		return delegate.fireAllRules(agendaFilter, fireLimit);
-	}
-
-	public Map<String, Channel> getChannels() {
-		return delegate.getChannels();
 	}
 
 	public Collection<? extends EntryPoint> getEntryPoints() {

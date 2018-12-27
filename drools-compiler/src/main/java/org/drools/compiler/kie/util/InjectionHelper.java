@@ -152,7 +152,7 @@ public class InjectionHelper {
                 }
             }
             if (kSession instanceof KieSession) {
-            	((KieSession) kSession).registerChannel(channelModel.getName(), channel);
+            	((KieSession) kSession).getChannelManager().registerChannel(channelModel.getName(), channel);
             } else if (kSession instanceof StatelessKieSession) {
             	((StatelessKieSession) kSession).registerChannel(channelModel.getName(), channel);
             } else {

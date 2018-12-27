@@ -18,12 +18,14 @@ package org.drools.core.impl;
 import org.drools.core.WorkingMemoryEventManager;
 import org.kie.api.event.KieRuntimeEventManager;
 import org.kie.api.logger.KieRuntimeLogger;
+import org.kie.api.runtime.ChannelManager;
 
 public abstract class AbstractRuntime {
 
     protected KieRuntimeLogger logger;
     protected KieRuntimeEventManager eventManager;
     protected WorkingMemoryEventManager workingMemoryEventManager;
+    protected ChannelManager channelManager = new ChannelManager();
 
     public KieRuntimeLogger getLogger() {
         return logger;
@@ -35,5 +37,9 @@ public abstract class AbstractRuntime {
 
     public KieRuntimeEventManager getKieRuntimeEventManager() {
         return eventManager;
+    }
+
+    public ChannelManager getChannelManager() {
+        return channelManager;
     }
 }

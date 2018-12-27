@@ -32,7 +32,7 @@ public class GetChannelsCommand
 
     public Object execute(Context context) {
         KieSession ksession = ((RegistryContext) context).lookup( KieSession.class );
-        return ksession.getChannels();
+        return ksession.getChannelManager().getChannels();
     }
 
     public String toString() {

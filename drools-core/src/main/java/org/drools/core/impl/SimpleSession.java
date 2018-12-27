@@ -17,12 +17,10 @@
 package org.drools.core.impl;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -96,20 +94,14 @@ import org.drools.core.util.index.TupleList;
 import org.kie.api.KieBase;
 import org.kie.api.command.BatchExecutionCommand;
 import org.kie.api.command.Command;
-import org.kie.api.event.kiebase.KieBaseEventListener;
-import org.kie.api.event.process.ProcessEventListener;
-import org.kie.api.event.rule.AgendaEventListener;
-import org.kie.api.event.rule.RuleRuntimeEventListener;
 import org.kie.api.internal.runtime.beliefs.Mode;
 import org.kie.api.runtime.Calendars;
-import org.kie.api.runtime.Channel;
 import org.kie.api.runtime.Environment;
 import org.kie.api.runtime.ExecutableRunner;
 import org.kie.api.runtime.Globals;
 import org.kie.api.runtime.KieRuntimeFactory;
 import org.kie.api.runtime.KieSession;
 import org.kie.api.runtime.RequestContext;
-import org.kie.api.runtime.process.ProcessInstance;
 import org.kie.api.runtime.process.WorkItemHandler;
 import org.kie.api.runtime.process.WorkItemManager;
 import org.kie.api.runtime.rule.AgendaFilter;
@@ -118,7 +110,6 @@ import org.kie.api.runtime.rule.LiveQuery;
 import org.kie.api.runtime.rule.QueryResults;
 import org.kie.api.runtime.rule.ViewChangedEventListener;
 import org.kie.api.time.SessionClock;
-import org.kie.internal.event.rule.RuleEventListener;
 import org.kie.internal.runtime.StatefulKnowledgeSession;
 
 import static java.util.stream.Collectors.toList;
@@ -190,8 +181,6 @@ public class SimpleSession extends AbstractRuntime implements InternalWorkingMem
     protected PropagationContextFactory pctxFactory;
 
     protected SessionConfiguration config;
-
-    private Map<String, Channel> channels;
 
     private Environment environment;
 
@@ -386,13 +375,6 @@ public class SimpleSession extends AbstractRuntime implements InternalWorkingMem
         for (AsyncReceiveNode.AsyncReceiveMemory receiveMemory : this.receiveNodeMemories) {
             receiveMemory.dispose();
         }
-//
-//        this.ruleRuntimeEventSupport.clear();
-//        this.ruleEventListenerSupport.clear();
-//        this.agendaEventSupport.clear();
-//        for (KieBaseEventListener listener : kieBaseEventListeners) {
-//            this.kBase.removeEventListener(listener);
-//        }
 
         if (processRuntime != null) {
             this.processRuntime.dispose();
@@ -1363,24 +1345,6 @@ public class SimpleSession extends AbstractRuntime implements InternalWorkingMem
 
     public void endBatchExecution() {
         this.lock.unlock();
-    }
-
-    public void registerChannel(String name,
-                                Channel channel) {
-        getChannels().put(name, channel);
-    }
-
-    public void unregisterChannel(String name) {
-        if (channels != null) {
-            channels.remove(name);
-        }
-    }
-
-    public Map<String, Channel> getChannels() {
-        if (channels == null) {
-            channels = new ConcurrentHashMap<String, Channel>();
-        }
-        return channels;
     }
 
     public long getFactCount() {

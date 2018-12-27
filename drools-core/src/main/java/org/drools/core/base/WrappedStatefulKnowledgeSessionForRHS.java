@@ -14,6 +14,7 @@ import java.util.concurrent.locks.Lock;
 import org.drools.core.SessionConfiguration;
 import org.drools.core.WorkingMemory;
 import org.drools.core.WorkingMemoryEntryPoint;
+import org.drools.core.WorkingMemoryEventManager;
 import org.drools.core.common.EndOperationListener;
 import org.drools.core.common.EventSupport;
 import org.drools.core.common.InternalAgenda;
@@ -51,6 +52,7 @@ import org.drools.core.time.TimerService;
 import org.drools.core.util.bitmask.BitMask;
 import org.kie.api.KieBase;
 import org.kie.api.command.Command;
+import org.kie.api.event.KieRuntimeEventManager;
 import org.kie.api.event.kiebase.KieBaseEventListener;
 import org.kie.api.event.process.ProcessEventListener;
 import org.kie.api.event.rule.AgendaEventListener;
@@ -107,8 +109,23 @@ public final class WrappedStatefulKnowledgeSessionForRHS
 	}
 
 	// -- then just delegate
-	
-    public InternalRuleUnitExecutor getRuleUnitExecutor() {
+
+	@Override
+	public EventSupport getEventSupport() {
+		return delegate.getEventSupport();
+	}
+
+	@Override
+	public WorkingMemoryEventManager getWorkingMemoryEventManager() {
+		return delegate.getWorkingMemoryEventManager();
+	}
+
+	@Override
+	public KieRuntimeEventManager getKieRuntimeEventManager() {
+		return delegate.getKieRuntimeEventManager();
+	}
+
+	public InternalRuleUnitExecutor getRuleUnitExecutor() {
         return delegate.getRuleUnitExecutor();
     }
 	

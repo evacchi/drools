@@ -95,7 +95,7 @@ public class PhreakRuleTerminalNode {
         RuleTerminalNodeLeftTuple rtnLeftTuple = (RuleTerminalNodeLeftTuple) leftTuple;
         agenda.createAgendaItem( rtnLeftTuple, salienceInt, pctx, ruleAgendaItem, ruleAgendaItem.getAgendaGroup() );
 
-        EventSupport es = (EventSupport) wm;
+        EventSupport es = wm.getEventSupport();
         es.getAgendaEventSupport().fireActivationCreated(rtnLeftTuple, wm);
 
         if (  rtnNode.getRule().isLockOnActive() &&
@@ -199,7 +199,7 @@ public class PhreakRuleTerminalNode {
 
                     rtnLeftTuple.update(salienceInt, pctx);
                     executor.addLeftTuple(leftTuple);
-                    wm.getRuleEventSupport().onUpdateMatch( rtnLeftTuple );
+                    wm.getEventSupport().getRuleEventSupport().onUpdateMatch( rtnLeftTuple );
                 }
             }
 

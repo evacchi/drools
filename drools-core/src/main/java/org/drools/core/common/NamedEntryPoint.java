@@ -288,7 +288,7 @@ public class NamedEntryPoint
                                           typeConf,
                                           this.wm );
 
-        this.wm.getRuleRuntimeEventSupport().fireObjectInserted(pctx,
+        this.wm.getEventSupport().getRuleRuntimeEventSupport().fireObjectInserted(pctx,
                                                                 handle,
                                                                 object,
                                                                 this.wm);
@@ -304,7 +304,7 @@ public class NamedEntryPoint
         pctx.setFactHandle(handle);
 
         this.entryPointNode.assertObject( handle, pctx, typeConf, this.wm );
-        this.wm.getRuleRuntimeEventSupport().fireObjectInserted(pctx, handle, object, this.wm);
+        this.wm.getEventSupport().getRuleRuntimeEventSupport().fireObjectInserted(pctx, handle, object, this.wm);
         return handle;
     }
 
@@ -427,7 +427,7 @@ public class NamedEntryPoint
                                           typeConf,
                                           this.wm );
 
-        this.wm.getRuleRuntimeEventSupport().fireObjectUpdated(propagationContext,
+        this.wm.getEventSupport().getRuleRuntimeEventSupport().fireObjectUpdated(propagationContext,
                                                                handle,
                                                                originalObject,
                                                                object,
@@ -570,7 +570,7 @@ public class NamedEntryPoint
         this.objectStore.removeHandle( handle );
 
 
-        this.wm.getRuleRuntimeEventSupport().fireObjectRetracted(propagationContext,
+        this.wm.getEventSupport().getRuleRuntimeEventSupport().fireObjectRetracted(propagationContext,
                                                                  handle,
                                                                  object,
                                                                  this.wm);

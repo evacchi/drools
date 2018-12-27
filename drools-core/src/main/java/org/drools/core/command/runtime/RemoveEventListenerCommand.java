@@ -17,6 +17,7 @@
 package org.drools.core.command.runtime;
 
 import org.kie.api.command.ExecutableCommand;
+import org.kie.api.event.KieRuntimeEventManager;
 import org.kie.api.event.process.ProcessEventListener;
 import org.kie.api.event.rule.AgendaEventListener;
 import org.kie.api.event.rule.RuleRuntimeEventListener;
@@ -49,12 +50,13 @@ public class RemoveEventListenerCommand
 
     public Void execute(Context context) {
         KieSession ksession = ((RegistryContext) context).lookup( KieSession.class );
+        KieRuntimeEventManager krem = ksession.getKieRuntimeEventManager();
         if ( ruleRuntimeEventlistener != null ) {
-            ksession.removeEventListener( ruleRuntimeEventlistener );
+            krem.removeEventListener(ruleRuntimeEventlistener );
         } else if ( agendaEventListener != null ) {
-            ksession.removeEventListener( agendaEventListener );
+            krem.removeEventListener( agendaEventListener );
         } else {
-            ksession.removeEventListener( processEventListener );
+            krem.removeEventListener( processEventListener );
         }
         return null;
     }

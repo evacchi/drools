@@ -40,7 +40,7 @@ import java.util.Map;
  * the RuleBase reference is transient. Please see the RuleBase interface for serializing
  * in WorkingMemories from an InputStream.
  */
-public interface WorkingMemory extends WorkingMemoryEventManager, WorkingMemoryEntryPoint {
+public interface WorkingMemory extends WorkingMemoryEntryPoint {
 
     /**
      * Returns the Agenda for this WorkingMemory. While the WorkingMemory interface is considered public, the Agenda interface
@@ -252,5 +252,6 @@ public interface WorkingMemory extends WorkingMemoryEventManager, WorkingMemoryE
      * @return
      */
     SessionClock getSessionClock();
-    
+
+    WorkingMemoryEventManager getWorkingMemoryEventManager();
 }

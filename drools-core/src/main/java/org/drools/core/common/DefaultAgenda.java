@@ -396,7 +396,7 @@ public class DefaultAgenda
             }
             leftTuple.decreaseActivationCountForEvents();
 
-            workingMemory.getAgendaEventSupport().fireActivationCancelled( activation,
+            workingMemory.getEventSupport().getAgendaEventSupport().fireActivationCancelled( activation,
                                                                            workingMemory,
                                                                            MatchCancelledCause.WME_MODIFY );
         }
@@ -405,7 +405,7 @@ public class DefaultAgenda
             item.getRuleAgendaItem().getRuleExecutor().fireConsequenceEvent( this.workingMemory, this, item, ON_DELETE_MATCH_CONSEQUENCE_NAME );
         }
 
-        workingMemory.getRuleEventSupport().onDeleteMatch( item );
+        workingMemory.getEventSupport().getRuleEventSupport().onDeleteMatch( item );
 
         TruthMaintenanceSystemHelper.removeLogicalDependencies( activation,
                                                                 context,
@@ -426,7 +426,7 @@ public class DefaultAgenda
             InternalAgendaGroup igroup = (InternalAgendaGroup) agendaGroup;
             igroup.setActive( true );
             igroup.setActivatedForRecency( this.workingMemory.getFactHandleFactory().getRecency() );
-            final EventSupport eventsupport = this.workingMemory;
+            final EventSupport eventsupport = this.workingMemory.getEventSupport();
             eventsupport.getAgendaEventSupport().fireAgendaGroupPushed( agendaGroup,
                                                                         this.workingMemory );
             return true;
@@ -489,15 +489,15 @@ public class DefaultAgenda
                 removeLast();
 
                 if ( agendaGroup.isAutoDeactivate() && !agendaGroup.getNodeInstances().isEmpty() ) {
-                    this.workingMemory.getAgendaEventSupport().fireBeforeRuleFlowGroupDeactivated( (InternalRuleFlowGroup) agendaGroup,
+                    this.workingMemory.getEventSupport().getAgendaEventSupport().fireBeforeRuleFlowGroupDeactivated( (InternalRuleFlowGroup) agendaGroup,
                             this.workingMemory );
 
                     innerDeactiveRuleFlowGroup((InternalRuleFlowGroup) agendaGroup);
 
-                    this.workingMemory.getAgendaEventSupport().fireAfterRuleFlowGroupDeactivated(( InternalRuleFlowGroup) agendaGroup,
+                    this.workingMemory.getEventSupport().getAgendaEventSupport().fireAfterRuleFlowGroupDeactivated(( InternalRuleFlowGroup) agendaGroup,
                             this.workingMemory);
                 }
-                final EventSupport eventsupport = this.workingMemory;
+                final EventSupport eventsupport = this.workingMemory.getEventSupport();
                 eventsupport.getAgendaEventSupport().fireAgendaGroupPopped( agendaGroup,
                                                                             this.workingMemory );
             } else {
@@ -610,7 +610,7 @@ public class DefaultAgenda
     }
 
     public void activateRuleFlowGroup(final InternalRuleFlowGroup group, long processInstanceId, String nodeInstanceId) {
-        this.workingMemory.getAgendaEventSupport().fireBeforeRuleFlowGroupActivated( group, this.workingMemory );
+        this.workingMemory.getEventSupport().getAgendaEventSupport().fireBeforeRuleFlowGroupActivated( group, this.workingMemory );
         group.setActive( true );
         group.hasRuleFlowListener(true);
         if ( !StringUtils.isEmpty( nodeInstanceId ) ) {
@@ -618,7 +618,7 @@ public class DefaultAgenda
             group.setActive( true );
         }
         group.setFocus();
-        this.workingMemory.getAgendaEventSupport().fireAfterRuleFlowGroupActivated( group, this.workingMemory );
+        this.workingMemory.getEventSupport().getAgendaEventSupport().fireAfterRuleFlowGroupActivated( group, this.workingMemory );
         propagationList.notifyWaitOnRest();
     }
 
@@ -630,11 +630,11 @@ public class DefaultAgenda
         if ( !group.isRuleFlowListener() ) {
             return;
         }
-        this.workingMemory.getAgendaEventSupport().fireBeforeRuleFlowGroupDeactivated( group, this.workingMemory );
+        this.workingMemory.getEventSupport().getAgendaEventSupport().fireBeforeRuleFlowGroupDeactivated( group, this.workingMemory );
         while ( removeGroup(group) ); // keep removing while group is on the stack
         group.setActive( false );
         innerDeactiveRuleFlowGroup( group );
-        this.workingMemory.getAgendaEventSupport().fireAfterRuleFlowGroupDeactivated( group, this.workingMemory );
+        this.workingMemory.getEventSupport().getAgendaEventSupport().fireAfterRuleFlowGroupDeactivated( group, this.workingMemory );
     }
 
     private void innerDeactiveRuleFlowGroup(InternalRuleFlowGroup group) {
@@ -760,7 +760,7 @@ public class DefaultAgenda
             ((RuleAgendaItem)activation).getRuleExecutor().reEvaluateNetwork( this );
         }
 
-        final EventSupport eventsupport = this.workingMemory;
+        final EventSupport eventsupport = this.workingMemory.getEventSupport();
 
         agendaGroup.setClearedForRecency( this.workingMemory.getFactHandleFactory().getRecency() );
 
@@ -812,7 +812,7 @@ public class DefaultAgenda
      * @see org.kie.common.AgendaI#clearActivationGroup(org.kie.spi.ActivationGroup)
      */
     public void clearAndCancelActivationGroup(final InternalActivationGroup activationGroup) {
-        final EventSupport eventsupport = this.workingMemory;
+        final EventSupport eventsupport = this.workingMemory.getEventSupport();
 
         activationGroup.setTriggeredForRecency( this.workingMemory.getFactHandleFactory().getRecency() );
 

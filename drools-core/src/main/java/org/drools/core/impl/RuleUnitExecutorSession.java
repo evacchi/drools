@@ -152,7 +152,7 @@ public class RuleUnitExecutorSession implements InternalRuleUnitExecutor {
     @Override
     public KieRuntimeLogger addConsoleLogger() {
         if (this.session != null) {
-            return KieServices.Factory.get().getLoggers().newConsoleLogger(session);
+            return KieServices.Factory.get().getLoggers().newConsoleLogger(session.getKieRuntimeEventManager());
         } else {
             throw new IllegalStateException("Cannot add logger to the rule unit when the session is not available");
         }
@@ -161,7 +161,7 @@ public class RuleUnitExecutorSession implements InternalRuleUnitExecutor {
     @Override
     public KieRuntimeLogger addFileLogger(String fileName) {
         if (this.session != null) {
-            return KieServices.Factory.get().getLoggers().newFileLogger(session, fileName);
+            return KieServices.Factory.get().getLoggers().newFileLogger(session.getKieRuntimeEventManager(), fileName);
         } else {
             throw new IllegalStateException("Cannot add logger to the rule unit when the session is not available");
         }
@@ -170,7 +170,7 @@ public class RuleUnitExecutorSession implements InternalRuleUnitExecutor {
     @Override
     public KieRuntimeLogger addFileLogger(String fileName, int maxEventsInMemory) {
         if (this.session != null) {
-            return KieServices.Factory.get().getLoggers().newFileLogger(session, fileName, maxEventsInMemory);
+            return KieServices.Factory.get().getLoggers().newFileLogger(session.getKieRuntimeEventManager(), fileName, maxEventsInMemory);
         } else {
             throw new IllegalStateException("Cannot add logger to the rule unit when the session is not available");
         }
@@ -179,7 +179,7 @@ public class RuleUnitExecutorSession implements InternalRuleUnitExecutor {
     @Override
     public KieRuntimeLogger addThreadedFileLogger(String fileName, int interval) {
         if (this.session != null) {
-            return KieServices.Factory.get().getLoggers().newThreadedFileLogger(session, fileName, interval);
+            return KieServices.Factory.get().getLoggers().newThreadedFileLogger(session.getKieRuntimeEventManager(), fileName, interval);
         } else {
             throw new IllegalStateException("Cannot add logger to the rule unit when the session is not available");
         }

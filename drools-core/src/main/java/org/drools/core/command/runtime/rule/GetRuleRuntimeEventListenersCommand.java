@@ -29,7 +29,7 @@ public class GetRuleRuntimeEventListenersCommand
 
     public Collection<RuleRuntimeEventListener> execute(Context context) {
         KieSession ksession = ((RegistryContext) context).lookup( KieSession.class );
-        return ksession.getRuleRuntimeEventListeners();
+        return ksession.getKieRuntimeEventManager().getRuleRuntimeEventListeners();
     }
 
     public String toString() {

@@ -72,7 +72,7 @@ public class InjectionHelper {
     public static void wireSessionComponents(BeanCreator beanCreator, KieSessionModel model, KieSession kSession) {
         BeanCreator fallbackBeanCreator = new ReflectionBeanCreator();
         ClassLoader cl = ((InternalKnowledgeBase)kSession.getKieBase()).getRootClassLoader();
-        wireListeners(beanCreator, fallbackBeanCreator, cl, model.getListenerModels(), kSession);
+        wireListeners(beanCreator, fallbackBeanCreator, cl, model.getListenerModels(), kSession.getKieRuntimeEventManager());
         wireWIHs(beanCreator, fallbackBeanCreator, cl, model.getWorkItemHandlerModels(), kSession);
         wireChannels(beanCreator, fallbackBeanCreator, cl, model.getChannelModels(), kSession);
     }
@@ -80,7 +80,7 @@ public class InjectionHelper {
     public static void wireSessionComponents(BeanCreator beanCreator, KieSessionModel model, StatelessKieSession kSession ) {
         BeanCreator fallbackBeanCreator = new ReflectionBeanCreator();
         ClassLoader cl = ((InternalKnowledgeBase)kSession.getKieBase()).getRootClassLoader();
-        wireListeners(beanCreator, fallbackBeanCreator, cl, model.getListenerModels(), kSession);
+        wireListeners(beanCreator, fallbackBeanCreator, cl, model.getListenerModels(), kSession.getKieRuntimeEventManager());
         wireChannels(beanCreator, fallbackBeanCreator, cl, model.getChannelModels(), kSession);
     }
       

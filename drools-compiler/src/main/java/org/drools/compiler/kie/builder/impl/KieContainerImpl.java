@@ -560,7 +560,7 @@ public class KieContainerImpl
         if (isJndiAvailable()) {
             wireSessionComponents( kSessionModel, kSession );
         }
-        registerLoggers(kSessionModel, kSession);
+        registerLoggers(kSessionModel, kSession.getKieRuntimeEventManager());
         registerCalendars(kSessionModel, kSession);
 
         ((StatefulKnowledgeSessionImpl ) kSession).initMBeans(containerId, kBase.getId(), kSessionModel.getName());
@@ -632,7 +632,7 @@ public class KieContainerImpl
         if (isJndiAvailable()) {
             wireSessionComponents( kSessionModel, statelessKieSession );
         }
-        registerLoggers(kSessionModel, statelessKieSession);
+        registerLoggers(kSessionModel, statelessKieSession.getKieRuntimeEventManager());
 
         ((StatelessKnowledgeSessionImpl) statelessKieSession).initMBeans(containerId, ((InternalKnowledgeBase) kBase).getId(), kSessionModel.getName());
 

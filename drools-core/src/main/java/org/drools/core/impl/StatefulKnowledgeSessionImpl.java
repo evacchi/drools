@@ -41,6 +41,7 @@ import org.drools.core.QueryResultsImpl;
 import org.drools.core.RuleBaseConfiguration;
 import org.drools.core.SessionConfiguration;
 import org.drools.core.WorkingMemoryEntryPoint;
+import org.drools.core.WorkingMemoryEventManager;
 import org.drools.core.base.CalendarsImpl;
 import org.drools.core.base.DroolsQuery;
 import org.drools.core.base.InternalViewChangedEventListener;
@@ -374,7 +375,7 @@ public class StatefulKnowledgeSessionImpl extends AbstractRuntime
     public void initMBeans(String containerId, String kbaseName, String ksessionName) {
         if (((InternalKnowledgeBase) kBase).getConfiguration() != null && ((InternalKnowledgeBase) kBase).getConfiguration().isMBeansEnabled() && mbeanRegistered.compareAndSet(false, true)) {
             this.mbeanRegisteredCBSKey = new DroolsManagementAgent.CBSKey( containerId, kbaseName, ksessionName );
-            DroolsManagementAgent.getInstance().registerKnowledgeSessionUnderName( mbeanRegisteredCBSKey, this );
+            DroolsManagementAgent.getInstance().registerKnowledgeSessionUnderName( mbeanRegisteredCBSKey, this.eventManager );
         }
     }
 
@@ -536,7 +537,7 @@ public class StatefulKnowledgeSessionImpl extends AbstractRuntime
         this.kBase.disposeStatefulSession( this );
 
         if (this.mbeanRegistered.get()) {
-            DroolsManagementAgent.getInstance().unregisterKnowledgeSessionUnderName(mbeanRegisteredCBSKey, this);
+            DroolsManagementAgent.getInstance().unregisterKnowledgeSessionUnderName(mbeanRegisteredCBSKey, this.eventManager);
         }
     }
 
@@ -1182,6 +1183,11 @@ public class StatefulKnowledgeSessionImpl extends AbstractRuntime
 
     public void removeEventListener(final RuleEventListener listener) {
         this.ruleEventListenerSupport.removeEventListener(listener);
+    }
+
+    @Override
+    public EventSupport getEventSupport() {
+        throw new UnsupportedOperationException();
     }
 
     public FactHandleFactory getFactHandleFactory() {
@@ -1894,6 +1900,10 @@ public class StatefulKnowledgeSessionImpl extends AbstractRuntime
 
     public SessionClock getSessionClock() {
         return (SessionClock) this.timerService;
+    }
+
+    public WorkingMemoryEventManager getWorkingMemoryEventManager() {
+        return this.workingMemoryEventManager;
     }
 
     public void startBatchExecution() {

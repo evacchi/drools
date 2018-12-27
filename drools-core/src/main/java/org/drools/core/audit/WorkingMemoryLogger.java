@@ -123,10 +123,11 @@ public abstract class WorkingMemoryLogger
      * @param workingMemory
      */
     public WorkingMemoryLogger(final WorkingMemory workingMemory) {
-        workingMemory.addEventListener( (RuleRuntimeEventListener) this );
-        workingMemory.addEventListener( (AgendaEventListener) this );
+        WorkingMemoryEventManager wmem = workingMemory.getWorkingMemoryEventManager();
+        wmem.addEventListener((RuleRuntimeEventListener) this );
+        wmem.addEventListener( (AgendaEventListener) this );
         setProcessRuntimeEventListener( (InternalWorkingMemory) workingMemory );
-        workingMemory.addEventListener( (KieBaseEventListener) this );
+        wmem.addEventListener( (KieBaseEventListener) this );
     }
 
     private void setProcessRuntimeEventListener( InternalWorkingMemory workingMemory ) {
@@ -143,7 +144,7 @@ public abstract class WorkingMemoryLogger
     public WorkingMemoryLogger(final KieRuntimeEventManager session) {
         if (session instanceof StatefulKnowledgeSessionImpl) {
             StatefulKnowledgeSessionImpl statefulSession = ((StatefulKnowledgeSessionImpl) session);
-            WorkingMemoryEventManager eventManager = statefulSession;
+            WorkingMemoryEventManager eventManager = statefulSession.getWorkingMemoryEventManager();
             eventManager.addEventListener( (RuleRuntimeEventListener) this );
             eventManager.addEventListener( (AgendaEventListener) this );
             eventManager.addEventListener( (KieBaseEventListener) this );
@@ -157,10 +158,11 @@ public abstract class WorkingMemoryLogger
             StatefulKnowledgeSessionImpl statefulSession =
                     ((StatefulKnowledgeSessionImpl)(( RegistryContext)((CommandBasedStatefulKnowledgeSession) session).getRunner().createContext()).lookup( KieSession.class ));
             InternalWorkingMemory eventManager = statefulSession;
-            eventManager.addEventListener( (RuleRuntimeEventListener) this );
-            eventManager.addEventListener( (AgendaEventListener) this );
+            WorkingMemoryEventManager wmem = statefulSession.getWorkingMemoryEventManager();
+            wmem.addEventListener( (RuleRuntimeEventListener) this );
+            wmem.addEventListener( (AgendaEventListener) this );
             InternalProcessRuntime processRuntime = eventManager.getProcessRuntime();
-            eventManager.addEventListener( (KieBaseEventListener) this );
+            wmem.addEventListener( (KieBaseEventListener) this );
             if (processRuntime != null) {
                 processRuntime.addEventListener( this );
             }

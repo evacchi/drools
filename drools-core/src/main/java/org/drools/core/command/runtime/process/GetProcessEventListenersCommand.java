@@ -48,7 +48,7 @@ public class GetProcessEventListenersCommand
     public Collection<ProcessEventListener> execute(Context context) {
         KieSession ksession = ((RegistryContext) context).lookup( KieSession.class );
 
-        Collection<ProcessEventListener> processEventListeners = ksession.getProcessEventListeners();
+        Collection<ProcessEventListener> processEventListeners = ksession.getKieRuntimeEventManager().getProcessEventListeners();
 
         if ( this.outIdentifier != null ) {
             ((RegistryContext) context).lookup( ExecutionResultImpl.class ).setResult(this.outIdentifier,

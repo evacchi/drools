@@ -41,16 +41,12 @@ import org.kie.api.runtime.rule.EntryPoint;
 import org.kie.api.runtime.rule.FactHandle;
 
 public interface InternalWorkingMemory
-    extends WorkingMemory, WorkingMemoryEntryPoint, EventSupport {
+    extends WorkingMemory, WorkingMemoryEntryPoint {
 
     InternalAgenda getAgenda();
 
     long getIdentifier();
     void setIdentifier(long id);
-
-    void setRuleRuntimeEventSupport(RuleRuntimeEventSupport workingMemoryEventSupport);
-
-    void setAgendaEventSupport(AgendaEventSupport agendaEventSupport);
 
     <T extends Memory> T getNodeMemory(MemoryFactory<T> node);
 
@@ -212,4 +208,6 @@ public interface InternalWorkingMemory
     default InternalRuleUnitExecutor getRuleUnitExecutor() {
         return null;
     }
+
+    EventSupport getEventSupport();
 }

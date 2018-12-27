@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import org.drools.core.common.EventSupport;
 import org.drools.core.event.AgendaEventSupport;
 import org.drools.core.event.RuleEventListenerSupport;
 import org.drools.core.event.RuleRuntimeEventSupport;
@@ -14,7 +15,7 @@ import org.kie.api.event.rule.AgendaEventListener;
 import org.kie.api.event.rule.RuleRuntimeEventListener;
 import org.kie.internal.event.rule.RuleEventListener;
 
-public class SessionEventSupport {
+public class SessionEventSupport implements EventSupport {
 
     private RuleRuntimeEventSupport ruleRuntimeEventSupport;
     private AgendaEventSupport agendaEventSupport;
@@ -36,6 +37,16 @@ public class SessionEventSupport {
 
     public RuleRuntimeEventSupport getRuleRuntimeEventSupport() {
         return this.ruleRuntimeEventSupport;
+    }
+
+    @Override
+    public Collection<AgendaEventListener> getAgendaEventListeners() {
+        return null;
+    }
+
+    @Override
+    public Collection<RuleRuntimeEventListener> getRuleRuntimeEventListeners() {
+        return null;
     }
 
     public AgendaEventSupport getAgendaEventSupport() {

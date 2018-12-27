@@ -36,12 +36,14 @@ import org.drools.core.InitialFact;
 import org.drools.core.RuleBaseConfiguration;
 import org.drools.core.SessionConfiguration;
 import org.drools.core.WorkingMemoryEntryPoint;
+import org.drools.core.WorkingMemoryEventManager;
 import org.drools.core.base.CalendarsImpl;
 import org.drools.core.common.CompositeDefaultAgenda;
 import org.drools.core.common.ConcurrentNodeMemories;
 import org.drools.core.common.DefaultFactHandle;
 import org.drools.core.common.EndOperationListener;
 import org.drools.core.common.EventFactHandle;
+import org.drools.core.common.EventSupport;
 import org.drools.core.common.InternalAgenda;
 import org.drools.core.common.InternalFactHandle;
 import org.drools.core.common.InternalKnowledgeRuntime;
@@ -132,7 +134,6 @@ public class SimpleSession extends AbstractRuntime implements InternalWorkingMem
     public static final String DEFAULT_RULE_UNIT = "DEFAULT_RULE_UNIT";
 
     private static final long serialVersionUID = 510l;
-    public byte[] bytes;
     protected Long id;
 
     /**
@@ -152,7 +153,9 @@ public class SimpleSession extends AbstractRuntime implements InternalWorkingMem
     /**
      * The eventSupport
      */
-    private SessionEventSupport eventSupport;
+    private WorkingMemoryEventManager workingMemoryEventManager;
+
+    private EventSupport eventSupport;
 
     /**
      * The <code>RuleBase</code> with which this memory is associated.
@@ -360,16 +363,6 @@ public class SimpleSession extends AbstractRuntime implements InternalWorkingMem
         return this.entryPoints;
     }
 
-    public Collection<RuleRuntimeEventListener> getRuleRuntimeEventListeners() {
-//        return Collections.unmodifiableCollection(ruleRuntimeEventSupport.getEventListeners());
-        return Collections.emptyList();
-    }
-
-    public Collection<AgendaEventListener> getAgendaEventListeners() {
-//        return Collections.unmodifiableCollection(this.agendaEventSupport.getEventListeners());
-        return Collections.emptyList();
-    }
-
     public KieBase getKieBase() {
         return this.kBase;
     }
@@ -414,7 +407,7 @@ public class SimpleSession extends AbstractRuntime implements InternalWorkingMem
         this.kBase.disposeStatefulSession(this);
 
         if (this.mbeanRegistered.get()) {
-            DroolsManagementAgent.getInstance().unregisterKnowledgeSessionUnderName(mbeanRegisteredCBSKey, this);
+            DroolsManagementAgent.getInstance().unregisterKnowledgeSessionUnderName(mbeanRegisteredCBSKey, this.eventManager);
         }
     }
 
@@ -510,21 +503,6 @@ public class SimpleSession extends AbstractRuntime implements InternalWorkingMem
         return null;
     }
 
-    @Override
-    public void addEventListener(ProcessEventListener processEventListener) {
-
-    }
-
-    @Override
-    public void removeEventListener(ProcessEventListener processEventListener) {
-
-    }
-
-    @Override
-    public Collection<ProcessEventListener> getProcessEventListeners() {
-        return null;
-    }
-
     public static class GlobalsAdapter
             implements
             GlobalResolver {
@@ -603,7 +581,7 @@ public class SimpleSession extends AbstractRuntime implements InternalWorkingMem
         this.agenda.reset();
 
         this.globalResolver.clear();
-        this.eventSupport.clear();
+        //this.eventSupport.clear();
 
         this.handleFactory.clear(0, 0);
         this.propagationIdCounter.set(0);
@@ -1570,103 +1548,18 @@ public class SimpleSession extends AbstractRuntime implements InternalWorkingMem
     }
 
     @Override
+    public WorkingMemoryEventManager getWorkingMemoryEventManager() {
+        return this.workingMemoryEventManager;
+    }
+
+    @Override
+    public EventSupport getEventSupport() {
+        return eventSupport;
+    }
+
+    @Override
     public String toString() {
         return "KieSession[" + id + "]";
-    }
-
-    // event support
-
-    @Override
-    public RuleRuntimeEventSupport getRuleRuntimeEventSupport() {
-        return eventSupport.getRuleRuntimeEventSupport();
-    }
-
-    @Override
-    public AgendaEventSupport getAgendaEventSupport() {
-        return eventSupport.getAgendaEventSupport();
-    }
-
-    @Override
-    public void setRuleRuntimeEventSupport(RuleRuntimeEventSupport ruleRuntimeEventSupport) {
-        eventSupport.setRuleRuntimeEventSupport(ruleRuntimeEventSupport);
-    }
-
-    @Override
-    public void setAgendaEventSupport(AgendaEventSupport agendaEventSupport) {
-        eventSupport.setAgendaEventSupport(agendaEventSupport);
-    }
-
-    @Override
-    public void addEventListener(RuleRuntimeEventListener listener) {
-        eventSupport.addEventListener(listener);
-    }
-
-    @Override
-    public void removeEventListener(RuleRuntimeEventListener listener) {
-        eventSupport.removeEventListener(listener);
-    }
-
-    @Override
-    public void addEventListener(AgendaEventListener listener) {
-        eventSupport.addEventListener(listener);
-    }
-
-    @Override
-    public void removeEventListener(AgendaEventListener listener) {
-        eventSupport.removeEventListener(listener);
-    }
-
-    @Override
-    public void addEventListener(KieBaseEventListener listener) {
-        eventSupport.addEventListener(listener);
-    }
-
-    @Override
-    public Collection<KieBaseEventListener> getKieBaseEventListeners() {
-        return eventSupport.getKieBaseEventListeners();
-    }
-
-    @Override
-    public void removeEventListener(KieBaseEventListener listener) {
-        eventSupport.removeEventListener(listener);
-    }
-
-    @Override
-    public RuleEventListenerSupport getRuleEventSupport() {
-        return eventSupport.getRuleEventSupport();
-    }
-
-    public void addEventListener(RuleEventListener listener) {
-        eventSupport.addEventListener(listener);
-    }
-
-    public void removeEventListener(RuleEventListener listener) {
-        eventSupport.removeEventListener(listener);
-    }
-
-    ///////////////////////////////////////////////////////////////////////////
-    // Start of utility methods used by droolsjbpm-tools
-    ///////////////////////////////////////////////////////////////////////////
-
-    public List iterateObjectsToList() {
-        List result = new ArrayList();
-        Iterator iterator = iterateObjects();
-        for (; iterator.hasNext(); ) {
-            result.add(iterator.next());
-        }
-        return result;
-    }
-
-    public List iterateNonDefaultEntryPointObjectsToList() {
-        List result = new ArrayList();
-        for (Map.Entry<String, WorkingMemoryEntryPoint> entry : entryPoints.entrySet()) {
-            WorkingMemoryEntryPoint entryPoint = entry.getValue();
-            if (entryPoint instanceof NamedEntryPoint) {
-                result.add(new EntryPointObjects(entry.getKey(),
-                                                 new ArrayList(entry.getValue().getObjects())));
-            }
-        }
-        return result;
     }
 
     private static class EntryPointObjects {

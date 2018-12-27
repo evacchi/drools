@@ -44,7 +44,7 @@ public class GetAgendaEventListenersCommand
 
     public Collection<AgendaEventListener> execute(Context context) {
         KieSession ksession = ((RegistryContext) context).lookup( KieSession.class );
-        final Collection<AgendaEventListener> agendaEventListeners = ksession.getAgendaEventListeners();
+        final Collection<AgendaEventListener> agendaEventListeners = ksession.getKieRuntimeEventManager().getAgendaEventListeners();
 
         if ( this.outIdentifier != null ) {
             ((RegistryContext) context).lookup( ExecutionResultImpl.class ).setResult(this.outIdentifier,

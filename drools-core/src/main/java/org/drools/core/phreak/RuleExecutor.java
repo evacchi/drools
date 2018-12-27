@@ -364,7 +364,7 @@ public class RuleExecutor {
         // we need to make sure it re-activates
         wm.startOperation();
         try {
-            wm.getAgendaEventSupport().fireBeforeActivationFired( activation, wm );
+            wm.getEventSupport().getAgendaEventSupport().fireBeforeActivationFired( activation, wm );
 
             if ( activation.getActivationGroupNode() != null ) {
                 // We know that this rule will cancel all other activations in the group
@@ -397,7 +397,7 @@ public class RuleExecutor {
                 }
             }
 
-            wm.getAgendaEventSupport().fireAfterActivationFired( activation, wm );
+            wm.getEventSupport().getAgendaEventSupport().fireAfterActivationFired( activation, wm );
         } finally {
             wm.endOperation();
         }
@@ -427,9 +427,9 @@ public class RuleExecutor {
                 log.trace( "Fire event {} for rule \"{}\" \n{}", consequence.getName(), activation.getRule().getName(), activation.getTuple() );
             }
 
-            wm.getRuleEventSupport().onBeforeMatchFire( activation );
+            wm.getEventSupport().getRuleEventSupport().onBeforeMatchFire( activation );
             consequence.evaluate(knowledgeHelper, wm);
-            wm.getRuleEventSupport().onAfterMatchFire( activation );
+            wm.getEventSupport().getRuleEventSupport().onAfterMatchFire( activation );
 
             activation.setActive(false);
             knowledgeHelper.cancelRemainingPreviousLogicalDependencies();

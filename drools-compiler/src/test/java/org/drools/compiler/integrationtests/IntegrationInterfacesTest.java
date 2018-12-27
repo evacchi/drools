@@ -187,7 +187,7 @@ public class IntegrationInterfacesTest extends CommonTestMethodBase {
         KieSession ksession = createKnowledgeSession(kbase);
         
         Channel someChannel = mock( Channel.class );
-        ksession.registerChannel( "someChannel", someChannel );
+        ksession.getChannelManager().registerChannel( "someChannel", someChannel );
         
         ksession.insert( new Cheese( "brie", 30 ) );
         ksession.insert( new Cheese( "stilton", 5 ) );

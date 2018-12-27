@@ -520,8 +520,8 @@ public class KieBuilderTest extends CommonTestMethodBase {
         KieContainer kieContainer = ks.newKieContainer( km.getReleaseId());
         
         KieSession kieSession = kieContainer.newKieSession();
-        assertEquals(1, kieSession.getChannels().size());
-        assertTrue(kieSession.getChannels().keySet().contains("testChannel"));
+        assertEquals(1, kieSession.getChannelManager().getChannels().size());
+        assertTrue(kieSession.getChannelManager().getChannels().keySet().contains("testChannel"));
     }
     
     @Test

@@ -25,6 +25,7 @@ import org.kie.api.event.rule.RuleRuntimeEventListener;
 import org.kie.api.logger.KieRuntimeLogger;
 import org.kie.api.runtime.Calendars;
 import org.kie.api.runtime.Channel;
+import org.kie.api.runtime.ChannelManager;
 import org.kie.api.runtime.Environment;
 import org.kie.api.runtime.Globals;
 import org.kie.api.runtime.KieSession;
@@ -196,17 +197,7 @@ public class ExternalSheetListenerTest {
                 }
 
                 @Override
-                public void registerChannel(String name, Channel channel) {
-
-                }
-
-                @Override
-                public void unregisterChannel(String name) {
-
-                }
-
-                @Override
-                public Map<String, Channel> getChannels() {
+                public ChannelManager getChannelManager() {
                     return null;
                 }
 

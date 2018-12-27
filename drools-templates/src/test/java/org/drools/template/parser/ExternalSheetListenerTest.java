@@ -341,56 +341,6 @@ public class ExternalSheetListenerTest {
                 }
 
                 @Override
-                public ProcessInstance startProcess(String processId) {
-                    return null;
-                }
-
-                @Override
-                public ProcessInstance startProcess(String processId, Map<String, Object> parameters) {
-                    return null;
-                }
-
-                @Override
-                public ProcessInstance createProcessInstance(String processId, Map<String, Object> parameters) {
-                    return null;
-                }
-
-                @Override
-                public ProcessInstance startProcessInstance(long processInstanceId) {
-                    return null;
-                }
-
-                @Override
-                public void signalEvent(String type, Object event) {
-
-                }
-
-                @Override
-                public void signalEvent(String type, Object event, long processInstanceId) {
-
-                }
-
-                @Override
-                public Collection<ProcessInstance> getProcessInstances() {
-                    return null;
-                }
-
-                @Override
-                public ProcessInstance getProcessInstance(long processInstanceId) {
-                    return null;
-                }
-
-                @Override
-                public ProcessInstance getProcessInstance(long processInstanceId, boolean readonly) {
-                    return null;
-                }
-
-                @Override
-                public void abortProcessInstance(long processInstanceId) {
-
-                }
-
-                @Override
                 public org.kie.api.runtime.process.WorkItemManager getWorkItemManager() {
                     return null;
                 }

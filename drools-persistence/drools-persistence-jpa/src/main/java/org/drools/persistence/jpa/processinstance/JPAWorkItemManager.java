@@ -26,7 +26,9 @@ import org.drools.persistence.api.PersistenceContextManager;
 import org.drools.persistence.info.WorkItemInfo;
 import org.kie.api.runtime.Environment;
 import org.kie.api.runtime.EnvironmentName;
+import org.kie.api.runtime.KieRuntime;
 import org.kie.api.runtime.process.ProcessInstance;
+import org.kie.api.runtime.process.ProcessRuntime;
 import org.kie.api.runtime.process.WorkItemHandler;
 import org.kie.internal.runtime.Closeable;
 
@@ -37,13 +39,15 @@ import java.util.Set;
 
 public class JPAWorkItemManager implements WorkItemManager {
 
-    private InternalKnowledgeRuntime kruntime;
+    private KieRuntime kruntime;
+    private final ProcessRuntime pruntime;
     private Map<String, WorkItemHandler> workItemHandlers = new HashMap<String, WorkItemHandler>();
     private transient Map<Long, WorkItemInfo> workItems;
     private transient volatile boolean pessimisticLocking;
 
-    public JPAWorkItemManager(InternalKnowledgeRuntime kruntime) {
+    public JPAWorkItemManager(KieRuntime kruntime, ProcessRuntime pruntime) {
         this.kruntime = kruntime;
+        this.pruntime = pruntime;
         Boolean locking = (Boolean) this.kruntime.getEnvironment().get( EnvironmentName.USE_PESSIMISTIC_LOCKING );
         if ( locking != null && locking ) {
             this.pessimisticLocking = locking;
@@ -160,7 +164,7 @@ public class JPAWorkItemManager implements WorkItemManager {
         if ( workItemInfo != null ) {
             WorkItem workItem = internalGetWorkItem( workItemInfo );
             workItem.setResults( results );
-            ProcessInstance processInstance = kruntime.getProcessInstance( workItem.getProcessInstanceId() );
+            ProcessInstance processInstance = pruntime.getProcessInstance( workItem.getProcessInstanceId() );
             workItem.setState( WorkItem.COMPLETED );
             // process instance may have finished already
             if ( processInstance != null ) {
@@ -191,7 +195,7 @@ public class JPAWorkItemManager implements WorkItemManager {
         // work item may have been aborted
         if ( workItemInfo != null ) {
             WorkItem workItem = (WorkItemImpl) internalGetWorkItem( workItemInfo );
-            ProcessInstance processInstance = kruntime.getProcessInstance( workItem.getProcessInstanceId() );
+            ProcessInstance processInstance = pruntime.getProcessInstance( workItem.getProcessInstanceId() );
             workItem.setState( WorkItem.ABORTED );
             // process instance may have finished already
             if ( processInstance != null ) {
@@ -251,11 +255,11 @@ public class JPAWorkItemManager implements WorkItemManager {
     }
 
     public void signalEvent( String type, Object event ) {
-        this.kruntime.signalEvent( type, event );
+        this.pruntime.signalEvent( type, event );
     }
 
     public void signalEvent( String type, Object event, long processInstanceId ) {
-        this.kruntime.signalEvent( type, event, processInstanceId );
+        this.pruntime.signalEvent( type, event, processInstanceId );
     }
 
     @Override

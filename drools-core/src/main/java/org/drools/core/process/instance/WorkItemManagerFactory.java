@@ -16,10 +16,11 @@
 
 package org.drools.core.process.instance;
 
-import org.drools.core.common.InternalKnowledgeRuntime;
+import org.kie.api.runtime.KieRuntime;
+import org.kie.api.runtime.process.ProcessRuntime;
 
 public interface WorkItemManagerFactory {
 
-    WorkItemManager createWorkItemManager(InternalKnowledgeRuntime kruntime);
+    WorkItemManager createWorkItemManager(KieRuntime kruntime, ProcessRuntime pruntime);
 
 }

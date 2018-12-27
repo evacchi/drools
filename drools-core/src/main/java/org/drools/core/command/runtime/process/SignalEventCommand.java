@@ -28,6 +28,7 @@ import org.kie.api.command.ExecutableCommand;
 import org.kie.api.runtime.Context;
 import org.kie.api.runtime.KieSession;
 import org.kie.api.runtime.process.ProcessInstance;
+import org.kie.api.runtime.process.ProcessRuntime;
 import org.kie.internal.command.ProcessInstanceIdCommand;
 import org.kie.internal.command.RegistryContext;
 import org.kie.internal.jaxb.CorrelationKeyXmlAdapter;
@@ -111,13 +112,13 @@ public class SignalEventCommand implements ExecutableCommand<Void>, ProcessInsta
         KieSession ksession = ((RegistryContext) context).lookup( KieSession.class );
         
         if (processInstanceId == -1 && correlationKey == null) {
-            ksession.signalEvent(eventType, event);
+            ksession.getKieRuntime(ProcessRuntime.class).signalEvent(eventType, event);
         } else {
             ProcessInstance processInstance;
             if( correlationKey != null ) { 
                 processInstance = ((CorrelationAwareProcessRuntime) ksession).getProcessInstance(correlationKey);
             } else { 
-                processInstance = ksession.getProcessInstance(processInstanceId);
+                processInstance = ksession.getKieRuntime(ProcessRuntime.class).getProcessInstance(processInstanceId);
             }
             if (processInstance != null) {
                 processInstance.signalEvent(eventType, event);

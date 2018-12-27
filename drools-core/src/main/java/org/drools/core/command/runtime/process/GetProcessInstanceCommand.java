@@ -26,6 +26,7 @@ import org.kie.api.command.ExecutableCommand;
 import org.kie.api.runtime.Context;
 import org.kie.api.runtime.KieSession;
 import org.kie.api.runtime.process.ProcessInstance;
+import org.kie.api.runtime.process.ProcessRuntime;
 import org.kie.internal.command.ProcessInstanceIdCommand;
 import org.kie.internal.command.RegistryContext;
 
@@ -82,7 +83,7 @@ public class GetProcessInstanceCommand implements ExecutableCommand<ProcessInsta
             return null;
         }
 
-        final ProcessInstance processInstance = ksession.getProcessInstance(processInstanceId, readOnly);
+        final ProcessInstance processInstance = ksession.getKieRuntime(ProcessRuntime.class).getProcessInstance(processInstanceId, readOnly);
 
         if ( this.outIdentifier != null ) {
             ((RegistryContext) context).lookup( ExecutionResultImpl.class ).setResult(this.outIdentifier, processInstance);

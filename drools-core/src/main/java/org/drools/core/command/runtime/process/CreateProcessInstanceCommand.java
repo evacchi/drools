@@ -34,6 +34,7 @@ import org.kie.api.command.ExecutableCommand;
 import org.kie.api.runtime.Context;
 import org.kie.api.runtime.KieSession;
 import org.kie.api.runtime.process.ProcessInstance;
+import org.kie.api.runtime.process.ProcessRuntime;
 import org.kie.internal.command.RegistryContext;
 
 @XmlAccessorType(XmlAccessType.NONE)
@@ -121,7 +122,7 @@ public class CreateProcessInstanceCommand implements ExecutableCommand<ProcessIn
                 ksession.insert(o);
             }
         }
-        ProcessInstance processInstance = (ProcessInstance) ksession.createProcessInstance(processId, parameters);
+        ProcessInstance processInstance = (ProcessInstance) ksession.getKieRuntime(ProcessRuntime.class).createProcessInstance(processId, parameters);
         if ( this.outIdentifier != null ) {
             ((RegistryContext) context).lookup( ExecutionResultImpl.class ).setResult(this.outIdentifier, processInstance.getId());
         }

@@ -24,11 +24,13 @@ import java.io.ObjectOutput;
 import org.drools.core.common.InternalKnowledgeRuntime;
 import org.drools.core.process.instance.WorkItemManager;
 import org.drools.core.process.instance.WorkItemManagerFactory;
+import org.kie.api.runtime.KieRuntime;
+import org.kie.api.runtime.process.ProcessRuntime;
 
 public class DefaultWorkItemManagerFactory implements WorkItemManagerFactory, Externalizable {
 
-    public WorkItemManager createWorkItemManager(InternalKnowledgeRuntime kruntime) {
-        return new DefaultWorkItemManager(kruntime);
+    public WorkItemManager createWorkItemManager(KieRuntime kruntime, ProcessRuntime pruntime) {
+        return new DefaultWorkItemManager(pruntime);
     }
 
     public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {

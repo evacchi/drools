@@ -35,6 +35,7 @@ import org.kie.api.command.ExecutableCommand;
 import org.kie.api.runtime.Context;
 import org.kie.api.runtime.KieSession;
 import org.kie.api.runtime.process.ProcessInstance;
+import org.kie.api.runtime.process.ProcessRuntime;
 import org.kie.internal.command.RegistryContext;
 
 @XmlRootElement
@@ -119,7 +120,7 @@ public class StartProcessCommand implements ExecutableCommand<ProcessInstance>, 
                 ksession.insert(o);
             }
         }
-        ProcessInstance processInstance = (ProcessInstance) ksession.startProcess(processId, parameters);
+        ProcessInstance processInstance = (ProcessInstance) ksession.getKieRuntime(ProcessRuntime.class).startProcess(processId, parameters);
         if ( this.outIdentifier != null ) {
             ((RegistryContext) context).lookup( ExecutionResultImpl.class ).setResult(this.outIdentifier, processInstance.getId());
         }

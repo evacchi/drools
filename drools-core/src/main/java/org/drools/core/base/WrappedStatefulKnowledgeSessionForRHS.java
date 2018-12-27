@@ -234,26 +234,26 @@ public final class WrappedStatefulKnowledgeSessionForRHS
 		return delegate.getPropagationIdCounter();
 	}
 
-	public ProcessInstance createProcessInstance(String processId, Map<String, Object> parameters) {
-		return delegate.createProcessInstance(processId, parameters);
-	}
-
-	public ProcessInstance startProcessInstance(long processInstanceId) {
-		return delegate.startProcessInstance(processInstanceId);
-	}
-
-	public ProcessInstance createProcessInstance(String processId, CorrelationKey correlationKey,
-			Map<String, Object> parameters) {
-		return delegate.createProcessInstance(processId, correlationKey, parameters);
-	}
+//	public ProcessInstance createProcessInstance(String processId, Map<String, Object> parameters) {
+//		return delegate.createProcessInstance(processId, parameters);
+//	}
+//
+//	public ProcessInstance startProcessInstance(long processInstanceId) {
+//		return delegate.startProcessInstance(processInstanceId);
+//	}
+//
+//	public ProcessInstance createProcessInstance(String processId, CorrelationKey correlationKey,
+//			Map<String, Object> parameters) {
+//		return delegate.createProcessInstance(processId, correlationKey, parameters);
+//	}
 
 	public boolean equals(Object obj) {
 		return delegate.equals(obj);
 	}
 
-	public ProcessInstance getProcessInstance(CorrelationKey correlationKey) {
-		return delegate.getProcessInstance(correlationKey);
-	}
+//	public ProcessInstance getProcessInstance(CorrelationKey correlationKey) {
+//		return delegate.getProcessInstance(correlationKey);
+//	}
 
 	public Map<String, WorkingMemoryEntryPoint> getWorkingMemoryEntryPoints() {
 		return delegate.getWorkingMemoryEntryPoints();
@@ -271,10 +271,10 @@ public final class WrappedStatefulKnowledgeSessionForRHS
 		return delegate.hashCode();
 	}
 
-	public ProcessInstance startProcess(String processId, CorrelationKey correlationKey,
-			Map<String, Object> parameters) {
-		return delegate.startProcess(processId, correlationKey, parameters);
-	}
+//	public ProcessInstance startProcess(String processId, CorrelationKey correlationKey,
+//			Map<String, Object> parameters) {
+//		return delegate.startProcess(processId, correlationKey, parameters);
+//	}
 
 	public void registerChannel(String name, Channel channel) {
 		delegate.registerChannel(name, channel);
@@ -736,25 +736,25 @@ public final class WrappedStatefulKnowledgeSessionForRHS
 		delegate.clearRuleFlowGroup(group);
 	}
 
-	public ProcessInstance startProcess(String processId) {
-		return delegate.startProcess(processId);
-	}
-
-	public ProcessInstance startProcess(String processId, Map<String, Object> parameters) {
-		return delegate.startProcess(processId, parameters);
-	}
-
-	public Collection<ProcessInstance> getProcessInstances() {
-		return delegate.getProcessInstances();
-	}
-
-	public ProcessInstance getProcessInstance(long id) {
-		return delegate.getProcessInstance(id);
-	}
-
-	public ProcessInstance getProcessInstance(long id, boolean readOnly) {
-		return delegate.getProcessInstance(id, readOnly);
-	}
+//	public ProcessInstance startProcess(String processId) {
+//		return delegate.startProcess(processId);
+//	}
+//
+//	public ProcessInstance startProcess(String processId, Map<String, Object> parameters) {
+//		return delegate.startProcess(processId, parameters);
+//	}
+//
+//	public Collection<ProcessInstance> getProcessInstances() {
+//		return delegate.getProcessInstances();
+//	}
+//
+//	public ProcessInstance getProcessInstance(long id) {
+//		return delegate.getProcessInstance(id);
+//	}
+//
+//	public ProcessInstance getProcessInstance(long id, boolean readOnly) {
+//		return delegate.getProcessInstance(id, readOnly);
+//	}
 
 	public WorkItemManager getWorkItemManager() {
 		return delegate.getWorkItemManager();

@@ -1330,56 +1330,9 @@ public class SimpleSession extends AbstractRuntime implements InternalWorkingMem
         }
     }
 
-    public ProcessInstance startProcess(final String processId) {
-        return getProcessRuntime().startProcess(processId);
-    }
-
-    public ProcessInstance startProcess(String processId,
-                                        Map<String, Object> parameters) {
-        return getProcessRuntime().startProcess(processId,
-                                                parameters);
-    }
-
-    public ProcessInstance createProcessInstance(String processId,
-                                                 Map<String, Object> parameters) {
-        return getProcessRuntime().createProcessInstance(processId, parameters);
-    }
-
-    public ProcessInstance startProcessInstance(long processInstanceId) {
-        return getProcessRuntime().startProcessInstance(processInstanceId);
-    }
-
-    @Override
-    public void signalEvent(String s, Object o) {
-
-    }
-
-    @Override
-    public void signalEvent(String s, Object o, long l) {
-
-    }
-
-    public Collection<ProcessInstance> getProcessInstances() {
-        return getProcessRuntime().getProcessInstances();
-    }
-
-    public ProcessInstance getProcessInstance(long processInstanceId) {
-        return getProcessRuntime().getProcessInstance(processInstanceId);
-    }
-
-    @Override
-    public ProcessInstance getProcessInstance(long id, boolean readOnly) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void abortProcessInstance(long l) {
-
-    }
-
     public WorkItemManager getWorkItemManager() {
         if (workItemManager == null) {
-            workItemManager = config.getWorkItemManagerFactory().createWorkItemManager(this.getKnowledgeRuntime());
+            workItemManager = config.getWorkItemManagerFactory().createWorkItemManager(this, this.processRuntime);
             Map<String, Object> params = new HashMap<String, Object>();
             params.put("ksession", this.getKnowledgeRuntime());
             Map<String, WorkItemHandler> workItemHandlers = config.getWorkItemHandlers(params);

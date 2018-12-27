@@ -18,11 +18,13 @@ package org.drools.persistence.jpa.processinstance;
 import org.drools.core.common.InternalKnowledgeRuntime;
 import org.drools.core.process.instance.WorkItemManager;
 import org.drools.core.process.instance.WorkItemManagerFactory;
+import org.kie.api.runtime.KieRuntime;
+import org.kie.api.runtime.process.ProcessRuntime;
 
 public class JPAWorkItemManagerFactory implements WorkItemManagerFactory {
 
-    public WorkItemManager createWorkItemManager(InternalKnowledgeRuntime kruntime) {
-        return new JPAWorkItemManager(kruntime);
+    public WorkItemManager createWorkItemManager(KieRuntime kruntime, ProcessRuntime pruntime) {
+        return new JPAWorkItemManager(kruntime, pruntime);
     }
 
 }

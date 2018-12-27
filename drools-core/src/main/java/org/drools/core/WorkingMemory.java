@@ -231,31 +231,6 @@ public interface WorkingMemory extends WorkingMemoryEventManager, WorkingMemoryE
      */
     void clearRuleFlowGroup(String group);
 
-    /**
-     * Starts a new process instance for the process with the given id.
-     */
-    ProcessInstance startProcess(String processId);
-
-    /**
-     * Starts a new process instance for the process with the given id.
-     */
-    ProcessInstance startProcess(String processId, Map<String, Object> parameters);
-
-    /**
-     * Returns the list of process instances of this working memory.
-     * This list is unmodifiable.
-     * @return the list of process instances
-     */
-    Collection<ProcessInstance> getProcessInstances();
-
-    /**
-     * Returns the process instance with the given id.
-     * @return the process instance with the given id
-     */
-    ProcessInstance getProcessInstance(long id);
-
-    ProcessInstance getProcessInstance(long id, boolean readOnly);
-
     WorkItemManager getWorkItemManager();
 
     /**

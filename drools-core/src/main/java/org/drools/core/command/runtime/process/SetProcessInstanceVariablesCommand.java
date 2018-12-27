@@ -31,6 +31,7 @@ import org.kie.api.command.ExecutableCommand;
 import org.kie.api.runtime.Context;
 import org.kie.api.runtime.KieSession;
 import org.kie.api.runtime.process.ProcessInstance;
+import org.kie.api.runtime.process.ProcessRuntime;
 import org.kie.api.runtime.process.WorkflowProcessInstance;
 import org.kie.internal.command.ProcessInstanceIdCommand;
 import org.kie.internal.command.RegistryContext;
@@ -81,7 +82,7 @@ public class SetProcessInstanceVariablesCommand implements ExecutableCommand<Voi
 
     public Void execute(Context context) {
         KieSession ksession = ((RegistryContext) context).lookup(KieSession.class);
-        ProcessInstance processInstance = ksession.getProcessInstance(processInstanceId);
+        ProcessInstance processInstance = ksession.getKieRuntime(ProcessRuntime.class).getProcessInstance(processInstanceId);
         if (processInstance != null) {
             if (variables != null) {
                 for (Map.Entry<String, Object> entry : variables.entrySet()) {

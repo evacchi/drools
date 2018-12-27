@@ -32,6 +32,7 @@ import org.drools.core.common.InternalKnowledgeRuntime;
 import org.drools.core.process.instance.WorkItem;
 import org.drools.core.process.instance.WorkItemManager;
 import org.kie.api.runtime.process.ProcessInstance;
+import org.kie.api.runtime.process.ProcessRuntime;
 import org.kie.api.runtime.process.WorkItemHandler;
 import org.kie.internal.runtime.Closeable;
 
@@ -41,10 +42,10 @@ public class DefaultWorkItemManager implements WorkItemManager, Externalizable {
 
     private AtomicLong workItemCounter = new AtomicLong(0);
     private Map<Long, WorkItem> workItems = new ConcurrentHashMap<Long, WorkItem>();
-    private InternalKnowledgeRuntime kruntime;
+    private ProcessRuntime kruntime;
     private Map<String, WorkItemHandler> workItemHandlers = new HashMap<String, WorkItemHandler>();
 
-    public DefaultWorkItemManager(InternalKnowledgeRuntime kruntime) {
+    public DefaultWorkItemManager(ProcessRuntime kruntime) {
         this.kruntime = kruntime;
     }
 
@@ -52,7 +53,7 @@ public class DefaultWorkItemManager implements WorkItemManager, Externalizable {
     public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
         workItemCounter.set(in.readLong());
         workItems = (Map<Long, WorkItem>) in.readObject();
-        kruntime = (InternalKnowledgeRuntime) in.readObject();
+        kruntime = (ProcessRuntime) in.readObject();
         workItemHandlers = (Map<String, WorkItemHandler>) in.readObject();
     }
 
@@ -170,12 +171,12 @@ public class DefaultWorkItemManager implements WorkItemManager, Externalizable {
     public void clear() {
         this.workItems.clear();
     }
-    
-    public void signalEvent(String type, Object event) { 
+
+    public void signalEvent(String type, Object event) {
         this.kruntime.signalEvent(type, event);
-    } 
-    
-    public void signalEvent(String type, Object event, long processInstanceId) { 
+    }
+
+    public void signalEvent(String type, Object event, long processInstanceId) {
         this.kruntime.signalEvent(type, event, processInstanceId);
     }
 

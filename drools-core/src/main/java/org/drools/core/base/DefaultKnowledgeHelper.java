@@ -64,6 +64,7 @@ import org.kie.api.runtime.process.NodeInstance;
 import org.kie.api.runtime.process.NodeInstanceContainer;
 import org.kie.api.runtime.process.ProcessContext;
 import org.kie.api.runtime.process.ProcessInstance;
+import org.kie.api.runtime.process.ProcessRuntime;
 import org.kie.api.runtime.process.WorkflowProcessInstance;
 import org.kie.api.runtime.rule.EntryPoint;
 import org.kie.api.runtime.rule.FactHandle;
@@ -537,7 +538,7 @@ public class DefaultKnowledgeHelper<T extends ModedAssertion<T>>
                             "Not supporting multiple node instances for the same ruleflow group");
                     }
                     Map.Entry<Long, String> entry = nodeInstances.entrySet().iterator().next();
-                    ProcessInstance processInstance = workingMemory.getProcessInstance(entry.getKey());
+                    ProcessInstance processInstance = workingMemory.getKieRuntime(ProcessRuntime.class).getProcessInstance(entry.getKey());
                     org.drools.core.spi.ProcessContext context = new org.drools.core.spi.ProcessContext(workingMemory.getKnowledgeRuntime());
                     context.setProcessInstance(processInstance);
                     String nodeInstance = entry.getValue();

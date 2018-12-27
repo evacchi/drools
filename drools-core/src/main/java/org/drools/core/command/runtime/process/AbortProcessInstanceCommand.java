@@ -24,6 +24,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 import org.kie.api.command.ExecutableCommand;
 import org.kie.api.runtime.Context;
 import org.kie.api.runtime.KieSession;
+import org.kie.api.runtime.process.ProcessRuntime;
 import org.kie.internal.command.ProcessInstanceIdCommand;
 import org.kie.internal.command.RegistryContext;
 
@@ -52,7 +53,7 @@ public class AbortProcessInstanceCommand implements ExecutableCommand<Void>, Pro
         if (processInstanceId == null) {
             return null;
         }
-        ksession.abortProcessInstance(processInstanceId);
+        ksession.getKieRuntime(ProcessRuntime.class).abortProcessInstance(processInstanceId);
         return null;
     }
 

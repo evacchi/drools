@@ -29,6 +29,7 @@ import org.kie.api.command.ExecutableCommand;
 import org.kie.api.runtime.Context;
 import org.kie.api.runtime.KieSession;
 import org.kie.api.runtime.process.ProcessInstance;
+import org.kie.api.runtime.process.ProcessRuntime;
 import org.kie.internal.command.RegistryContext;
 
 @XmlRootElement
@@ -51,7 +52,7 @@ public class GetProcessInstancesCommand
     public Collection<ProcessInstance> execute(Context context) {
         KieSession ksession = ((RegistryContext) context).lookup( KieSession.class );
 
-        Collection<ProcessInstance> instances = ksession.getProcessInstances();
+        Collection<ProcessInstance> instances = ksession.getKieRuntime(ProcessRuntime.class).getProcessInstances();
         Collection<ProcessInstance> result = new ArrayList<ProcessInstance>();
 
         for ( ProcessInstance instance : instances ) {

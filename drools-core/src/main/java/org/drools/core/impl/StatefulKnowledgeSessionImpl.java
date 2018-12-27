@@ -164,12 +164,7 @@ public class StatefulKnowledgeSessionImpl extends AbstractRuntime
         WorkingMemoryEntryPoint,
         InternalKnowledgeRuntime,
         KieSession,
-        KieRuntimeEventManager,
         InternalWorkingMemoryActions,
-        EventSupport,
-        RuleEventManager,
-        ProcessEventManager,
-        CorrelationAwareProcessRuntime,
         Externalizable {
 
     public static final String ERRORMSG = "Illegal method call. This session was previously disposed.";
@@ -1857,59 +1852,9 @@ public class StatefulKnowledgeSessionImpl extends AbstractRuntime
         }
     }
 
-    public ProcessInstance startProcess(final String processId) {
-        return getProcessRuntime().startProcess( processId );
-    }
-
-    public ProcessInstance startProcess(String processId,
-                                        Map<String, Object> parameters) {
-        return getProcessRuntime().startProcess( processId,
-                                                 parameters );
-    }
-
-    public ProcessInstance createProcessInstance(String processId,
-                                                 Map<String, Object> parameters) {
-        return getProcessRuntime().createProcessInstance( processId, parameters );
-    }
-
-    public ProcessInstance startProcessInstance(long processInstanceId) {
-        return getProcessRuntime().startProcessInstance( processInstanceId );
-    }
-
-    public Collection<ProcessInstance> getProcessInstances() {
-        return getProcessRuntime().getProcessInstances();
-    }
-
-    public ProcessInstance getProcessInstance(long processInstanceId) {
-        return getProcessRuntime().getProcessInstance( processInstanceId );
-    }
-
-    @Override
-    public ProcessInstance startProcess(String processId,
-                                        CorrelationKey correlationKey, Map<String, Object> parameters) {
-
-        return getProcessRuntime().startProcess( processId, correlationKey, parameters );
-    }
-
-    @Override
-    public ProcessInstance createProcessInstance(String processId,
-                                                 CorrelationKey correlationKey, Map<String, Object> parameters) {
-
-        return getProcessRuntime().createProcessInstance( processId, correlationKey, parameters );
-    }
-
-    @Override
-    public ProcessInstance getProcessInstance(CorrelationKey correlationKey) {
-        return getProcessRuntime().getProcessInstance( correlationKey );
-    }
-
-    public ProcessInstance getProcessInstance(long processInstanceId, boolean readOnly) {
-        return getProcessRuntime().getProcessInstance( processInstanceId, readOnly);
-    }
-
     public WorkItemManager getWorkItemManager() {
         if (workItemManager == null) {
-            workItemManager = config.getWorkItemManagerFactory().createWorkItemManager(this.getKnowledgeRuntime());
+            workItemManager = config.getWorkItemManagerFactory().createWorkItemManager(this, this.processRuntime);
             Map<String, Object> params = new HashMap<String, Object>();
             params.put("ksession", this.getKnowledgeRuntime());
             Map<String, WorkItemHandler> workItemHandlers = config.getWorkItemHandlers(params);

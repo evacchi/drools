@@ -3,9 +3,9 @@ package org.kie.api2;
 import org.junit.Test;
 import org.kie.api2.api.DataSource;
 import org.kie.api2.api.Kie;
-import org.kie.api2.api.RuleRuntime;
 import org.kie.api2.api.RuleUnit;
-import org.kie.api2.api.UnitRuntime;
+import org.kie.api2.api.RuleUnitInstance;
+import org.kie.api2.api.UnitInstance;
 import org.kie.api2.impl.DataSourceImpl;
 
 public class DataSourceTest {
@@ -22,8 +22,8 @@ public class DataSourceTest {
     public void testRuleRuntime() {
         final DataSource<String> ds = new DataSourceImpl<>();
         ds.add("foo");
-        UnitRuntime<MyUnit> rt = Kie.runtime().of(new MyUnit(ds));
-        rt.run();
+        RuleUnitInstance<MyUnit> rui = Kie.runtime().of(new MyUnit(ds));
+        rui.run();
 
     }
 }

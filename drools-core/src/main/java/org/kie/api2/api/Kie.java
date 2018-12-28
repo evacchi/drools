@@ -16,7 +16,8 @@ public interface Kie {
 
         interface Factory {
 
-            <U extends Unit> UnitRuntime<U> of(U unit);
+            <U extends Unit> UnitInstance<U> of(U unit);
+            <U extends RuleUnit> RuleUnitInstance<U> of(U unit);
         }
     }
 }

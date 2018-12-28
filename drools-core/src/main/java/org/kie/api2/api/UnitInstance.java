@@ -1,6 +1,6 @@
 package org.kie.api2.api;
 
-public interface UnitRuntime<T> {
+public interface UnitInstance<T> {
 
     void run();
 }

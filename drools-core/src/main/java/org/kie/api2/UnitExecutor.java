@@ -1,7 +1,7 @@
 package org.kie.api2;
 
 import org.kie.api.KieBase;
-import org.kie.api2.api.UnitInstance;
+import org.kie.api2.api.UnitRuntime;
 
 public class UnitExecutor {
 
@@ -9,7 +9,7 @@ public class UnitExecutor {
 
     }
 
-    public void submit(UnitInstance<?> ui) {
+    public void submit(UnitRuntime<?> ui) {
 
     }
 

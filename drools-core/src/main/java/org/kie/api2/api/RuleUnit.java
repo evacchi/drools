@@ -1,5 +1,5 @@
 package org.kie.api2.api;
 
-public interface RuleUnit {
+public interface RuleUnit extends Unit {
 
 }

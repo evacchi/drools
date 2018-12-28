@@ -158,17 +158,13 @@ import static org.drools.core.base.ClassObjectType.InitialFact_ObjectType;
 import static org.drools.core.common.PhreakPropagationContextFactory.createPropagationContextForFact;
 import static org.drools.core.reteoo.PropertySpecificUtil.allSetButTraitBitMask;
 
-public class StatefulKnowledgeSessionImpl extends AbstractRuntime
+public class StatefulKnowledgeSessionImpl
+    extends AbstractSession
         implements
         StatefulKnowledgeSession,
-        WorkingMemoryEntryPoint,
         InternalKnowledgeRuntime,
-        KieSession,
-        KieRuntimeEventManager,
         InternalWorkingMemoryActions,
-        EventSupport,
         RuleEventManager,
-        ProcessEventManager,
         CorrelationAwareProcessRuntime,
         Externalizable {
 

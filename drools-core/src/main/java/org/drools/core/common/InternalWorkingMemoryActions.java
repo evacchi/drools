@@ -30,8 +30,7 @@ import org.kie.api.internal.runtime.beliefs.Mode;
 
 public interface InternalWorkingMemoryActions
         extends
-        InternalWorkingMemory,
-        WorkingMemoryEntryPoint {
+        InternalWorkingMemory {
 
     void update(FactHandle handle,
                 Object object,

@@ -41,7 +41,7 @@ import org.kie.api.runtime.rule.EntryPoint;
 import org.kie.api.runtime.rule.FactHandle;
 
 public interface InternalWorkingMemory
-    extends WorkingMemory, WorkingMemoryEntryPoint, EventSupport {
+    extends WorkingMemory, EventSupport {
 
     InternalAgenda getAgenda();
 

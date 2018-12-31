@@ -561,8 +561,7 @@ public class PatchedDefaultAgenda
         if ( agendaGroup == null ) {
             // The AgendaGroup is defined but not yet added to the
             // Agenda, so create the AgendaGroup and add to the Agenda.
-            agendaGroup = agendaGroupFactory.createAgendaGroup( name,
-                                                                kBase );
+            agendaGroup = new PatchedAgendaGroupQueueImpl(name, kBase);
             addAgendaGroup( agendaGroup );
         }
 

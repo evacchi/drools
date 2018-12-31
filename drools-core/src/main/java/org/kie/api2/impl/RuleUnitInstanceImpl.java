@@ -1,5 +1,6 @@
 package org.kie.api2.impl;
 
+import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
@@ -8,6 +9,7 @@ import java.util.concurrent.locks.Lock;
 import org.drools.core.SessionConfiguration;
 import org.drools.core.WorkingMemoryEntryPoint;
 import org.drools.core.common.InternalAgenda;
+import org.drools.core.common.InternalAgendaGroup;
 import org.drools.core.common.InternalFactHandle;
 import org.drools.core.common.InternalKnowledgeRuntime;
 import org.drools.core.common.InternalWorkingMemory;
@@ -25,6 +27,7 @@ import org.drools.core.event.RuleRuntimeEventSupport;
 import org.drools.core.impl.InternalKnowledgeBase;
 import org.drools.core.phreak.PropagationEntry;
 import org.drools.core.reteoo.EntryPointNode;
+import org.drools.core.reteoo.ReteooFactHandleFactory;
 import org.drools.core.reteoo.TerminalNode;
 import org.drools.core.rule.EntryPointId;
 import org.drools.core.runtime.process.InternalProcessRuntime;
@@ -48,6 +51,7 @@ import org.kie.api.runtime.rule.EntryPoint;
 import org.kie.api.runtime.rule.FactHandle;
 import org.kie.api.runtime.rule.QueryResults;
 import org.kie.api.time.SessionClock;
+import org.kie.api2.api.DataSource;
 import org.kie.api2.api.RuleUnit;
 import org.kie.api2.api.RuleUnitInstance;
 
@@ -80,7 +84,31 @@ public class RuleUnitInstanceImpl<T extends RuleUnit> implements RuleUnitInstanc
 
     @Override
     public void run() {
+        bindDataSources();
+        agenda.flushPropagations();
+
+        InternalAgendaGroup unitGroup =
+                (InternalAgendaGroup) agenda.getAgendaGroup(unit.getClass().getName());
+        unitGroup.setAutoDeactivate(false);
+        unitGroup.setFocus();
+
         fireAllRules();
+    }
+
+    private void bindDataSources() {
+        try {
+            for (Field field : unit.getClass().getDeclaredFields()) {
+                if (field.getType().isAssignableFrom(DataSource.class)) {
+                    field.setAccessible(true);
+                    DataSourceImpl<?> v = (DataSourceImpl<?>) field.get(unit);
+                    v.bind(workingMemory);
+                } else {
+                    throw new UnsupportedOperationException();
+                }
+            }
+        } catch (IllegalAccessException e) {
+            throw new UnsupportedOperationException();
+        }
     }
 }
 
@@ -288,7 +316,7 @@ class DummyWorkingMemory implements InternalWorkingMemory {
 
     @Override
     public FactHandleFactory getFactHandleFactory() {
-        return null;
+        return new ReteooFactHandleFactory();
     }
 
     @Override

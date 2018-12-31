@@ -101,7 +101,7 @@ public class RuleUnitInstanceImpl<T extends RuleUnit> implements RuleUnitInstanc
                 if (field.getType().isAssignableFrom(DataSource.class)) {
                     field.setAccessible(true);
                     DataSourceImpl<?> v = (DataSourceImpl<?>) field.get(unit);
-                    v.bind(workingMemory);
+                    v.bind(v, workingMemory);
                 } else {
                     throw new UnsupportedOperationException();
                 }
@@ -326,7 +326,7 @@ class DummyWorkingMemory implements InternalWorkingMemory {
 
     @Override
     public InternalWorkingMemory getInternalWorkingMemory() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override

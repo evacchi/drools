@@ -7,13 +7,18 @@ import org.kie.api2.api.Kie;
 import org.kie.api2.api.RuleUnit;
 import org.kie.api2.api.RuleUnitInstance;
 import org.kie.api2.api.RuleUnitInstanceFactory;
+import org.kie.api2.api.RuleUnitInstanceFactoryImpl;
 import org.kie.api2.api.Unit;
 import org.kie.api2.api.UnitInstance;
 import org.kie.api2.api.UnitInstanceFactory;
 
 public class KieRuntimeFactoryImpl implements Kie.Runtime.Factory {
 
-    private KieBase kBase;
+    private final KieBase kBase;
+
+    public KieRuntimeFactoryImpl(KieBase kBase) {
+        this.kBase = kBase;
+    }
 
     @Override
     public <U extends Unit> UnitInstance<U> of(U unit) {
@@ -24,7 +29,7 @@ public class KieRuntimeFactoryImpl implements Kie.Runtime.Factory {
     @Override
     public <U extends RuleUnit> RuleUnitInstance<U> of(U unit) {
         RuleUnitInstanceFactory factory = lookupFactory(RuleUnitInstanceFactory.class);
-        return factory.create(unit);
+        return (RuleUnitInstance<U>) factory.create(unit);
     }
 
     private UnitInstanceFactory lookup(Class<? extends Unit> unitClass) {
@@ -36,6 +41,10 @@ public class KieRuntimeFactoryImpl implements Kie.Runtime.Factory {
 
     private <T extends UnitInstanceFactory> T lookupFactory(Class<T> cls) {
         // wizardry left as exercise for the reader
-        return null;
+        if (cls == RuleUnitInstanceFactory.class) {
+            return (T) new RuleUnitInstanceFactoryImpl(kBase);
+        } else {
+            throw new NoSuchElementException();
+        }
     }
 }

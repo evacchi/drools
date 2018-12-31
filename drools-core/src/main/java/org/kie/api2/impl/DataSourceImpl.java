@@ -6,7 +6,7 @@ import org.kie.api2.api.DataSource;
 
 public class DataSourceImpl<T> implements DataSource<T> {
 
-    CursoredDataSource<T> cds;
+    private final CursoredDataSource<T> cds = new CursoredDataSource<>();
 
     @Override
     public FactHandle add(T object) {

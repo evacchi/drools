@@ -93,7 +93,7 @@ public class DefaultKnowledgeHelper<T extends ModedAssertion<T>>
     }
 
     public DefaultKnowledgeHelper(final WorkingMemory workingMemory) {
-        this.workingMemory = new WrappedStatefulKnowledgeSessionForRHS( workingMemory );
+        this.workingMemory = null; //new WrappedStatefulKnowledgeSessionForRHS( workingMemory );
     }
 
     public DefaultKnowledgeHelper(Activation activation, final WorkingMemory workingMemory) {

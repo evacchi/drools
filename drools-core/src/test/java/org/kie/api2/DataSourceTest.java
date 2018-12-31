@@ -5,7 +5,6 @@ import org.kie.api2.api.DataSource;
 import org.kie.api2.api.Kie;
 import org.kie.api2.api.RuleUnit;
 import org.kie.api2.api.RuleUnitInstance;
-import org.kie.api2.api.UnitInstance;
 import org.kie.api2.impl.DataSourceImpl;
 
 public class DataSourceTest {

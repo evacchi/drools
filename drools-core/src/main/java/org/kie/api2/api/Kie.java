@@ -1,15 +1,14 @@
 package org.kie.api2.api;
 
+import org.drools.core.impl.KnowledgeBaseImpl;
 import org.kie.api.KieBase;
+import org.kie.api2.impl.KieRuntimeFactoryImpl;
 
 public interface Kie {
 
-    public static KieBase getKieBase() {
-        return null;
-    }
-
     static Runtime.Factory runtime() {
-        return null;
+        KieBase kBase = new KnowledgeBaseImpl();
+        return new KieRuntimeFactoryImpl(kBase);
     }
 
     interface Runtime {
@@ -17,6 +16,7 @@ public interface Kie {
         interface Factory {
 
             <U extends Unit> UnitInstance<U> of(U unit);
+
             <U extends RuleUnit> RuleUnitInstance<U> of(U unit);
         }
     }

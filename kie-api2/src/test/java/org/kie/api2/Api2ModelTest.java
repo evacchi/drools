@@ -8,14 +8,14 @@ import org.drools.model.Variable;
 import org.drools.model.impl.ModelImpl;
 import org.drools.modelcompiler.KiePackagesBuilder;
 import org.drools.modelcompiler.builder.KieBaseBuilder;
-import org.drools.modelcompiler.domain.Person;
-import org.drools.modelcompiler.domain.Result;
 import org.junit.Test;
 import org.kie.api.runtime.rule.FactHandle;
 import org.kie.api2.api.DataSource;
 import org.kie.api2.api.Kie;
 import org.kie.api2.api.RuleUnitInstance;
 import org.kie.api2.impl.DataSourceImpl;
+import org.kie.api2.model.Person;
+import org.kie.api2.model.Result;
 
 import static org.drools.model.DSL.declarationOf;
 import static org.drools.model.DSL.on;
@@ -32,7 +32,7 @@ public class Api2ModelTest {
 //        Variable<Person> olderV = declarationOf(Person.class);
 
         Rule rule = rule("beta")
-                .unit(MyUnit.class)
+                .unit(PersonUnit.class)
                 .build(
                         pattern(markV)
                                 .expr("exprA", p -> {
@@ -54,7 +54,7 @@ public class Api2ModelTest {
 
         DataSource<Person> ps = new DataSourceImpl<>();
 
-        RuleUnitInstance<MyUnit> rui = Kie.runtime(kieBase).of(new MyUnit(ps));
+        RuleUnitInstance<PersonUnit> rui = Kie.runtime(kieBase).of(new PersonUnit(ps));
 
         Person mark = new Person("Mark", 37);
         Person edson = new Person("Edson", 35);
@@ -73,11 +73,11 @@ public class Api2ModelTest {
     }
 }
 
-class MyUnit implements org.kie.api2.api.RuleUnit {
+class PersonUnit implements org.kie.api2.api.RuleUnit {
 
     private final DataSource<Person> persons;
 
-    public MyUnit(DataSource<Person> persons) {
+    public PersonUnit(DataSource<Person> persons) {
         this.persons = persons;
     }
 }

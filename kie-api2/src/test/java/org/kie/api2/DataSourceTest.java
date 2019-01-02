@@ -2,9 +2,7 @@ package org.kie.api2;
 
 import org.junit.Test;
 import org.kie.api2.api.DataSource;
-import org.kie.api2.api.Kie;
 import org.kie.api2.api.RuleUnit;
-import org.kie.api2.api.RuleUnitInstance;
 import org.kie.api2.impl.DataSourceImpl;
 
 public class DataSourceTest {
@@ -15,15 +13,6 @@ public class DataSourceTest {
         ds.add("foo");
         ds.add("bar");
         ds.add("baz");
-    }
-
-    @Test
-    public void testRuleRuntime() {
-        final DataSource<String> ds = new DataSourceImpl<>();
-        ds.add("foo");
-        RuleUnitInstance<MyUnit> rui = Kie.runtime().of(new MyUnit(ds));
-        rui.run();
-
     }
 }
 

@@ -7,14 +7,18 @@ import java.util.Map;
 import java.util.concurrent.locks.Lock;
 
 import org.drools.core.SessionConfiguration;
+import org.drools.core.SessionConfigurationImpl;
 import org.drools.core.WorkingMemoryEntryPoint;
+import org.drools.core.common.ConcurrentNodeMemories;
 import org.drools.core.common.InternalAgenda;
 import org.drools.core.common.InternalAgendaGroup;
 import org.drools.core.common.InternalFactHandle;
 import org.drools.core.common.InternalKnowledgeRuntime;
 import org.drools.core.common.InternalWorkingMemory;
+import org.drools.core.common.InternalWorkingMemoryActions;
 import org.drools.core.common.Memory;
 import org.drools.core.common.MemoryFactory;
+import org.drools.core.common.NamedEntryPoint;
 import org.drools.core.common.NodeMemories;
 import org.drools.core.common.ObjectStore;
 import org.drools.core.common.ObjectTypeConfigurationRegistry;
@@ -24,8 +28,11 @@ import org.drools.core.definitions.rule.impl.RuleImpl;
 import org.drools.core.event.AgendaEventSupport;
 import org.drools.core.event.RuleEventListenerSupport;
 import org.drools.core.event.RuleRuntimeEventSupport;
+import org.drools.core.factmodel.traits.Thing;
+import org.drools.core.factmodel.traits.TraitableBean;
 import org.drools.core.impl.InternalKnowledgeBase;
 import org.drools.core.phreak.PropagationEntry;
+import org.drools.core.phreak.PropagationList;
 import org.drools.core.reteoo.EntryPointNode;
 import org.drools.core.reteoo.ReteooFactHandleFactory;
 import org.drools.core.reteoo.TerminalNode;
@@ -40,6 +47,7 @@ import org.drools.core.util.bitmask.BitMask;
 import org.kie.api.event.kiebase.KieBaseEventListener;
 import org.kie.api.event.rule.AgendaEventListener;
 import org.kie.api.event.rule.RuleRuntimeEventListener;
+import org.kie.api.internal.runtime.beliefs.Mode;
 import org.kie.api.runtime.Calendars;
 import org.kie.api.runtime.Channel;
 import org.kie.api.runtime.Environment;
@@ -56,18 +64,27 @@ import org.kie.api2.api.RuleUnit;
 import org.kie.api2.api.RuleUnitInstance;
 
 public class RuleUnitInstanceImpl<T extends RuleUnit> implements RuleUnitInstance<T> {
+    private static final String DEFAULT_RULE_UNIT = "DEFAULT_RULE_UNIT";
 
-    private final DummyWorkingMemory workingMemory;
+    private final DummyWorkingMemory dummyWorkingMemory;
+    private final ConcurrentNodeMemories nodeMemories;
     private RuleUnit unit;
     private InternalKnowledgeBase kBase;
     private InternalAgenda agenda;
+    private final NamedEntryPoint ep;
+    private final EntryPointNode epn;
 
     public RuleUnitInstanceImpl(RuleUnit unit, InternalKnowledgeBase kBase) {
+        this.dummyWorkingMemory = new DummyWorkingMemory(this);
         this.unit = unit;
         this.kBase = kBase;
+        epn = this.kBase.getRete().getEntryPointNode( EntryPointId.DEFAULT );
+        ep =  new NamedEntryPoint(EntryPointId.DEFAULT, epn, dummyWorkingMemory);
         this.agenda = new PatchedDefaultAgenda(kBase);
-        this.workingMemory = new DummyWorkingMemory();
-        this.agenda.setWorkingMemory(workingMemory);
+
+        this.nodeMemories = new ConcurrentNodeMemories(kBase, DEFAULT_RULE_UNIT);
+
+        this.agenda.setWorkingMemory(dummyWorkingMemory);
     }
 
     public int fireAllRules() {
@@ -85,12 +102,13 @@ public class RuleUnitInstanceImpl<T extends RuleUnit> implements RuleUnitInstanc
     @Override
     public void run() {
         bindDataSources();
-        agenda.flushPropagations();
-
-        InternalAgendaGroup unitGroup =
-                (InternalAgendaGroup) agenda.getAgendaGroup(unit.getClass().getName());
-        unitGroup.setAutoDeactivate(false);
-        unitGroup.setFocus();
+////        agenda.executeFlush();
+//
+//        InternalAgendaGroup unitGroup =
+//                (InternalAgendaGroup) agenda.getAgendaGroup("MAIN");
+//////                (InternalAgendaGroup) agenda.getAgendaGroup(unit.getClass().getName());
+//        unitGroup.setAutoDeactivate(false);
+//        unitGroup.setFocus();
 
         fireAllRules();
     }
@@ -101,7 +119,7 @@ public class RuleUnitInstanceImpl<T extends RuleUnit> implements RuleUnitInstanc
                 if (field.getType().isAssignableFrom(DataSource.class)) {
                     field.setAccessible(true);
                     DataSourceImpl<?> v = (DataSourceImpl<?>) field.get(unit);
-                    v.bind(v, workingMemory);
+                    v.setWorkingMemory(dummyWorkingMemory);
                 } else {
                     throw new UnsupportedOperationException();
                 }
@@ -110,207 +128,294 @@ public class RuleUnitInstanceImpl<T extends RuleUnit> implements RuleUnitInstanc
             throw new UnsupportedOperationException();
         }
     }
+
+    InternalKnowledgeBase getInternalKnowledgeBase() {
+        return kBase;
+    }
+
+    public WorkingMemoryEntryPoint getEntryPoint() {
+        return ep;
+    }
+
+    public NodeMemories getNodeMemories() {
+        return nodeMemories;
+    }
+
+    public InternalAgenda getAgenda() {
+        return agenda;
+    }
+
+    public EntryPointNode getEntryPointNode() {
+        return epn;
+    }
 }
 
-class DummyWorkingMemory implements InternalWorkingMemory {
+class DummyWorkingMemory implements InternalWorkingMemoryActions {
+
+    private final RuleUnitInstanceImpl delegate;
+    private SessionConfigurationImpl sessionConfiguration = new SessionConfigurationImpl();
+
+    public DummyWorkingMemory(RuleUnitInstanceImpl delegate) {
+        this.delegate = delegate;
+    }
 
     @Override
     public InternalAgenda getAgenda() {
-        return null;
+        return delegate.getAgenda();
+    }
+
+    @Override
+    public PropagationList getPropagationList() {
+        return delegate.getAgenda().getPropagationList();
+    }
+
+    @Override
+    public InternalKnowledgeBase getKnowledgeBase() {
+        return delegate.getInternalKnowledgeBase();
     }
 
     @Override
     public void setGlobal(String identifier, Object value) {
-
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public Object getGlobal(String identifier) {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public Environment getEnvironment() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public void setGlobalResolver(GlobalResolver globalResolver) {
+        throw new UnsupportedOperationException();
 
     }
 
     @Override
     public GlobalResolver getGlobalResolver() {
-        return null;
-    }
+        throw new UnsupportedOperationException();
 
-    @Override
-    public InternalKnowledgeBase getKnowledgeBase() {
-        return null;
     }
 
     @Override
     public void delete(FactHandle factHandle, RuleImpl rule, TerminalNode terminalNode) {
+        throw new UnsupportedOperationException();
 
     }
 
     @Override
     public void delete(FactHandle factHandle, RuleImpl rule, TerminalNode terminalNode, FactHandle.State fhState) {
+        throw new UnsupportedOperationException();
 
     }
 
     @Override
     public void update(FactHandle handle, Object object, BitMask mask, Class<?> modifiedClass, Activation activation) {
+        throw new UnsupportedOperationException();
 
+    }
+
+    @Override
+    public FactHandle insert(Object object, boolean dynamic, RuleImpl rule, TerminalNode terminalNode) {
+        throw new UnsupportedOperationException();
+
+    }
+
+    @Override
+    public FactHandle insertAsync(Object object) {
+        throw new UnsupportedOperationException();
+
+    }
+
+    @Override
+    public void updateTraits(InternalFactHandle h, BitMask mask, Class<?> modifiedClass, Activation activation) {
+        throw new UnsupportedOperationException();
+
+    }
+
+    @Override
+    public <T, K, X extends TraitableBean> Thing<K> shed(Activation activation, TraitableBean<K, X> core, Class<T> trait) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public <T, K> T don(Activation activation, K core, Collection<Class<? extends Thing>> traits, boolean b, Mode[] modes) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public <T, K> T don(Activation activation, K core, Class<T> trait, boolean b, Mode[] modes) {
+        return null;
     }
 
     @Override
     public TruthMaintenanceSystem getTruthMaintenanceSystem() {
-        return null;
+        throw new UnsupportedOperationException();
+
     }
 
     @Override
     public int fireAllRules() {
-        return 0;
+        throw new UnsupportedOperationException();
+
     }
 
     @Override
     public int fireAllRules(AgendaFilter agendaFilter) {
-        return 0;
+        throw new UnsupportedOperationException();
+
     }
 
     @Override
     public int fireAllRules(int fireLimit) {
-        return 0;
+        throw new UnsupportedOperationException();
+
     }
 
     @Override
     public int fireAllRules(AgendaFilter agendaFilter, int fireLimit) {
-        return 0;
+        throw new UnsupportedOperationException();
+
     }
 
     @Override
     public Object getObject(FactHandle handle) {
-        return null;
+        throw new UnsupportedOperationException();
+
     }
 
     @Override
     public Collection<? extends Object> getObjects() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public Collection<? extends Object> getObjects(ObjectFilter filter) {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public <T extends FactHandle> Collection<T> getFactHandles() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public <T extends FactHandle> Collection<T> getFactHandles(ObjectFilter filter) {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public long getFactCount() {
-        return 0;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public String getEntryPointId() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public FactHandle insert(Object object) {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public void retract(FactHandle handle) {
+        throw new UnsupportedOperationException();
 
     }
 
     @Override
     public void delete(FactHandle handle) {
+        throw new UnsupportedOperationException();
 
     }
 
     @Override
     public void delete(FactHandle handle, FactHandle.State fhState) {
+        throw new UnsupportedOperationException();
 
     }
 
     @Override
     public void update(FactHandle handle, Object object) {
+        throw new UnsupportedOperationException();
 
     }
 
     @Override
     public void update(FactHandle handle, Object object, String... modifiedProperties) {
+        throw new UnsupportedOperationException();
 
     }
 
     @Override
     public FactHandle getFactHandle(Object object) {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public long getIdentifier() {
-        return 0;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public void setIdentifier(long id) {
+        throw new UnsupportedOperationException();
 
     }
 
     @Override
     public void setRuleRuntimeEventSupport(RuleRuntimeEventSupport workingMemoryEventSupport) {
+        throw new UnsupportedOperationException();
 
     }
 
     @Override
     public void setAgendaEventSupport(AgendaEventSupport agendaEventSupport) {
+        throw new UnsupportedOperationException();
 
     }
 
     @Override
     public <T extends Memory> T getNodeMemory(MemoryFactory<T> node) {
-        return null;
+        return getNodeMemories().getNodeMemory(node, this);
     }
 
     @Override
     public void clearNodeMemory(MemoryFactory node) {
+        throw new UnsupportedOperationException();
 
     }
 
     @Override
     public NodeMemories getNodeMemories() {
-        return null;
+        return delegate.getNodeMemories();
     }
 
+    long propagationIdCounter;
     @Override
     public long getNextPropagationIdCounter() {
-        return 0;
+        return propagationIdCounter++;
     }
 
     @Override
     public ObjectStore getObjectStore() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public FactHandleFactory getHandleFactory() {
-        return null;
+        return delegate.getEntryPoint().getHandleFactory();
     }
 
     @Override
     public void queueWorkingMemoryAction(WorkingMemoryAction action) {
+        throw new UnsupportedOperationException();
 
     }
 
@@ -321,361 +426,390 @@ class DummyWorkingMemory implements InternalWorkingMemory {
 
     @Override
     public EntryPointId getEntryPoint() {
-        return null;
+        return delegate.getEntryPoint().getEntryPoint();
     }
 
     @Override
     public InternalWorkingMemory getInternalWorkingMemory() {
-        throw new UnsupportedOperationException();
+        return this;
     }
 
     @Override
     public EntryPointNode getEntryPointNode() {
-        return null;
+        return delegate.getEntryPointNode();
     }
 
     @Override
     public EntryPoint getEntryPoint(String name) {
-        return null;
+        System.out.println("getEntryPoint() :: FAKE -- Ignoring name : "+name);
+        return delegate.getEntryPoint();
     }
 
     @Override
     public FactHandle getFactHandleByIdentity(Object object) {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public void reset() {
+        throw new UnsupportedOperationException();
 
     }
 
     @Override
     public Iterator<?> iterateObjects() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public Iterator<?> iterateObjects(ObjectFilter filter) {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public Iterator<InternalFactHandle> iterateFactHandles() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public Iterator<InternalFactHandle> iterateFactHandles(ObjectFilter filter) {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public void setFocus(String focus) {
+        throw new UnsupportedOperationException();
 
     }
 
     @Override
     public QueryResults getQueryResults(String query, Object... arguments) {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public void setAsyncExceptionHandler(AsyncExceptionHandler handler) {
+        throw new UnsupportedOperationException();
 
     }
 
     @Override
     public void clearAgenda() {
+        throw new UnsupportedOperationException();
 
     }
 
     @Override
     public void clearAgendaGroup(String group) {
+        throw new UnsupportedOperationException();
 
     }
 
     @Override
     public void clearActivationGroup(String group) {
+        throw new UnsupportedOperationException();
 
     }
 
     @Override
     public void clearRuleFlowGroup(String group) {
+        throw new UnsupportedOperationException();
 
     }
 
     @Override
     public ProcessInstance startProcess(String processId) {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public ProcessInstance startProcess(String processId, Map<String, Object> parameters) {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public Collection<ProcessInstance> getProcessInstances() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public ProcessInstance getProcessInstance(long id) {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public ProcessInstance getProcessInstance(long id, boolean readOnly) {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public WorkItemManager getWorkItemManager() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public void halt() {
+        throw new UnsupportedOperationException();
 
     }
 
     @Override
     public FactHandle insert(Object object, boolean dynamic) {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public WorkingMemoryEntryPoint getWorkingMemoryEntryPoint(String id) {
-        return null;
+        return (WorkingMemoryEntryPoint) getEntryPoint(id);
     }
 
     @Override
     public void dispose() {
+        throw new UnsupportedOperationException();
 
     }
 
     @Override
     public SessionClock getSessionClock() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public Lock getLock() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public boolean isSequential() {
-        return false;
+        return true;
     }
 
     @Override
     public ObjectTypeConfigurationRegistry getObjectTypeConfigurationRegistry() {
-        return null;
+        return delegate.getEntryPoint().getObjectTypeConfigurationRegistry();
     }
 
     @Override
     public InternalFactHandle getInitialFactHandle() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public Calendars getCalendars() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public TimerService getTimerService() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public InternalKnowledgeRuntime getKnowledgeRuntime() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public Map<String, Channel> getChannels() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public Collection<? extends EntryPoint> getEntryPoints() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public SessionConfiguration getSessionConfiguration() {
-        return null;
+        return sessionConfiguration;
     }
 
     @Override
     public void startBatchExecution() {
+        throw new UnsupportedOperationException();
 
     }
 
     @Override
     public void endBatchExecution() {
 
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public void startOperation() {
+        throw new UnsupportedOperationException();
 
     }
 
     @Override
     public void endOperation() {
+        throw new UnsupportedOperationException();
 
     }
 
     @Override
     public long getIdleTime() {
-        return 0;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public long getTimeToNextJob() {
-        return 0;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public void updateEntryPointsCache() {
+        throw new UnsupportedOperationException();
 
     }
 
     @Override
     public void prepareToFireActivation() {
+        throw new UnsupportedOperationException();
 
     }
 
     @Override
     public void activationFired() {
+        throw new UnsupportedOperationException();
 
     }
 
     @Override
     public long getTotalFactCount() {
-        return 0;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public InternalProcessRuntime getProcessRuntime() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public InternalProcessRuntime internalGetProcessRuntime() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public void closeLiveQuery(InternalFactHandle factHandle) {
+        throw new UnsupportedOperationException();
 
     }
 
     @Override
     public void addPropagation(PropagationEntry propagationEntry) {
-
+        delegate.getAgenda().addPropagation(propagationEntry);
     }
 
     @Override
     public void flushPropagations() {
-
+        delegate.getAgenda().flushPropagations();
     }
 
     @Override
     public void activate() {
+        throw new UnsupportedOperationException();
 
     }
 
     @Override
     public void deactivate() {
+        throw new UnsupportedOperationException();
 
     }
 
     @Override
     public boolean tryDeactivate() {
-        return false;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public Iterator<? extends PropagationEntry> getActionsIterator() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public void removeGlobal(String identifier) {
+        throw new UnsupportedOperationException();
 
     }
 
     @Override
     public void notifyWaitOnRest() {
+        throw new UnsupportedOperationException();
 
     }
 
     @Override
     public void cancelActivation(Activation activation, boolean declarativeAgenda) {
+        throw new UnsupportedOperationException();
 
     }
 
     @Override
     public void addEventListener(RuleRuntimeEventListener listener) {
+        throw new UnsupportedOperationException();
 
     }
 
     @Override
     public void removeEventListener(RuleRuntimeEventListener listener) {
+        throw new UnsupportedOperationException();
 
     }
 
     @Override
     public Collection<RuleRuntimeEventListener> getRuleRuntimeEventListeners() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public AgendaEventSupport getAgendaEventSupport() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public RuleRuntimeEventSupport getRuleRuntimeEventSupport() {
-        return null;
+        return new RuleRuntimeEventSupport();
     }
 
     @Override
     public RuleEventListenerSupport getRuleEventSupport() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public void addEventListener(AgendaEventListener listener) {
+        throw new UnsupportedOperationException();
 
     }
 
     @Override
     public void removeEventListener(AgendaEventListener listener) {
+        throw new UnsupportedOperationException();
 
     }
 
     @Override
     public Collection<AgendaEventListener> getAgendaEventListeners() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public void addEventListener(KieBaseEventListener listener) {
+        throw new UnsupportedOperationException();
 
     }
 
     @Override
     public void removeEventListener(KieBaseEventListener listener) {
+        throw new UnsupportedOperationException();
 
     }
 
     @Override
     public Collection<KieBaseEventListener> getKieBaseEventListeners() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 }

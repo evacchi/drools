@@ -40,17 +40,32 @@ public class Api2ModelTest {
                 .unit(MyUnit.class)
                 .build(
                         pattern(markV)
-                                .expr("exprA", p -> p.getName().equals("Mark"),
+                                .expr("exprA", p -> {
+                                          System.out.println("CHECK");
+                                          return p.getName().equals("Mark");
+                                      },
                                       alphaIndexedBy(String.class, Index.ConstraintType.EQUAL, 1, p -> p.getName(), "Mark"),
                                       reactOn("name", "age")),
                         pattern(olderV)
-                                .expr("exprB", p -> !p.getName().equals("Mark"),
+                                .expr("exprB", p -> {
+                                          System.out.println("CHECK2");
+
+                                          return !p.getName().equals("Mark");
+                                      },
                                       alphaIndexedBy(String.class, Index.ConstraintType.NOT_EQUAL, 1, p -> p.getName(), "Mark"),
                                       reactOn("name"))
-                                .expr("exprC", markV, (p1, p2) -> p1.getAge() > p2.getAge(),
+                                .expr("exprC", markV, (p1, p2) -> {
+                                          System.out.println("CHECK3");
+
+                                          return p1.getAge() > p2.getAge();
+                                      },
                                       betaIndexedBy(int.class, Index.ConstraintType.GREATER_THAN, 0, p -> p.getAge(), p -> p.getAge()),
                                       reactOn("age")),
-                        on(olderV, markV).execute((p1, p2) -> result.setValue(p1.getName() + " is older than " + p2.getName()))
+                        on(olderV, markV).execute((p1, p2) -> {
+                            String value = p1.getName() + " is older than " + p2.getName();
+                            System.out.println(value);
+                            result.setValue(value);
+                        })
                 );
 
         Model model = new ModelImpl().addRule(rule);
@@ -61,7 +76,7 @@ public class Api2ModelTest {
 
         DataSource<Person> ps = new DataSourceImpl<>();
 
-        RuleUnitInstance<MyUnit> rui = Kie.runtime().of(new MyUnit(ps));
+        RuleUnitInstance<MyUnit> rui = Kie.runtime(kieBase).of(new MyUnit(ps));
 
         Person mark = new Person("Mark", 37);
         Person edson = new Person("Edson", 35);

@@ -76,7 +76,7 @@ public class NamedEntryPoint
     protected EntryPointId     entryPoint;
     protected EntryPointNode entryPointNode;
 
-    protected final StatefulKnowledgeSessionImpl wm;
+    protected final InternalWorkingMemoryActions wm;
 
     protected FactHandleFactory         handleFactory;
     protected PropagationContextFactory pctxFactory;
@@ -89,7 +89,7 @@ public class NamedEntryPoint
 
     public NamedEntryPoint(EntryPointId entryPoint,
                            EntryPointNode entryPointNode,
-                           StatefulKnowledgeSessionImpl wm) {
+                           InternalWorkingMemoryActions wm) {
         this(entryPoint,
              entryPointNode,
              wm,
@@ -98,7 +98,7 @@ public class NamedEntryPoint
 
     public NamedEntryPoint(EntryPointId entryPoint,
                            EntryPointNode entryPointNode,
-                           StatefulKnowledgeSessionImpl wm,
+                           InternalWorkingMemoryActions wm,
                            ReentrantLock lock) {
         this.entryPoint = entryPoint;
         this.entryPointNode = entryPointNode;

@@ -10,25 +10,25 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import org.drools.core.RuleBaseConfiguration;
-import org.drools.core.WorkingMemory;
 import org.drools.core.WorkingMemoryEntryPoint;
 import org.drools.core.common.ClassAwareObjectStore;
 import org.drools.core.common.EqualityKey;
 import org.drools.core.common.InternalFactHandle;
 import org.drools.core.common.InternalWorkingMemory;
 import org.drools.core.common.InternalWorkingMemoryEntryPoint;
+import org.drools.core.common.NamedEntryPoint;
 import org.drools.core.common.ObjectStore;
 import org.drools.core.common.PropagationContextFactory;
 import org.drools.core.datasources.InternalDataSource;
 import org.drools.core.factmodel.traits.TraitTypeEnum;
 import org.drools.core.phreak.PropagationEntry;
 import org.drools.core.phreak.PropagationList;
-import org.drools.core.phreak.SynchronizedPropagationList;
 import org.drools.core.reteoo.EntryPointNode;
 import org.drools.core.reteoo.LeftTuple;
 import org.drools.core.reteoo.ObjectTypeConf;
 import org.drools.core.reteoo.ObjectTypeNode;
 import org.drools.core.reteoo.RightTuple;
+import org.drools.core.rule.EntryPointId;
 import org.drools.core.spi.Activation;
 import org.drools.core.spi.FactHandleFactory;
 import org.drools.core.spi.PropagationContext;
@@ -39,28 +39,26 @@ import org.kie.api.runtime.rule.FactHandle;
 import org.kie.api.runtime.rule.RuleUnit;
 import org.kie.api2.api.DataSource;
 
-import static java.util.Arrays.asList;
 import static org.drools.core.common.DefaultFactHandle.determineIdentityHashCode;
-import static org.drools.core.reteoo.PropertySpecificUtil.allSetButTraitBitMask;
-import static org.drools.core.reteoo.PropertySpecificUtil.calculatePositiveMask;
-import static org.drools.core.reteoo.PropertySpecificUtil.getAccessibleProperties;
 
 public class DataSourceImpl<T> implements DataSource<T> {
 
-    private InternalWorkingMemory workingMemory;
-
     private ObjectStore objectStore = new ClassAwareObjectStore(RuleBaseConfiguration.AssertBehaviour.IDENTITY, null);
-
-    private Map<Object, PropagationList> propagationsMap = new HashMap<>();
-
-    private Object currentUnit;
-    private EntryPoint currentEntryPoint;
 
     private List<T> inserted;
 
     @Override
     public FactHandle add(T object) {
-        return insert(object);
+        if (inserted == null) {
+            inserted = new ArrayList<>();
+        }
+        inserted.add(object);
+        return null;
+    }
+
+    public void setWorkingMemory(InternalWorkingMemory wm) {
+//        inserted.forEach(obj -> ep.insert(obj, false, null, null));
+        inserted.forEach(o -> insertIntoWm(wm, o));
     }
 
     @Override
@@ -73,18 +71,6 @@ public class DataSourceImpl<T> implements DataSource<T> {
         delete(handle);
     }
 
-    public void bind(WorkingMemory wm) {
-        setWorkingMemory((InternalWorkingMemory) wm);
-    }
-
-    public void setWorkingMemory(InternalWorkingMemory workingMemory) {
-        this.workingMemory = workingMemory;
-        if (inserted != null) {
-            inserted.forEach(this::insertIntoWm);
-            inserted = null;
-        }
-    }
-
     public FactHandle getFactHandleForObject(Object object) {
         if (objectStore != null) {
             return (FactHandle) ((ClassAwareObjectStore) objectStore).getHandleForObject(object);
@@ -93,9 +79,9 @@ public class DataSourceImpl<T> implements DataSource<T> {
     }
 
     public FactHandle insert(T object) {
-        if (workingMemory != null) {
-            return insertIntoWm(object);
-        }
+//        if (workingMemory != null) {
+//            return insertIntoWm(object);
+//        }
 
         if (inserted == null) {
             inserted = new ArrayList<>();
@@ -104,19 +90,19 @@ public class DataSourceImpl<T> implements DataSource<T> {
         return null;
     }
 
-    private FactHandle insertIntoWm(T object) {
+    private FactHandle insertIntoWm(InternalWorkingMemory workingMemory, T object) {
         FactHandleFactory fhFactory = workingMemory.getFactHandleFactory();
         DataSourceFactHandle factHandle = new DataSourceFactHandle(this, fhFactory.getNextId(), fhFactory.getNextRecency(), object);
         objectStore.addHandle(factHandle, object);
-        propagate(() -> new Insert(factHandle));
+        propagate(workingMemory, () -> new Insert(factHandle));
         return factHandle;
     }
 
     public void update(FactHandle handle, T object, String... modifiedProperties) {
-        BitMask mask = modifiedProperties == null || modifiedProperties.length == 0 ?
-                allSetButTraitBitMask() :
-                calculatePositiveMask(object.getClass(), asList(modifiedProperties), getAccessibleProperties(workingMemory.getKnowledgeBase(), object.getClass()));
-        internalUpdate((DataSourceFactHandle) handle, object, mask, Object.class, null);
+//        BitMask mask = modifiedProperties == null || modifiedProperties.length == 0 ?
+//                allSetButTraitBitMask() :
+//                calculatePositiveMask(object.getClass(), asList(modifiedProperties), getAccessibleProperties(workingMemory.getKnowledgeBase(), object.getClass()));
+//        internalUpdate((DataSourceFactHandle) handle, object, mask, Object.class, null);
     }
 
     public void update(FactHandle fh, Object obj, BitMask mask, Class<?> modifiedClass, Activation activation) {
@@ -125,43 +111,32 @@ public class DataSourceImpl<T> implements DataSource<T> {
     }
 
     private void internalUpdate(DataSourceFactHandle dataSourceFactHandle, Object obj, BitMask mask, Class<?> modifiedClass, Activation activation) {
-        propagate(() -> new Update(dataSourceFactHandle, obj, mask, modifiedClass, activation));
+        throw new UnsupportedOperationException();
+        //propagate(workingMemory, () -> new Update(dataSourceFactHandle, obj, mask, modifiedClass, activation));
     }
 
-    private void propagate(Supplier<AbstractDataSourcePropagation> s) {
-        propagationsMap.forEach((ruId, list) -> {
-            if (ruId.equals(currentUnit)) {
-                workingMemory.getPropagationList().addEntry(s.get().setEntryPoint(currentEntryPoint));
-            } else {
-                list.addEntry(s.get());
-            }
-        });
+    private void propagate(InternalWorkingMemory workingMemory, Supplier<AbstractDataSourcePropagation> s) {
+//        propagationsMap.forEach((ruId, list) -> {
+//            if (ruId.equals(currentUnit)) {
+
+        EntryPoint entryPoint = workingMemory.getEntryPoint(EntryPointId.DEFAULT.getEntryPointId());
+        workingMemory.getPropagationList().addEntry(s.get().setEntryPoint(entryPoint));
+
+//            } else {
+//                list.addEntry(s.get());
+//            }
+//        });
     }
 
     public void delete(FactHandle fh) {
         DataSourceFactHandle dsFh = (DataSourceFactHandle) fh;
         objectStore.removeHandle(dsFh);
-        propagate(() -> new Delete(dsFh, null));
+//        propagate(workingMemory, () -> new Delete(dsFh, null));
+        throw new UnsupportedOperationException();
     }
 
     public void delete(Object obj) {
         delete(objectStore.getHandleForObject(obj));
-    }
-
-    public void bind(Object unitId, WorkingMemoryEntryPoint ep) {
-        setWorkingMemory(ep.getInternalWorkingMemory());
-        PropagationList propagationList = propagationsMap.get(unitId);
-        if (propagationList != null) {
-            flush(ep, propagationList.takeAll());
-        } else {
-            Iterator<InternalFactHandle> fhs = objectStore.iterateFactHandles();
-            while (fhs.hasNext()) {
-                new Insert((DataSourceFactHandle) fhs.next()).execute(ep);
-            }
-            propagationsMap.put(unitId, new SynchronizedPropagationList(((WorkingMemoryEntryPoint) ep).getInternalWorkingMemory()));
-        }
-        currentUnit = unitId;
-        currentEntryPoint = ep;
     }
 
     private void flush(EntryPoint ep, PropagationEntry currentHead) {
@@ -171,8 +146,8 @@ public class DataSourceImpl<T> implements DataSource<T> {
     }
 
     public void unbind(RuleUnit unit) {
-        currentUnit = null;
-        currentEntryPoint = null;
+//        currentUnit = null;
+//        currentEntryPoint = null;
     }
 
     public Iterator<T> iterator() {
@@ -211,10 +186,12 @@ public class DataSourceImpl<T> implements DataSource<T> {
                     .getObjectTypeConf(ep.getEntryPoint(), dsFactHandle.getObject());
 
             InternalFactHandle handleForEp = dsFactHandle.createFactHandleFor(ep, typeConf);
-            RuleUnit ruleUnit = ep.getInternalWorkingMemory().getRuleUnitExecutor().getCurrentRuleUnit();
-            dsFactHandle.childHandles.put(ruleUnit.getUnitIdentity(), handleForEp);
+//            RuleUnit ruleUnit = ep.getInternalWorkingMemory().getRuleUnitExecutor().getCurrentRuleUnit();
+//            dsFactHandle.childHandles.put(ruleUnit.getUnitIdentity(), handleForEp);
 
-            PropagationContextFactory pctxFactory = ((InternalWorkingMemoryEntryPoint) ep).getPctxFactory();
+            PropagationContextFactory pctxFactory =
+                    ep.getKnowledgeBase().getConfiguration().getComponentFactory().getPropagationContextFactory();
+
             PropagationContext context = pctxFactory.createPropagationContext(ep.getInternalWorkingMemory().getNextPropagationIdCounter(),
                                                                               PropagationContext.Type.INSERTION,
                                                                               null,

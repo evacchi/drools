@@ -30,9 +30,7 @@ import org.drools.core.reteoo.ObjectTypeConf;
 import org.drools.core.reteoo.ObjectTypeNode;
 import org.drools.core.reteoo.ReteooFactHandleFactory;
 import org.drools.core.reteoo.RightTuple;
-import org.drools.core.rule.EntryPointId;
 import org.drools.core.spi.Activation;
-import org.drools.core.spi.FactHandleFactory;
 import org.drools.core.spi.PropagationContext;
 import org.drools.core.spi.Tuple;
 import org.drools.core.util.bitmask.BitMask;
@@ -40,7 +38,6 @@ import org.kie.api.runtime.rule.EntryPoint;
 import org.kie.api.runtime.rule.FactHandle;
 import org.kie.api.runtime.rule.RuleUnit;
 import org.kie.api2.api.DataSource;
-import org.kie.api2.api.RuleUnitInstance;
 
 import static org.drools.core.common.DefaultFactHandle.determineIdentityHashCode;
 import static org.drools.core.ruleunit.RuleUnitUtil.RULE_UNIT_ENTRY_POINT;
@@ -53,7 +50,16 @@ public class DataSourceImpl<T> implements DataSource<T> {
 
     private List<T> inserted;
 
-    public void bind(RuleUnitInstanceImpl ruleUnitInstance) {
+    @Override
+    public FactHandle add(T object) {
+        if (inserted == null) {
+            inserted = new ArrayList<>();
+        }
+        inserted.add(object);
+        return null;
+    }
+
+    void bind(RuleUnitInstanceImpl ruleUnitInstance) {
         InternalAgenda agenda = ruleUnitInstance.getAgenda();
 
         String unitName = ruleUnitInstance.unit().getClass().getCanonicalName();
@@ -70,17 +76,10 @@ public class DataSourceImpl<T> implements DataSource<T> {
             DataSourceFactHandle factHandle = new DataSourceFactHandle(
                     this, FACT_HANDLE_FACTORY.getNextId(), FACT_HANDLE_FACTORY.getNextRecency(), object);
             objectStore.addHandle(factHandle, object);
-            propagate(ruleUnitInstance, () -> new Insert(factHandle));
+            ruleUnitInstance.getAgenda().getPropagationList().addEntry(new Insert(factHandle, ruleUnitInstance));
         });
-    }
 
-    @Override
-    public FactHandle add(T object) {
-        if (inserted == null) {
-            inserted = new ArrayList<>();
-        }
-        inserted.add(object);
-        return null;
+        inserted = null;
     }
 
     @Override
@@ -100,20 +99,16 @@ public class DataSourceImpl<T> implements DataSource<T> {
         remove(objectStore.getHandleForObject(obj));
     }
 
-
-
-
-    private void propagate(RuleUnitInstanceImpl ruleUnitInstance, Supplier<AbstractDataSourcePropagation> s) {
+    private void propagate(RuleUnitInstanceImpl ruleUnitInstance, AbstractDataSourcePropagation s) {
         // FIXME I am not sure why this is working... if I use RULE_UNIT_ENTRY_POINT it breaks...
         // `workingMemory` is equivalent to:
         // EntryPoint entryPoint = workingMemory.getEntryPoint(
         //         EntryPointId.DEFAULT.getEntryPointId());
         PropagationList propagationList = ruleUnitInstance.getAgenda().getPropagationList();
         DummyWorkingMemory workingMemory = ruleUnitInstance.getWorkingMemory();
-        AbstractDataSourcePropagation propagationEntry = s.get().setEntryPoint(workingMemory);
-        propagationList.addEntry(propagationEntry);
+        AbstractDataSourcePropagation propagationEntry = s.setEntryPoint(workingMemory);
+        propagationList.addEntry(s);
     }
-
 
     private void flush(EntryPoint ep, PropagationEntry currentHead) {
         for (PropagationEntry entry = currentHead; entry != null; entry = entry.getNext()) {
@@ -148,9 +143,16 @@ public class DataSourceImpl<T> implements DataSource<T> {
     static class Insert extends AbstractDataSourcePropagation {
 
         private final DataSourceFactHandle dsFactHandle;
+        private final RuleUnitInstanceImpl ruleUnitInstance;
 
-        Insert(DataSourceFactHandle factHandle) {
+        public Insert(DataSourceFactHandle factHandle, RuleUnitInstanceImpl ruleUnitInstance) {
             this.dsFactHandle = factHandle;
+            this.ruleUnitInstance = ruleUnitInstance;
+            // FIXME I am not sure why this is working... if I use RULE_UNIT_ENTRY_POINT it breaks...
+            //  the returned `DummyWorkingMemory` instance delegates to:
+            //  EntryPoint entryPoint = workingMemory.getEntryPoint(
+            //         EntryPointId.DEFAULT.getEntryPointId());
+            setEntryPoint(ruleUnitInstance.getWorkingMemory());
         }
 
         @Override

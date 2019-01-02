@@ -123,18 +123,19 @@ public class RuleUnitInstanceImpl<T extends RuleUnit> implements RuleUnitInstanc
         return this.entryPoints;
     }
 
-    public NodeMemories getNodeMemories() {
+    NodeMemories getNodeMemories() {
         return nodeMemories;
     }
 
-    public InternalAgenda getAgenda() {
+    InternalAgenda getAgenda() {
         return agenda;
     }
 
-    public DummyWorkingMemory getWorkingMemory() {
+    DummyWorkingMemory getWorkingMemory() {
         return dummyWorkingMemory;
     }
 
+    @Override
     public T unit() {
         return unit;
     }

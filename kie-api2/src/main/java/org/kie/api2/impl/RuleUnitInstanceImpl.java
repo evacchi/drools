@@ -180,7 +180,9 @@ class EntryPoints {
     }
 
     WorkingMemoryEntryPoint get(String id) {
-        if (EntryPointId.DEFAULT.getEntryPointId().equals(id)) return defaultEntryPoint();
+        if (EntryPointId.DEFAULT.getEntryPointId().equals(id)) {
+            return defaultEntryPoint();
+        }
         return entryPoints.get(id);
     }
 

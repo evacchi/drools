@@ -13,6 +13,7 @@ import org.drools.core.RuleBaseConfiguration;
 import org.drools.core.WorkingMemoryEntryPoint;
 import org.drools.core.common.ClassAwareObjectStore;
 import org.drools.core.common.EqualityKey;
+import org.drools.core.common.InternalAgenda;
 import org.drools.core.common.InternalAgendaGroup;
 import org.drools.core.common.InternalFactHandle;
 import org.drools.core.common.InternalWorkingMemory;
@@ -22,10 +23,12 @@ import org.drools.core.common.PropagationContextFactory;
 import org.drools.core.datasources.InternalDataSource;
 import org.drools.core.factmodel.traits.TraitTypeEnum;
 import org.drools.core.phreak.PropagationEntry;
+import org.drools.core.phreak.PropagationList;
 import org.drools.core.reteoo.EntryPointNode;
 import org.drools.core.reteoo.LeftTuple;
 import org.drools.core.reteoo.ObjectTypeConf;
 import org.drools.core.reteoo.ObjectTypeNode;
+import org.drools.core.reteoo.ReteooFactHandleFactory;
 import org.drools.core.reteoo.RightTuple;
 import org.drools.core.rule.EntryPointId;
 import org.drools.core.spi.Activation;
@@ -37,28 +40,37 @@ import org.kie.api.runtime.rule.EntryPoint;
 import org.kie.api.runtime.rule.FactHandle;
 import org.kie.api.runtime.rule.RuleUnit;
 import org.kie.api2.api.DataSource;
+import org.kie.api2.api.RuleUnitInstance;
 
 import static org.drools.core.common.DefaultFactHandle.determineIdentityHashCode;
 import static org.drools.core.ruleunit.RuleUnitUtil.RULE_UNIT_ENTRY_POINT;
 
 public class DataSourceImpl<T> implements DataSource<T> {
 
+    private static final ReteooFactHandleFactory FACT_HANDLE_FACTORY = new ReteooFactHandleFactory();
+
     private ObjectStore objectStore = new ClassAwareObjectStore(RuleBaseConfiguration.AssertBehaviour.IDENTITY, null);
 
     private List<T> inserted;
 
     public void bind(RuleUnitInstanceImpl ruleUnitInstance) {
-        DummyWorkingMemory workingMemory = ruleUnitInstance.getWorkingMemory();
-        workingMemory.getEntryPoint(RULE_UNIT_ENTRY_POINT).insert(ruleUnitInstance.unit());
-        FactHandleFactory fhFactory = workingMemory.getFactHandleFactory();
-        InternalAgendaGroup agendaGroup = (InternalAgendaGroup) workingMemory.getAgenda().getAgendaGroup(ruleUnitInstance.unit().getClass().getCanonicalName());
+        InternalAgenda agenda = ruleUnitInstance.getAgenda();
+
+        String unitName = ruleUnitInstance.unit().getClass().getCanonicalName();
+        EntryPoints entryPoints = ruleUnitInstance.getEntryPoints();
+        WorkingMemoryEntryPoint workingMemoryEntryPoint = entryPoints.get(RULE_UNIT_ENTRY_POINT);
+        workingMemoryEntryPoint.insert(ruleUnitInstance.unit());
+
+        InternalAgendaGroup agendaGroup =
+                (InternalAgendaGroup) agenda.getAgendaGroup(unitName);
         agendaGroup.setAutoDeactivate(false);
         agendaGroup.setFocus();
 
         inserted.forEach(object -> {
-            DataSourceFactHandle factHandle = new DataSourceFactHandle(this, fhFactory.getNextId(), fhFactory.getNextRecency(), object);
+            DataSourceFactHandle factHandle = new DataSourceFactHandle(
+                    this, FACT_HANDLE_FACTORY.getNextId(), FACT_HANDLE_FACTORY.getNextRecency(), object);
             objectStore.addHandle(factHandle, object);
-            propagate(workingMemory, () -> new Insert(factHandle));
+            propagate(ruleUnitInstance, () -> new Insert(factHandle));
         });
     }
 
@@ -71,91 +83,37 @@ public class DataSourceImpl<T> implements DataSource<T> {
         return null;
     }
 
-    public void setWorkingMemory(InternalWorkingMemory wm) {
-//        inserted.forEach(obj -> ep.insert(obj, false, null, null));
-        inserted.forEach(o -> insertIntoWm(wm, o));
-    }
-
     @Override
     public void update(FactHandle handle, T object) {
-        update(handle, object);
     }
 
     @Override
     public void remove(FactHandle handle) {
-        delete(handle);
+//        DataSourceFactHandle dsFh = (DataSourceFactHandle) fh;
+//        objectStore.removeHandle(dsFh);
+////        propagate(workingMemory, () -> new Delete(dsFh, null));
+//        throw new UnsupportedOperationException();
+
     }
 
-    public FactHandle getFactHandleForObject(Object object) {
-        if (objectStore != null) {
-            return (FactHandle) ((ClassAwareObjectStore) objectStore).getHandleForObject(object);
-        }
-        return null;
+    public void remove(Object obj) {
+        remove(objectStore.getHandleForObject(obj));
     }
 
-    public FactHandle insert(T object) {
-//        if (workingMemory != null) {
-//            return insertIntoWm(object);
-//        }
 
-        if (inserted == null) {
-            inserted = new ArrayList<>();
-        }
-        inserted.add(object);
-        return null;
+
+
+    private void propagate(RuleUnitInstanceImpl ruleUnitInstance, Supplier<AbstractDataSourcePropagation> s) {
+        // FIXME I am not sure why this is working... if I use RULE_UNIT_ENTRY_POINT it breaks...
+        // `workingMemory` is equivalent to:
+        // EntryPoint entryPoint = workingMemory.getEntryPoint(
+        //         EntryPointId.DEFAULT.getEntryPointId());
+        PropagationList propagationList = ruleUnitInstance.getAgenda().getPropagationList();
+        DummyWorkingMemory workingMemory = ruleUnitInstance.getWorkingMemory();
+        AbstractDataSourcePropagation propagationEntry = s.get().setEntryPoint(workingMemory);
+        propagationList.addEntry(propagationEntry);
     }
 
-    private FactHandle insertIntoWm(InternalWorkingMemory workingMemory, T object) {
-        FactHandleFactory fhFactory = workingMemory.getFactHandleFactory();
-        DataSourceFactHandle factHandle = new DataSourceFactHandle(this, fhFactory.getNextId(), fhFactory.getNextRecency(), object);
-        objectStore.addHandle(factHandle, object);
-        propagate(workingMemory, () -> new Insert(factHandle));
-        return factHandle;
-    }
-
-    public void update(FactHandle handle, T object, String... modifiedProperties) {
-//        BitMask mask = modifiedProperties == null || modifiedProperties.length == 0 ?
-//                allSetButTraitBitMask() :
-//                calculatePositiveMask(object.getClass(), asList(modifiedProperties), getAccessibleProperties(workingMemory.getKnowledgeBase(), object.getClass()));
-//        internalUpdate((DataSourceFactHandle) handle, object, mask, Object.class, null);
-    }
-
-    public void update(FactHandle fh, Object obj, BitMask mask, Class<?> modifiedClass, Activation activation) {
-        DataSourceFactHandle dataSourceFactHandle = ((DataSourceFactHandle) ((InternalFactHandle) fh).getParentHandle());
-        internalUpdate(dataSourceFactHandle, obj, mask, modifiedClass, activation);
-    }
-
-    private void internalUpdate(DataSourceFactHandle dataSourceFactHandle, Object obj, BitMask mask, Class<?> modifiedClass, Activation activation) {
-        throw new UnsupportedOperationException();
-        //propagate(workingMemory, () -> new Update(dataSourceFactHandle, obj, mask, modifiedClass, activation));
-    }
-
-    private void propagate(InternalWorkingMemory workingMemory, Supplier<AbstractDataSourcePropagation> s) {
-//        propagationsMap.forEach((ruId, list) -> {
-//            if (ruId.equals(currentUnit)) {
-
-        EntryPoint entryPoint = workingMemory.getEntryPoint(
-                EntryPointId.DEFAULT.getEntryPointId()
-
-        );
-        workingMemory.getPropagationList().addEntry(s.get().setEntryPoint(entryPoint));
-
-//            } else {
-//                list.addEntry(s.get());
-//            }
-//        });
-    }
-
-    public void delete(FactHandle fh) {
-        DataSourceFactHandle dsFh = (DataSourceFactHandle) fh;
-        objectStore.removeHandle(dsFh);
-//        propagate(workingMemory, () -> new Delete(dsFh, null));
-        throw new UnsupportedOperationException();
-    }
-
-    public void delete(Object obj) {
-        delete(objectStore.getHandleForObject(obj));
-    }
 
     private void flush(EntryPoint ep, PropagationEntry currentHead) {
         for (PropagationEntry entry = currentHead; entry != null; entry = entry.getNext()) {
@@ -164,8 +122,6 @@ public class DataSourceImpl<T> implements DataSource<T> {
     }
 
     public void unbind(RuleUnit unit) {
-//        currentUnit = null;
-//        currentEntryPoint = null;
     }
 
     public Iterator<T> iterator() {

@@ -85,16 +85,12 @@ public class RuleUnitInstanceImpl<T extends RuleUnit> implements RuleUnitInstanc
         this.agenda.setWorkingMemory(dummyWorkingMemory);
     }
 
-    public int fireAllRules() {
+    private int fireAllRules() {
         return fireAllRules(null, -1);
     }
 
     private int fireAllRules(AgendaFilter agendaFilter, int fireLimit) {
         return this.agenda.fireAllRules(agendaFilter, fireLimit);
-    }
-
-    public void start() {
-
     }
 
     @Override

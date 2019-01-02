@@ -650,12 +650,12 @@ class DummyWorkingMemory implements InternalWorkingMemoryActions {
 
     @Override
     public void startOperation() {
-        System.out.println("START OPERATION");
+        // System.out.println("START OPERATION");
     }
 
     @Override
     public void endOperation() {
-        System.out.println("END OPERATION");
+        // System.out.println("END OPERATION");
     }
 
     @Override

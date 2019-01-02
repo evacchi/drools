@@ -35,15 +35,9 @@ public class Api2ModelTest {
                 .unit(PersonUnit.class)
                 .build(
                         pattern(markV)
-                                .expr("exprA", p -> {
-                                    System.out.println("CHECK");
-                                    return p.getName().equals("Mark");
-                                }),
+                                .expr("exprA", p -> p.getName().equals("Mark")),
 
-                        on(markV).execute(m -> {
-                            System.out.println("I found Mark");
-                            result.setValue(m);
-                        })
+                        on(markV).execute(result::setValue)
                 );
 
         Model model = new ModelImpl().addRule(rule);

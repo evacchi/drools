@@ -76,16 +76,12 @@ public class RuleUnitInstanceImpl<T extends RuleUnit> implements RuleUnitInstanc
     private final EntryPoints entryPoints;
 
     public RuleUnitInstanceImpl(T unit, InternalKnowledgeBase kBase) {
-        this.dummyWorkingMemory = new DummyWorkingMemory(this);
         this.unit = unit;
         this.kBase = kBase;
-
+        this.dummyWorkingMemory = new DummyWorkingMemory(this);
         this.agenda = new PatchedDefaultAgenda(kBase);
-
         this.nodeMemories = new ConcurrentNodeMemories(kBase, DEFAULT_RULE_UNIT);
-
         this.entryPoints = new EntryPoints(kBase, dummyWorkingMemory);
-
         this.agenda.setWorkingMemory(dummyWorkingMemory);
     }
 
@@ -104,14 +100,6 @@ public class RuleUnitInstanceImpl<T extends RuleUnit> implements RuleUnitInstanc
     @Override
     public void run() {
         bindDataSources();
-////        agenda.executeFlush();
-//
-//        InternalAgendaGroup unitGroup =
-//                (InternalAgendaGroup) agenda.getAgendaGroup("MAIN");
-//////                (InternalAgendaGroup) agenda.getAgendaGroup(unit.getClass().getName());
-//        unitGroup.setAutoDeactivate(false);
-//        unitGroup.setFocus();
-
         fireAllRules();
     }
 

@@ -4,6 +4,7 @@ import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 
 import org.drools.core.SessionConfiguration;
@@ -11,7 +12,6 @@ import org.drools.core.SessionConfigurationImpl;
 import org.drools.core.WorkingMemoryEntryPoint;
 import org.drools.core.common.ConcurrentNodeMemories;
 import org.drools.core.common.InternalAgenda;
-import org.drools.core.common.InternalAgendaGroup;
 import org.drools.core.common.InternalFactHandle;
 import org.drools.core.common.InternalKnowledgeRuntime;
 import org.drools.core.common.InternalWorkingMemory;
@@ -43,6 +43,7 @@ import org.drools.core.spi.AsyncExceptionHandler;
 import org.drools.core.spi.FactHandleFactory;
 import org.drools.core.spi.GlobalResolver;
 import org.drools.core.time.TimerService;
+import org.drools.core.time.impl.JDKTimerService;
 import org.drools.core.util.bitmask.BitMask;
 import org.kie.api.event.kiebase.KieBaseEventListener;
 import org.kie.api.event.rule.AgendaEventListener;
@@ -64,25 +65,26 @@ import org.kie.api2.api.RuleUnit;
 import org.kie.api2.api.RuleUnitInstance;
 
 public class RuleUnitInstanceImpl<T extends RuleUnit> implements RuleUnitInstance<T> {
+
     private static final String DEFAULT_RULE_UNIT = "DEFAULT_RULE_UNIT";
 
     private final DummyWorkingMemory dummyWorkingMemory;
     private final ConcurrentNodeMemories nodeMemories;
-    private RuleUnit unit;
+    private T unit;
     private InternalKnowledgeBase kBase;
     private InternalAgenda agenda;
-    private final NamedEntryPoint ep;
-    private final EntryPointNode epn;
+    private final EntryPoints entryPoints;
 
-    public RuleUnitInstanceImpl(RuleUnit unit, InternalKnowledgeBase kBase) {
+    public RuleUnitInstanceImpl(T unit, InternalKnowledgeBase kBase) {
         this.dummyWorkingMemory = new DummyWorkingMemory(this);
         this.unit = unit;
         this.kBase = kBase;
-        epn = this.kBase.getRete().getEntryPointNode( EntryPointId.DEFAULT );
-        ep =  new NamedEntryPoint(EntryPointId.DEFAULT, epn, dummyWorkingMemory);
+
         this.agenda = new PatchedDefaultAgenda(kBase);
 
         this.nodeMemories = new ConcurrentNodeMemories(kBase, DEFAULT_RULE_UNIT);
+
+        this.entryPoints = new EntryPoints(kBase, dummyWorkingMemory);
 
         this.agenda.setWorkingMemory(dummyWorkingMemory);
     }
@@ -119,7 +121,7 @@ public class RuleUnitInstanceImpl<T extends RuleUnit> implements RuleUnitInstanc
                 if (field.getType().isAssignableFrom(DataSource.class)) {
                     field.setAccessible(true);
                     DataSourceImpl<?> v = (DataSourceImpl<?>) field.get(unit);
-                    v.setWorkingMemory(dummyWorkingMemory);
+                    v.bind(this);
                 } else {
                     throw new UnsupportedOperationException();
                 }
@@ -133,8 +135,8 @@ public class RuleUnitInstanceImpl<T extends RuleUnit> implements RuleUnitInstanc
         return kBase;
     }
 
-    public WorkingMemoryEntryPoint getEntryPoint() {
-        return ep;
+    EntryPoints getEntryPoints() {
+        return this.entryPoints;
     }
 
     public NodeMemories getNodeMemories() {
@@ -145,7 +147,48 @@ public class RuleUnitInstanceImpl<T extends RuleUnit> implements RuleUnitInstanc
         return agenda;
     }
 
-    public EntryPointNode getEntryPointNode() {
+    public DummyWorkingMemory getWorkingMemory() {
+        return dummyWorkingMemory;
+    }
+
+    public T unit() {
+        return unit;
+    }
+}
+
+class EntryPoints {
+
+    private InternalKnowledgeBase kBase;
+    private final NamedEntryPoint ep;
+    private final EntryPointNode epn;
+    private final Map<String, WorkingMemoryEntryPoint> entryPoints = new ConcurrentHashMap<>();
+
+    EntryPoints(InternalKnowledgeBase kBase, InternalWorkingMemoryActions dummyWorkingMemory) {
+        this.kBase = kBase;
+        this.epn = this.kBase.getRete().getEntryPointNode(EntryPointId.DEFAULT);
+        this.ep = new NamedEntryPoint(EntryPointId.DEFAULT, epn, dummyWorkingMemory);
+        if (kBase.getAddedEntryNodeCache() != null) {
+            for (EntryPointNode addedNode : kBase.getAddedEntryNodeCache()) {
+                EntryPointId id = addedNode.getEntryPoint();
+                if (EntryPointId.DEFAULT.equals(id)) {
+                    continue;
+                }
+                WorkingMemoryEntryPoint wmEntryPoint = new NamedEntryPoint(id, addedNode, dummyWorkingMemory);
+                entryPoints.put(id.getEntryPointId(), wmEntryPoint);
+            }
+        }
+    }
+
+    WorkingMemoryEntryPoint get(String id) {
+        if (EntryPointId.DEFAULT.getEntryPointId().equals(id)) return defaultEntryPoint();
+        return entryPoints.get(id);
+    }
+
+    WorkingMemoryEntryPoint defaultEntryPoint() {
+        return ep;
+    }
+
+    EntryPointNode defaultEntryPointNode() {
         return epn;
     }
 }
@@ -154,8 +197,10 @@ class DummyWorkingMemory implements InternalWorkingMemoryActions {
 
     private final RuleUnitInstanceImpl delegate;
     private SessionConfigurationImpl sessionConfiguration = new SessionConfigurationImpl();
+    private SessionClock timerService = new JDKTimerService();
+    private InternalKnowledgeRuntime dummyRuntime;
 
-    public DummyWorkingMemory(RuleUnitInstanceImpl delegate) {
+    DummyWorkingMemory(RuleUnitInstanceImpl delegate) {
         this.delegate = delegate;
     }
 
@@ -192,49 +237,41 @@ class DummyWorkingMemory implements InternalWorkingMemoryActions {
     @Override
     public void setGlobalResolver(GlobalResolver globalResolver) {
         throw new UnsupportedOperationException();
-
     }
 
     @Override
     public GlobalResolver getGlobalResolver() {
         throw new UnsupportedOperationException();
-
     }
 
     @Override
     public void delete(FactHandle factHandle, RuleImpl rule, TerminalNode terminalNode) {
         throw new UnsupportedOperationException();
-
     }
 
     @Override
     public void delete(FactHandle factHandle, RuleImpl rule, TerminalNode terminalNode, FactHandle.State fhState) {
         throw new UnsupportedOperationException();
-
     }
 
     @Override
     public void update(FactHandle handle, Object object, BitMask mask, Class<?> modifiedClass, Activation activation) {
         throw new UnsupportedOperationException();
-
     }
 
     @Override
     public FactHandle insert(Object object, boolean dynamic, RuleImpl rule, TerminalNode terminalNode) {
         throw new UnsupportedOperationException();
-
     }
 
     @Override
     public FactHandle insertAsync(Object object) {
         throw new UnsupportedOperationException();
-
     }
 
     @Override
     public void updateTraits(InternalFactHandle h, BitMask mask, Class<?> modifiedClass, Activation activation) {
         throw new UnsupportedOperationException();
-
     }
 
     @Override
@@ -255,37 +292,31 @@ class DummyWorkingMemory implements InternalWorkingMemoryActions {
     @Override
     public TruthMaintenanceSystem getTruthMaintenanceSystem() {
         throw new UnsupportedOperationException();
-
     }
 
     @Override
     public int fireAllRules() {
         throw new UnsupportedOperationException();
-
     }
 
     @Override
     public int fireAllRules(AgendaFilter agendaFilter) {
         throw new UnsupportedOperationException();
-
     }
 
     @Override
     public int fireAllRules(int fireLimit) {
         throw new UnsupportedOperationException();
-
     }
 
     @Override
     public int fireAllRules(AgendaFilter agendaFilter, int fireLimit) {
         throw new UnsupportedOperationException();
-
     }
 
     @Override
     public Object getObject(FactHandle handle) {
         throw new UnsupportedOperationException();
-
     }
 
     @Override
@@ -326,31 +357,26 @@ class DummyWorkingMemory implements InternalWorkingMemoryActions {
     @Override
     public void retract(FactHandle handle) {
         throw new UnsupportedOperationException();
-
     }
 
     @Override
     public void delete(FactHandle handle) {
         throw new UnsupportedOperationException();
-
     }
 
     @Override
     public void delete(FactHandle handle, FactHandle.State fhState) {
         throw new UnsupportedOperationException();
-
     }
 
     @Override
     public void update(FactHandle handle, Object object) {
         throw new UnsupportedOperationException();
-
     }
 
     @Override
     public void update(FactHandle handle, Object object, String... modifiedProperties) {
         throw new UnsupportedOperationException();
-
     }
 
     @Override
@@ -366,19 +392,16 @@ class DummyWorkingMemory implements InternalWorkingMemoryActions {
     @Override
     public void setIdentifier(long id) {
         throw new UnsupportedOperationException();
-
     }
 
     @Override
     public void setRuleRuntimeEventSupport(RuleRuntimeEventSupport workingMemoryEventSupport) {
         throw new UnsupportedOperationException();
-
     }
 
     @Override
     public void setAgendaEventSupport(AgendaEventSupport agendaEventSupport) {
         throw new UnsupportedOperationException();
-
     }
 
     @Override
@@ -389,7 +412,6 @@ class DummyWorkingMemory implements InternalWorkingMemoryActions {
     @Override
     public void clearNodeMemory(MemoryFactory node) {
         throw new UnsupportedOperationException();
-
     }
 
     @Override
@@ -398,6 +420,7 @@ class DummyWorkingMemory implements InternalWorkingMemoryActions {
     }
 
     long propagationIdCounter;
+
     @Override
     public long getNextPropagationIdCounter() {
         return propagationIdCounter++;
@@ -410,13 +433,12 @@ class DummyWorkingMemory implements InternalWorkingMemoryActions {
 
     @Override
     public FactHandleFactory getHandleFactory() {
-        return delegate.getEntryPoint().getHandleFactory();
+        return delegate.getEntryPoints().defaultEntryPoint().getHandleFactory();
     }
 
     @Override
     public void queueWorkingMemoryAction(WorkingMemoryAction action) {
         throw new UnsupportedOperationException();
-
     }
 
     @Override
@@ -426,7 +448,7 @@ class DummyWorkingMemory implements InternalWorkingMemoryActions {
 
     @Override
     public EntryPointId getEntryPoint() {
-        return delegate.getEntryPoint().getEntryPoint();
+        return delegate.getEntryPoints().defaultEntryPoint().getEntryPoint();
     }
 
     @Override
@@ -436,13 +458,12 @@ class DummyWorkingMemory implements InternalWorkingMemoryActions {
 
     @Override
     public EntryPointNode getEntryPointNode() {
-        return delegate.getEntryPointNode();
+        return delegate.getEntryPoints().defaultEntryPointNode();
     }
 
     @Override
     public EntryPoint getEntryPoint(String name) {
-        System.out.println("getEntryPoint() :: FAKE -- Ignoring name : "+name);
-        return delegate.getEntryPoint();
+        return delegate.getEntryPoints().get(name);
     }
 
     @Override
@@ -453,7 +474,6 @@ class DummyWorkingMemory implements InternalWorkingMemoryActions {
     @Override
     public void reset() {
         throw new UnsupportedOperationException();
-
     }
 
     @Override
@@ -479,7 +499,6 @@ class DummyWorkingMemory implements InternalWorkingMemoryActions {
     @Override
     public void setFocus(String focus) {
         throw new UnsupportedOperationException();
-
     }
 
     @Override
@@ -490,31 +509,26 @@ class DummyWorkingMemory implements InternalWorkingMemoryActions {
     @Override
     public void setAsyncExceptionHandler(AsyncExceptionHandler handler) {
         throw new UnsupportedOperationException();
-
     }
 
     @Override
     public void clearAgenda() {
         throw new UnsupportedOperationException();
-
     }
 
     @Override
     public void clearAgendaGroup(String group) {
         throw new UnsupportedOperationException();
-
     }
 
     @Override
     public void clearActivationGroup(String group) {
         throw new UnsupportedOperationException();
-
     }
 
     @Override
     public void clearRuleFlowGroup(String group) {
         throw new UnsupportedOperationException();
-
     }
 
     @Override
@@ -550,7 +564,6 @@ class DummyWorkingMemory implements InternalWorkingMemoryActions {
     @Override
     public void halt() {
         throw new UnsupportedOperationException();
-
     }
 
     @Override
@@ -566,12 +579,12 @@ class DummyWorkingMemory implements InternalWorkingMemoryActions {
     @Override
     public void dispose() {
         throw new UnsupportedOperationException();
-
     }
 
     @Override
     public SessionClock getSessionClock() {
-        throw new UnsupportedOperationException();
+//        throw new UnsupportedOperationException();
+        return this.timerService;
     }
 
     @Override
@@ -586,7 +599,7 @@ class DummyWorkingMemory implements InternalWorkingMemoryActions {
 
     @Override
     public ObjectTypeConfigurationRegistry getObjectTypeConfigurationRegistry() {
-        return delegate.getEntryPoint().getObjectTypeConfigurationRegistry();
+        return delegate.getEntryPoints().defaultEntryPoint().getObjectTypeConfigurationRegistry();
     }
 
     @Override
@@ -606,7 +619,7 @@ class DummyWorkingMemory implements InternalWorkingMemoryActions {
 
     @Override
     public InternalKnowledgeRuntime getKnowledgeRuntime() {
-        throw new UnsupportedOperationException();
+        return dummyRuntime;
     }
 
     @Override
@@ -627,7 +640,6 @@ class DummyWorkingMemory implements InternalWorkingMemoryActions {
     @Override
     public void startBatchExecution() {
         throw new UnsupportedOperationException();
-
     }
 
     @Override
@@ -638,14 +650,12 @@ class DummyWorkingMemory implements InternalWorkingMemoryActions {
 
     @Override
     public void startOperation() {
-        throw new UnsupportedOperationException();
-
+        System.out.println("START OPERATION");
     }
 
     @Override
     public void endOperation() {
-        throw new UnsupportedOperationException();
-
+        System.out.println("END OPERATION");
     }
 
     @Override
@@ -661,19 +671,16 @@ class DummyWorkingMemory implements InternalWorkingMemoryActions {
     @Override
     public void updateEntryPointsCache() {
         throw new UnsupportedOperationException();
-
     }
 
     @Override
     public void prepareToFireActivation() {
         throw new UnsupportedOperationException();
-
     }
 
     @Override
     public void activationFired() {
         throw new UnsupportedOperationException();
-
     }
 
     @Override
@@ -694,7 +701,6 @@ class DummyWorkingMemory implements InternalWorkingMemoryActions {
     @Override
     public void closeLiveQuery(InternalFactHandle factHandle) {
         throw new UnsupportedOperationException();
-
     }
 
     @Override
@@ -710,13 +716,11 @@ class DummyWorkingMemory implements InternalWorkingMemoryActions {
     @Override
     public void activate() {
         throw new UnsupportedOperationException();
-
     }
 
     @Override
     public void deactivate() {
         throw new UnsupportedOperationException();
-
     }
 
     @Override
@@ -732,31 +736,26 @@ class DummyWorkingMemory implements InternalWorkingMemoryActions {
     @Override
     public void removeGlobal(String identifier) {
         throw new UnsupportedOperationException();
-
     }
 
     @Override
     public void notifyWaitOnRest() {
         throw new UnsupportedOperationException();
-
     }
 
     @Override
     public void cancelActivation(Activation activation, boolean declarativeAgenda) {
         throw new UnsupportedOperationException();
-
     }
 
     @Override
     public void addEventListener(RuleRuntimeEventListener listener) {
         throw new UnsupportedOperationException();
-
     }
 
     @Override
     public void removeEventListener(RuleRuntimeEventListener listener) {
         throw new UnsupportedOperationException();
-
     }
 
     @Override
@@ -766,7 +765,7 @@ class DummyWorkingMemory implements InternalWorkingMemoryActions {
 
     @Override
     public AgendaEventSupport getAgendaEventSupport() {
-        throw new UnsupportedOperationException();
+        return new AgendaEventSupport();
     }
 
     @Override
@@ -776,19 +775,17 @@ class DummyWorkingMemory implements InternalWorkingMemoryActions {
 
     @Override
     public RuleEventListenerSupport getRuleEventSupport() {
-        throw new UnsupportedOperationException();
+        return new RuleEventListenerSupport();
     }
 
     @Override
     public void addEventListener(AgendaEventListener listener) {
         throw new UnsupportedOperationException();
-
     }
 
     @Override
     public void removeEventListener(AgendaEventListener listener) {
         throw new UnsupportedOperationException();
-
     }
 
     @Override
@@ -799,13 +796,11 @@ class DummyWorkingMemory implements InternalWorkingMemoryActions {
     @Override
     public void addEventListener(KieBaseEventListener listener) {
         throw new UnsupportedOperationException();
-
     }
 
     @Override
     public void removeEventListener(KieBaseEventListener listener) {
         throw new UnsupportedOperationException();
-
     }
 
     @Override

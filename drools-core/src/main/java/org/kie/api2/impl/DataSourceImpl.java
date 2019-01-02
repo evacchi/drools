@@ -13,16 +13,15 @@ import org.drools.core.RuleBaseConfiguration;
 import org.drools.core.WorkingMemoryEntryPoint;
 import org.drools.core.common.ClassAwareObjectStore;
 import org.drools.core.common.EqualityKey;
+import org.drools.core.common.InternalAgendaGroup;
 import org.drools.core.common.InternalFactHandle;
 import org.drools.core.common.InternalWorkingMemory;
 import org.drools.core.common.InternalWorkingMemoryEntryPoint;
-import org.drools.core.common.NamedEntryPoint;
 import org.drools.core.common.ObjectStore;
 import org.drools.core.common.PropagationContextFactory;
 import org.drools.core.datasources.InternalDataSource;
 import org.drools.core.factmodel.traits.TraitTypeEnum;
 import org.drools.core.phreak.PropagationEntry;
-import org.drools.core.phreak.PropagationList;
 import org.drools.core.reteoo.EntryPointNode;
 import org.drools.core.reteoo.LeftTuple;
 import org.drools.core.reteoo.ObjectTypeConf;
@@ -40,12 +39,28 @@ import org.kie.api.runtime.rule.RuleUnit;
 import org.kie.api2.api.DataSource;
 
 import static org.drools.core.common.DefaultFactHandle.determineIdentityHashCode;
+import static org.drools.core.ruleunit.RuleUnitUtil.RULE_UNIT_ENTRY_POINT;
 
 public class DataSourceImpl<T> implements DataSource<T> {
 
     private ObjectStore objectStore = new ClassAwareObjectStore(RuleBaseConfiguration.AssertBehaviour.IDENTITY, null);
 
     private List<T> inserted;
+
+    public void bind(RuleUnitInstanceImpl ruleUnitInstance) {
+        DummyWorkingMemory workingMemory = ruleUnitInstance.getWorkingMemory();
+        workingMemory.getEntryPoint(RULE_UNIT_ENTRY_POINT).insert(ruleUnitInstance.unit());
+        FactHandleFactory fhFactory = workingMemory.getFactHandleFactory();
+        InternalAgendaGroup agendaGroup = (InternalAgendaGroup) workingMemory.getAgenda().getAgendaGroup(ruleUnitInstance.unit().getClass().getCanonicalName());
+        agendaGroup.setAutoDeactivate(false);
+        agendaGroup.setFocus();
+
+        inserted.forEach(object -> {
+            DataSourceFactHandle factHandle = new DataSourceFactHandle(this, fhFactory.getNextId(), fhFactory.getNextRecency(), object);
+            objectStore.addHandle(factHandle, object);
+            propagate(workingMemory, () -> new Insert(factHandle));
+        });
+    }
 
     @Override
     public FactHandle add(T object) {
@@ -119,7 +134,10 @@ public class DataSourceImpl<T> implements DataSource<T> {
 //        propagationsMap.forEach((ruId, list) -> {
 //            if (ruId.equals(currentUnit)) {
 
-        EntryPoint entryPoint = workingMemory.getEntryPoint(EntryPointId.DEFAULT.getEntryPointId());
+        EntryPoint entryPoint = workingMemory.getEntryPoint(
+                EntryPointId.DEFAULT.getEntryPointId()
+
+        );
         workingMemory.getPropagationList().addEntry(s.get().setEntryPoint(entryPoint));
 
 //            } else {

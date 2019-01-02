@@ -2,7 +2,6 @@ package org.kie.api2;
 
 import org.drools.core.RuleBaseConfiguration;
 import org.drools.core.impl.InternalKnowledgeBase;
-import org.drools.model.Index;
 import org.drools.model.Model;
 import org.drools.model.Rule;
 import org.drools.model.Variable;
@@ -20,12 +19,8 @@ import org.kie.api2.impl.DataSourceImpl;
 
 import static org.drools.model.DSL.declarationOf;
 import static org.drools.model.DSL.on;
-import static org.drools.model.PatternDSL.alphaIndexedBy;
-import static org.drools.model.PatternDSL.betaIndexedBy;
 import static org.drools.model.PatternDSL.pattern;
-import static org.drools.model.PatternDSL.reactOn;
 import static org.drools.model.PatternDSL.rule;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 public class Api2ModelTest {
@@ -34,37 +29,20 @@ public class Api2ModelTest {
     public void testApi2() {
         Result result = new Result();
         Variable<Person> markV = declarationOf(Person.class);
-        Variable<Person> olderV = declarationOf(Person.class);
+//        Variable<Person> olderV = declarationOf(Person.class);
 
         Rule rule = rule("beta")
                 .unit(MyUnit.class)
                 .build(
                         pattern(markV)
                                 .expr("exprA", p -> {
-                                          System.out.println("CHECK");
-                                          return p.getName().equals("Mark");
-                                      },
-                                      alphaIndexedBy(String.class, Index.ConstraintType.EQUAL, 1, p -> p.getName(), "Mark"),
-                                      reactOn("name", "age")),
-                        pattern(olderV)
-                                .expr("exprB", p -> {
-                                          System.out.println("CHECK2");
+                                    System.out.println("CHECK");
+                                    return p.getName().equals("Mark");
+                                }),
 
-                                          return !p.getName().equals("Mark");
-                                      },
-                                      alphaIndexedBy(String.class, Index.ConstraintType.NOT_EQUAL, 1, p -> p.getName(), "Mark"),
-                                      reactOn("name"))
-                                .expr("exprC", markV, (p1, p2) -> {
-                                          System.out.println("CHECK3");
-
-                                          return p1.getAge() > p2.getAge();
-                                      },
-                                      betaIndexedBy(int.class, Index.ConstraintType.GREATER_THAN, 0, p -> p.getAge(), p -> p.getAge()),
-                                      reactOn("age")),
-                        on(olderV, markV).execute((p1, p2) -> {
-                            String value = p1.getName() + " is older than " + p2.getName();
-                            System.out.println(value);
-                            result.setValue(value);
+                        on(markV).execute(m -> {
+                            System.out.println("I found Mark");
+                            result.setValue(m);
                         })
                 );
 
@@ -87,18 +65,7 @@ public class Api2ModelTest {
         FactHandle marioFH = ps.add(mario);
 
         rui.run();
-        assertEquals("Mario is older than Mark", result.getValue());
-
-        result.setValue(null);
-        ps.remove(marioFH);
-        rui.run();
         assertNotNull(result.getValue());
-
-        mark.setAge(34);
-        ps.update(markFH, mark);
-
-        rui.run();
-        assertEquals("Edson is older than Mark", result.getValue());
 
         System.out.println(result.getValue());
 

@@ -5,12 +5,14 @@ import java.util.UUID;
 import org.drools.core.RuleBaseConfiguration;
 import org.drools.core.impl.InternalKnowledgeBase;
 import org.drools.core.impl.KnowledgeBaseImpl;
+import org.kie.api.KieServices;
+import org.kie.api.runtime.KieContainer;
 import org.kie.api2.impl.KieRuntimeFactoryImpl;
 
 public interface Kie {
 
     static Runtime.Factory runtime() {
-        return runtime(new KnowledgeBaseImpl(UUID.randomUUID().toString(), new RuleBaseConfiguration()));
+        return runtime((InternalKnowledgeBase) KieServices.Factory.get().newKieClasspathContainer().getKieBase());
     }
 
     static Runtime.Factory runtime(InternalKnowledgeBase kBase) {

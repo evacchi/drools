@@ -6,6 +6,9 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.locks.Lock;
 
+import org.drools.compiler.builder.impl.KnowledgeBuilderImpl;
+import org.drools.compiler.compiler.ProcessBuilder;
+import org.drools.compiler.compiler.ProcessBuilderFactory;
 import org.drools.core.SessionConfiguration;
 import org.drools.core.SessionConfigurationImpl;
 import org.drools.core.WorkingMemoryEntryPoint;
@@ -27,6 +30,7 @@ import org.drools.core.event.RuleEventListenerSupport;
 import org.drools.core.event.RuleRuntimeEventSupport;
 import org.drools.core.impl.EnvironmentImpl;
 import org.drools.core.impl.InternalKnowledgeBase;
+import org.drools.core.io.impl.ReaderResource;
 import org.drools.core.phreak.PropagationEntry;
 import org.drools.core.reteoo.EntryPointNode;
 import org.drools.core.reteoo.TerminalNode;
@@ -45,6 +49,7 @@ import org.jbpm.process.core.impl.ProcessImpl;
 import org.jbpm.process.instance.ProcessRuntimeImpl;
 import org.jbpm.ruleflow.core.RuleFlowProcess;
 import org.kie.api.KieBase;
+import org.kie.api.definition.process.Process;
 import org.kie.api.event.kiebase.KieBaseEventListener;
 import org.kie.api.event.process.ProcessEventListener;
 import org.kie.api.event.rule.AgendaEventListener;
@@ -75,9 +80,10 @@ public class ProcessUnitInstanceImpl<U extends ProcessUnit> implements ProcessUn
 
     private final U unit;
     private final InternalKnowledgeBase kBase;
-    private final InternalProcessRuntime runtime;
+    private final InternalProcessRuntime processRuntime;
     private final ProcessInstance processInstance;
-    private final ProcessImpl process;
+    private final Process process;
+    private final ProcessUnitDummyWorkingMemory dummyWorkingMemory;
 
     public ProcessUnitInstanceImpl(U unit, InternalKnowledgeBase kBase) {
         // I know this isn't correct: for now we are recreating new factories and runtimes each time; this is only for this PoC
@@ -85,11 +91,13 @@ public class ProcessUnitInstanceImpl<U extends ProcessUnit> implements ProcessUn
         ProcessRuntimeFactoryService svc = ProcessRuntimeFactory.getProcessRuntimeFactoryService();
         this.unit = unit;
         this.kBase = kBase;
-        this.process = new RuleFlowProcess(); // faking it for now, we just want to "run" an empty process
-        this.process.setId(id());
-        kBase.addProcess(this.process);
-        this.runtime = svc.newProcessRuntime(new ProcessUnitDummyWorkingMemory(kBase));
-        this.processInstance = runtime.createProcessInstance(
+        this.dummyWorkingMemory = new ProcessUnitDummyWorkingMemory(kBase);
+        this.processRuntime = svc.newProcessRuntime(dummyWorkingMemory);
+        // by convention (for now) we assume process id == unit name
+        this.process = kBase.getProcess(id());
+        this.dummyWorkingMemory.setProcessRuntime(processRuntime);
+
+        this.processInstance = processRuntime.createProcessInstance(
                 unit.getClass().getCanonicalName(),
                 Collections.emptyMap() // this would extract the params from the Unit and pass it via Map (for now)
         );
@@ -97,7 +105,7 @@ public class ProcessUnitInstanceImpl<U extends ProcessUnit> implements ProcessUn
 
     @Override
     public void run() {
-        runtime.startProcess(id());
+        processRuntime.startProcessInstance(processInstance.getId());
     }
 
     @Override
@@ -126,7 +134,12 @@ class ProcessUnitDummyWorkingMemory implements InternalWorkingMemory,
         environment = new EnvironmentImpl();
         timerService = new JDKTimerService();
         this.kieBase = kieBase;
-        processRuntime = new ProcessRuntimeImpl((InternalKnowledgeRuntime) this);
+//        // must use (InternalWorkingMemory) and not (InternalKnowledgeRuntime) otherwise it breaks with:
+//        // java.lang.ClassCastException: org.drools.core.common.ProjectClassLoader cannot be cast to org.kie.internal.utils.CompositeClassLoader
+    }
+
+    void setProcessRuntime(InternalProcessRuntime processRuntime) {
+        this.processRuntime = processRuntime;
     }
 
     @Override

@@ -10,6 +10,7 @@ import java.util.concurrent.locks.Lock;
 import org.drools.core.SessionConfiguration;
 import org.drools.core.SessionConfigurationImpl;
 import org.drools.core.WorkingMemoryEntryPoint;
+import org.drools.core.base.MapGlobalResolver;
 import org.drools.core.common.ConcurrentNodeMemories;
 import org.drools.core.common.InternalAgenda;
 import org.drools.core.common.InternalFactHandle;
@@ -239,7 +240,7 @@ class RuleUnitDummyWorkingMemory implements InternalWorkingMemoryActions {
 
     @Override
     public GlobalResolver getGlobalResolver() {
-        throw new UnsupportedOperationException();
+        return new MapGlobalResolver();
     }
 
     @Override

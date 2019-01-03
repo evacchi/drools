@@ -12,11 +12,7 @@ import org.kie.api2.impl.KieRuntimeFactoryImpl;
 public interface Kie {
 
     static Runtime.Factory runtime() {
-        return runtime((InternalKnowledgeBase) KieServices.Factory.get().newKieClasspathContainer().getKieBase());
-    }
-
-    static Runtime.Factory runtime(InternalKnowledgeBase kBase) {
-        return new KieRuntimeFactoryImpl(kBase);
+        return new KieRuntimeFactoryImpl((InternalKnowledgeBase) KieServices.Factory.get().newKieClasspathContainer().getKieBase());
     }
 
     interface Runtime {

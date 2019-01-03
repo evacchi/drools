@@ -12,6 +12,7 @@ import org.junit.Test;
 import org.kie.api.runtime.rule.FactHandle;
 import org.kie.api2.api.DataSource;
 import org.kie.api2.api.Kie;
+import org.kie.api2.api.ProcessUnit;
 import org.kie.api2.api.RuleUnitInstance;
 import org.kie.api2.impl.DataSourceImpl;
 import org.kie.api2.model.Person;

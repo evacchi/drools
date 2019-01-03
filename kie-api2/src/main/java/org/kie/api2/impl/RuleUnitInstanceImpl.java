@@ -68,7 +68,7 @@ public class RuleUnitInstanceImpl<T extends RuleUnit> implements RuleUnitInstanc
 
     private static final String DEFAULT_RULE_UNIT = "DEFAULT_RULE_UNIT";
 
-    private final DummyWorkingMemory dummyWorkingMemory;
+    private final RuleUnitDummyWorkingMemory dummyWorkingMemory;
     private final ConcurrentNodeMemories nodeMemories;
     private T unit;
     private InternalKnowledgeBase kBase;
@@ -78,7 +78,7 @@ public class RuleUnitInstanceImpl<T extends RuleUnit> implements RuleUnitInstanc
     public RuleUnitInstanceImpl(T unit, InternalKnowledgeBase kBase) {
         this.unit = unit;
         this.kBase = kBase;
-        this.dummyWorkingMemory = new DummyWorkingMemory(this);
+        this.dummyWorkingMemory = new RuleUnitDummyWorkingMemory(this);
         this.agenda = new PatchedDefaultAgenda(kBase);
         this.nodeMemories = new ConcurrentNodeMemories(kBase, DEFAULT_RULE_UNIT);
         this.entryPoints = new EntryPoints(kBase, dummyWorkingMemory);
@@ -131,7 +131,7 @@ public class RuleUnitInstanceImpl<T extends RuleUnit> implements RuleUnitInstanc
         return agenda;
     }
 
-    DummyWorkingMemory getWorkingMemory() {
+    RuleUnitDummyWorkingMemory getWorkingMemory() {
         return dummyWorkingMemory;
     }
 
@@ -180,14 +180,14 @@ class EntryPoints {
     }
 }
 
-class DummyWorkingMemory implements InternalWorkingMemoryActions {
+class RuleUnitDummyWorkingMemory implements InternalWorkingMemoryActions {
 
     private final RuleUnitInstanceImpl delegate;
     private SessionConfigurationImpl sessionConfiguration = new SessionConfigurationImpl();
     private SessionClock timerService = new JDKTimerService();
     private InternalKnowledgeRuntime dummyRuntime;
 
-    DummyWorkingMemory(RuleUnitInstanceImpl delegate) {
+    RuleUnitDummyWorkingMemory(RuleUnitInstanceImpl delegate) {
         this.delegate = delegate;
     }
 

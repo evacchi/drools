@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 
 import org.drools.core.RuleBaseConfiguration;
 import org.drools.core.WorkingMemoryEntryPoint;
@@ -105,7 +104,7 @@ public class DataSourceImpl<T> implements DataSource<T> {
         // EntryPoint entryPoint = workingMemory.getEntryPoint(
         //         EntryPointId.DEFAULT.getEntryPointId());
         PropagationList propagationList = ruleUnitInstance.getAgenda().getPropagationList();
-        DummyWorkingMemory workingMemory = ruleUnitInstance.getWorkingMemory();
+        RuleUnitDummyWorkingMemory workingMemory = ruleUnitInstance.getWorkingMemory();
         AbstractDataSourcePropagation propagationEntry = s.setEntryPoint(workingMemory);
         propagationList.addEntry(s);
     }

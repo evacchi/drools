@@ -34,6 +34,7 @@ import org.drools.core.common.ActivationGroupNode;
 import org.drools.core.common.ActivationsFilter;
 import org.drools.core.common.AgendaGroupFactory;
 import org.drools.core.common.AgendaItem;
+import org.drools.core.common.DefaultAgenda;
 import org.drools.core.common.EventSupport;
 import org.drools.core.common.InternalAgenda;
 import org.drools.core.common.InternalAgendaGroup;
@@ -80,6 +81,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * A patched version of the original {@link DefaultAgenda}. Diff with the original for details
+ *
  * Rule-firing Agenda.
  *
  * <p>

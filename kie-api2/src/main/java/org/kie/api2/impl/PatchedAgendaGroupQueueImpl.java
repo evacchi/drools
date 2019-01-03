@@ -38,6 +38,8 @@ import org.drools.core.spi.PropagationContext;
 import org.drools.core.util.BinaryHeapQueue;
 
 /**
+ * A patched version of the original <code>AgendaGroup</code>. Diff with the original for details
+ *
  * <code>AgendaGroup</code> implementation that uses a <code>PriorityQueue</code> to prioritise the evaluation of added
  * <code>ActivationQueue</code>s. The <code>AgendaGroup</code> also maintains a <code>Map</code> of <code>ActivationQueues</code>
  * for requested salience values.

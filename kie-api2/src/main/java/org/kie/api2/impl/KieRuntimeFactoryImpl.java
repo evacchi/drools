@@ -43,6 +43,8 @@ public class KieRuntimeFactoryImpl implements Kie.Runtime.Factory {
     private UnitInstanceFactory lookup(Class<? extends Unit> unitClass) {
         if (unitClass == RuleUnit.class) {
             return lookupFactory(RuleUnitInstanceFactory.class);
+        } else if (unitClass == ProcessUnit.class) {
+            return lookupFactory(ProcessUnitInstanceFactory.class);
         }
         throw new NoSuchElementException();
     }

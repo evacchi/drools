@@ -67,6 +67,10 @@ import org.kie.api.time.SessionClock;
 import org.kie.api2.api.ProcessUnit;
 import org.kie.api2.api.ProcessUnitInstance;
 
+/**
+ * It represents a process with all its runtime-related state.
+ * It's basically a ProcessInstance + additional meta data.
+ */
 public class ProcessUnitInstanceImpl<U extends ProcessUnit> implements ProcessUnitInstance<U> {
 
     private final U unit;
@@ -76,6 +80,8 @@ public class ProcessUnitInstanceImpl<U extends ProcessUnit> implements ProcessUn
     private final ProcessImpl process;
 
     public ProcessUnitInstanceImpl(U unit, InternalKnowledgeBase kBase) {
+        // I know this isn't correct: for now we are recreating new factories and runtimes each time; this is only for this PoC
+        // see the Unit design document for details of how this will be actually handled using managers
         ProcessRuntimeFactoryService svc = ProcessRuntimeFactory.getProcessRuntimeFactoryService();
         this.unit = unit;
         this.kBase = kBase;
@@ -85,7 +91,7 @@ public class ProcessUnitInstanceImpl<U extends ProcessUnit> implements ProcessUn
         this.runtime = svc.newProcessRuntime(new ProcessUnitDummyWorkingMemory(kBase));
         this.processInstance = runtime.createProcessInstance(
                 unit.getClass().getCanonicalName(),
-                Collections.emptyMap() // this would extract the params from the Unit
+                Collections.emptyMap() // this would extract the params from the Unit and pass it via Map (for now)
         );
     }
 
@@ -104,7 +110,12 @@ public class ProcessUnitInstanceImpl<U extends ProcessUnit> implements ProcessUn
     }
 }
 
-class ProcessUnitDummyWorkingMemory implements InternalWorkingMemory, InternalKnowledgeRuntime {
+/**
+ * A severely limited implementation of the WorkingMemory interface.
+ * It only exists for legacy reasons.
+ */
+class ProcessUnitDummyWorkingMemory implements InternalWorkingMemory,
+                                               InternalKnowledgeRuntime {
 
     private final TimerService timerService;
     private final EnvironmentImpl environment;

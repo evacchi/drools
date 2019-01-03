@@ -64,6 +64,10 @@ import org.kie.api2.api.DataSource;
 import org.kie.api2.api.RuleUnit;
 import org.kie.api2.api.RuleUnitInstance;
 
+/**
+ * Represents a {@link RuleUnit} with all its runtime-related data. It's the equivalent
+ * of a session, but with the working memory, agenda, etc. limited to this only Unit.
+ */
 public class RuleUnitInstanceImpl<T extends RuleUnit> implements RuleUnitInstance<T> {
 
     private static final String DEFAULT_RULE_UNIT = "DEFAULT_RULE_UNIT";
@@ -140,7 +144,9 @@ public class RuleUnitInstanceImpl<T extends RuleUnit> implements RuleUnitInstanc
         return unit;
     }
 }
-
+/**
+ * Implements a collection of EntryPoints
+ */
 class EntryPoints {
 
     private InternalKnowledgeBase kBase;
@@ -180,6 +186,11 @@ class EntryPoints {
     }
 }
 
+/**
+ * A severely limited implementation of the WorkingMemory interface
+ * which delegates to the RuleUnitInstance. It only exists for legacy reasons.
+ *
+ */
 class RuleUnitDummyWorkingMemory implements InternalWorkingMemoryActions {
 
     private final RuleUnitInstanceImpl delegate;

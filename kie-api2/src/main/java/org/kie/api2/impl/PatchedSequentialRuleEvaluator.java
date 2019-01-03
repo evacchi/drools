@@ -19,10 +19,14 @@ package org.kie.api2.impl;
 import org.drools.core.base.DefaultKnowledgeHelper;
 import org.drools.core.common.InternalAgendaGroup;
 import org.drools.core.concurrent.RuleEvaluator;
+import org.drools.core.concurrent.SequentialRuleEvaluator;
 import org.drools.core.phreak.RuleAgendaItem;
 import org.drools.core.spi.KnowledgeHelper;
 import org.kie.api.runtime.rule.AgendaFilter;
 
+/**
+ * A patched, simplified version of the original {@link SequentialRuleEvaluator}.
+ */
 public class PatchedSequentialRuleEvaluator implements RuleEvaluator {
 
     private final KnowledgeHelper knowledgeHelper;

@@ -9,6 +9,7 @@ public class DataSourceTest {
 
     @Test
     public void testDs() {
+        // example usage of a data source
         DataSource<String> ds = new DataSourceImpl<>();
         ds.add("foo");
         ds.add("bar");

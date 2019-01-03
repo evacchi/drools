@@ -1,14 +1,13 @@
 package org.kie.api2.impl;
 
+import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.locks.Lock;
 
-import org.drools.compiler.builder.impl.KnowledgeBuilderImpl;
-import org.drools.compiler.compiler.ProcessBuilder;
-import org.drools.compiler.compiler.ProcessBuilderFactory;
 import org.drools.core.SessionConfiguration;
 import org.drools.core.SessionConfigurationImpl;
 import org.drools.core.WorkingMemoryEntryPoint;
@@ -30,7 +29,6 @@ import org.drools.core.event.RuleEventListenerSupport;
 import org.drools.core.event.RuleRuntimeEventSupport;
 import org.drools.core.impl.EnvironmentImpl;
 import org.drools.core.impl.InternalKnowledgeBase;
-import org.drools.core.io.impl.ReaderResource;
 import org.drools.core.phreak.PropagationEntry;
 import org.drools.core.reteoo.EntryPointNode;
 import org.drools.core.reteoo.TerminalNode;
@@ -45,9 +43,7 @@ import org.drools.core.spi.GlobalResolver;
 import org.drools.core.time.TimerService;
 import org.drools.core.time.impl.JDKTimerService;
 import org.drools.core.util.bitmask.BitMask;
-import org.jbpm.process.core.impl.ProcessImpl;
-import org.jbpm.process.instance.ProcessRuntimeImpl;
-import org.jbpm.ruleflow.core.RuleFlowProcess;
+import org.jbpm.workflow.instance.impl.WorkflowProcessInstanceImpl;
 import org.kie.api.KieBase;
 import org.kie.api.definition.process.Process;
 import org.kie.api.event.kiebase.KieBaseEventListener;
@@ -71,6 +67,7 @@ import org.kie.api.runtime.rule.ViewChangedEventListener;
 import org.kie.api.time.SessionClock;
 import org.kie.api2.api.ProcessUnit;
 import org.kie.api2.api.ProcessUnitInstance;
+import org.kie.api2.api.Unit;
 
 /**
  * It represents a process with all its runtime-related state.
@@ -81,9 +78,9 @@ public class ProcessUnitInstanceImpl<U extends ProcessUnit> implements ProcessUn
     private final U unit;
     private final InternalKnowledgeBase kBase;
     private final InternalProcessRuntime processRuntime;
-    private final ProcessInstance processInstance;
     private final Process process;
     private final ProcessUnitDummyWorkingMemory dummyWorkingMemory;
+    private WorkflowProcessInstanceImpl processInstance;
 
     public ProcessUnitInstanceImpl(U unit, InternalKnowledgeBase kBase) {
         // I know this isn't correct: for now we are recreating new factories and runtimes each time; this is only for this PoC
@@ -97,15 +94,47 @@ public class ProcessUnitInstanceImpl<U extends ProcessUnit> implements ProcessUn
         this.process = kBase.getProcess(id());
         this.dummyWorkingMemory.setProcessRuntime(processRuntime);
 
-        this.processInstance = processRuntime.createProcessInstance(
-                unit.getClass().getCanonicalName(),
-                Collections.emptyMap() // this would extract the params from the Unit and pass it via Map (for now)
-        );
+        this.processInstance = null;
     }
 
     @Override
     public void run() {
+        // we convert back and forth between the fields of the unit and a map.
+        // This is suboptimal, but it's just for the PoC. We can think of better ways,
+        // like creating a Map that delegates to the Unit fields (I have already done it and kept in a PR for a while)
+        HashMap<String, Object> params = new HashMap<>();
+        // extract the params from the Unit and pass it via Map (pick each field and set it as key for now)
+        toMap(unit, params);
+        processInstance = (WorkflowProcessInstanceImpl) processRuntime.createProcessInstance(
+                unit.getClass().getCanonicalName(), params);
         processRuntime.startProcessInstance(processInstance.getId());
+        // reconcile unit with internal variable representation
+        fromMap(processInstance.getVariables(), unit);
+    }
+
+    private static void toMap(Unit unit, Map<String, Object> map) {
+        try {
+            for (Field field : unit.getClass().getDeclaredFields()) {
+                field.setAccessible(true);
+                String key = field.getName();
+                Object value = field.get(unit);
+                map.put(key, value);
+            }
+        } catch (IllegalAccessException e) {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    private static void fromMap(Map<String, Object> map, Unit unit) {
+        try {
+            for (Field field : unit.getClass().getDeclaredFields()) {
+                field.setAccessible(true);
+                String key = field.getName();
+                field.set(unit, map.get(key));
+            }
+        } catch (IllegalAccessException e) {
+            throw new UnsupportedOperationException();
+        }
     }
 
     @Override
@@ -754,7 +783,7 @@ class ProcessUnitDummyWorkingMemory implements InternalWorkingMemory,
 
     @Override
     public Collection<? extends Object> getObjects(ObjectFilter filter) {
-        return null;
+        return Collections.emptyList();
     }
 
     @Override

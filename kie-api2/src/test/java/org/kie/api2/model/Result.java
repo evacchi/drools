@@ -16,6 +16,7 @@
 
 package org.kie.api2.model;
 
+// using a static field for now instead of globals
 public class Result {
     public static Person value;
 }

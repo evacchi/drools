@@ -3,6 +3,9 @@ package org.kie.api2.impl;
 import java.util.NoSuchElementException;
 
 import org.kie.api.KieBase;
+import org.kie.api2.api.BayesUnit;
+import org.kie.api2.api.BayesUnitInstance;
+import org.kie.api2.api.BayesUnitInstanceFactory;
 import org.kie.api2.api.Kie;
 import org.kie.api2.api.ProcessUnit;
 import org.kie.api2.api.ProcessUnitInstance;
@@ -40,11 +43,18 @@ public class KieRuntimeFactoryImpl implements Kie.Runtime.Factory {
         return (ProcessUnitInstance<U>) factory.create(unit);
     }
 
+    public <U extends BayesUnit> BayesUnitInstance<U> of(U unit) {
+        BayesUnitInstanceFactory factory = lookupFactory(BayesUnitInstanceFactory.class);
+        return (BayesUnitInstance<U>) factory.create(unit);
+    }
+
     private UnitInstanceFactory lookup(Class<? extends Unit> unitClass) {
         if (unitClass == RuleUnit.class) {
             return lookupFactory(RuleUnitInstanceFactory.class);
         } else if (unitClass == ProcessUnit.class) {
             return lookupFactory(ProcessUnitInstanceFactory.class);
+        } else if (unitClass == BayesUnit.class) {
+            return lookupFactory(BayesUnitInstanceFactory.class);
         }
         throw new NoSuchElementException();
     }
@@ -56,6 +66,8 @@ public class KieRuntimeFactoryImpl implements Kie.Runtime.Factory {
             return (T) new RuleUnitInstanceFactoryImpl(kBase);
         } else if (cls == ProcessUnitInstanceFactory.class) {
             return (T) new ProcessUnitInstanceFactoryImpl(kBase);
+        } else if (cls == BayesUnitInstanceFactory.class) {
+            return (T) new BayesUnitInstanceFactoryImpl(kBase);
         } else {
             throw new NoSuchElementException();
         }

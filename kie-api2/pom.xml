@@ -19,6 +19,11 @@
       <version>7.16.0-SNAPSHOT</version>
     </dependency>
     <dependency>
+      <groupId>org.drools</groupId>
+      <artifactId>drools-beliefs</artifactId>
+      <version>7.16.0-SNAPSHOT</version>
+    </dependency>
+    <dependency>
       <groupId>org.jbpm</groupId>
       <artifactId>jbpm-bpmn2</artifactId>
       <version>7.16.0-SNAPSHOT</version>

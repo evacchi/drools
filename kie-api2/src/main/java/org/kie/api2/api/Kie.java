@@ -25,6 +25,8 @@ public interface Kie {
             <U extends RuleUnit> RuleUnitInstance<U> of(U unit);
 
             <U extends ProcessUnit> ProcessUnitInstance<U> of(U unit);
+
+            <U extends BayesUnit> BayesUnitInstance<U> of(U Unit);
         }
     }
 }

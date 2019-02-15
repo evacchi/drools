@@ -386,7 +386,6 @@ public class SlidingTimeWindow
             // TODO Auto-generated method stub
         }
 
-        @Override
         public InternalWorkingMemory getWorkingMemory() {
             return workingMemory;
         }

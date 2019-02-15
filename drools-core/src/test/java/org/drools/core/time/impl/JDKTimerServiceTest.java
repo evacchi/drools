@@ -139,7 +139,6 @@ public class JDKTimerServiceTest {
             return list;
         }
 
-        @Override
         public InternalWorkingMemory getWorkingMemory() {
             return (InternalWorkingMemory) Proxy.newProxyInstance( InternalWorkingMemory.class.getClassLoader(),
                                                                    new Class[]{InternalWorkingMemory.class},

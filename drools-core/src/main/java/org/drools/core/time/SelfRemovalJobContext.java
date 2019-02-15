@@ -47,9 +47,8 @@ public class SelfRemovalJobContext implements JobContext {
         return jobContext.getJobHandle();
     }
 
-    @Override
     public InternalWorkingMemory getWorkingMemory() {
-        return jobContext.getWorkingMemory();
+        throw new UnsupportedOperationException("delegate.getWorkingMemory()");
     }
 
     public void remove() {

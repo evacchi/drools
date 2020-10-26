@@ -164,6 +164,7 @@ import static org.drools.mvel.parser.GeneratedMvelParserConstants.STRING_LITERAL
 import static org.drools.mvel.parser.GeneratedMvelParserConstants.SUPER;
 import static org.drools.mvel.parser.GeneratedMvelParserConstants.SWITCH;
 import static org.drools.mvel.parser.GeneratedMvelParserConstants.SYNCHRONIZED;
+import static org.drools.mvel.parser.GeneratedMvelParserConstants.THEN;
 import static org.drools.mvel.parser.GeneratedMvelParserConstants.THIS;
 import static org.drools.mvel.parser.GeneratedMvelParserConstants.THROW;
 import static org.drools.mvel.parser.GeneratedMvelParserConstants.THROWS;
@@ -174,10 +175,12 @@ import static org.drools.mvel.parser.GeneratedMvelParserConstants.TRANSITIVE;
 import static org.drools.mvel.parser.GeneratedMvelParserConstants.TRUE;
 import static org.drools.mvel.parser.GeneratedMvelParserConstants.TRY;
 import static org.drools.mvel.parser.GeneratedMvelParserConstants.UNICODE_ESCAPE;
+import static org.drools.mvel.parser.GeneratedMvelParserConstants.UNIT;
 import static org.drools.mvel.parser.GeneratedMvelParserConstants.UNIX_EOL;
 import static org.drools.mvel.parser.GeneratedMvelParserConstants.USES;
 import static org.drools.mvel.parser.GeneratedMvelParserConstants.VOID;
 import static org.drools.mvel.parser.GeneratedMvelParserConstants.VOLATILE;
+import static org.drools.mvel.parser.GeneratedMvelParserConstants.WHEN;
 import static org.drools.mvel.parser.GeneratedMvelParserConstants.WHILE;
 import static org.drools.mvel.parser.GeneratedMvelParserConstants.WINDOWS_EOL;
 import static org.drools.mvel.parser.GeneratedMvelParserConstants.WITH;
@@ -262,7 +265,10 @@ public class TokenTypes {
      */
     public static JavaToken.Category getCategory(int kind) {
         switch (kind) {
+            case UNIT:
             case RULE:
+            case WHEN:
+            case THEN:
                 return JavaToken.Category.KEYWORD;
             case WINDOWS_EOL:
             case UNIX_EOL:

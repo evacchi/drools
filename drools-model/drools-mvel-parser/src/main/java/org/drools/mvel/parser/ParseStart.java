@@ -54,6 +54,7 @@ public interface ParseStart<R> {
     ParseStart<Name> NAME = GeneratedMvelParser::NameParseStart;
     ParseStart<SimpleName> SIMPLE_NAME = GeneratedMvelParser::SimpleNameParseStart;
     ParseStart<CompilationUnit> COMPILATION_UNIT = GeneratedMvelParser::CompilationUnit;
+    ParseStart<CompilationUnit> DRLX_COMPILATION_UNIT = GeneratedMvelParser::DrlxCompilationUnit;
 
     R parse(GeneratedMvelParser parser) throws ParseException, org.drools.mvel.parser.ParseException;
 }

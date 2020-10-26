@@ -15,7 +15,7 @@ public class DrlxParserTest {
 
     @Test
     public void testA () throws IOException {
-        ParseStart<CompilationUnit> context = ParseStart.COMPILATION_UNIT;
+        ParseStart<CompilationUnit> context = ParseStart.DRLX_COMPILATION_UNIT;
         MvelParser mvelParser = new MvelParser();
         ParseResult<CompilationUnit> parse =
                 mvelParser.parse(context,

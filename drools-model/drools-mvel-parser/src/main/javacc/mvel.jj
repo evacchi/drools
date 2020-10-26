@@ -296,9 +296,10 @@ TOKEN :
 | < EXPORTS: "exports" >
 | < PROVIDES: "provides" >
 | < TRANSITIVE: "transitive" >
+| < UNIT: "unit" >
+| < RULE: "rule" >
 | < WHEN: "when" >
 | < THEN: "then" >
-| < RULE: "rule" >
 | < NOT: "not" >
 | < MODIFY: "modify" >
 | < MVEL_STARTS_WITH: "str[startsWith]" >
@@ -2992,6 +2993,50 @@ NodeList<Expression> Expressions():
   { return ret; }
 }
 
+
+
+CompilationUnit DrlxCompilationUnit():
+{
+	PackageDeclaration pakage = null;
+	NodeList<ImportDeclaration> imports = emptyList();
+	ImportDeclaration in = null;
+	NodeList<TypeDeclaration<?>> types = emptyList();
+    ModifierHolder modifier;
+	TypeDeclaration<?> tn = null;
+	ModuleDeclaration module = null;
+}
+{
+    try {
+        ( LOOKAHEAD(2)";" )*
+        [ LOOKAHEAD(PackageDeclaration()) pakage = PackageDeclaration() ]
+        (
+            in = ImportDeclaration() { imports = add(imports, in); }
+        |
+            UnitDeclaration() // FIXME keep name around
+            modifier = Modifiers()
+            tn = RuleDeclaration(modifier) { types = add(types, tn); }
+        )*
+        (<EOF> | <CTRL_Z>)
+        { return new CompilationUnit(range(token_source.getHomeToken(), token()), pakage, imports, types, module); }
+    } catch (ParseException e) {
+        recover(EOF, e);
+        final CompilationUnit compilationUnit = new CompilationUnit(range(token_source.getHomeToken(), token()), null, new NodeList<ImportDeclaration>(), new NodeList<TypeDeclaration<?>>(), null);
+        compilationUnit.setParsed(UNPARSABLE);
+        return compilationUnit;
+    }
+}
+
+SimpleName UnitDeclaration():
+{
+    SimpleName name;
+}
+{
+    <UNIT>
+    name = SimpleName()
+    ";"
+    { return name; }
+}
+
 RuleDeclaration RuleDeclaration(ModifierHolder modifier):
 {
     SimpleName name;
@@ -2999,9 +3044,8 @@ RuleDeclaration RuleDeclaration(ModifierHolder modifier):
     RuleBody body;
 }
 {
-  "rule"
+  <RULE>
   name = SimpleName()
-  <WHEN>
   body = RuleBody()
 
 	{ return new RuleDeclaration(range(begin, token()), modifier.annotations, name, body); }
@@ -3013,11 +3057,8 @@ RuleBody RuleBody():
     JavaToken begin;
 }
 {
-  "{"
   items = RuleItems()
-  "}"
-
-    { return new RuleBody(null, items); }
+  { return new RuleBody(null, items); }
 }
 
 NodeList<RuleItem> RuleItems():
@@ -3027,14 +3068,13 @@ NodeList<RuleItem> RuleItems():
     RuleConsequence consequnce;
 }
 {
-
+  <WHEN> "{"
   (
     item = RulePattern() { items.add(item); }
   )*
-  "}" <THEN> "{"
-  (
-      item = RuleConsequence() { items.add(item); }
-  )*
+  "}"
+  <THEN>
+  item = RuleConsequence() { items.add(item); }
 
     { return items; }
 }
@@ -3062,7 +3102,7 @@ RuleConsequence RuleConsequence():
     BlockStmt block;
 }
 {
-  "do" { begin=token(); }
+  { begin=token(); }
   block = Block()
 
     { return new RuleConsequence(range(begin, token()), block); }

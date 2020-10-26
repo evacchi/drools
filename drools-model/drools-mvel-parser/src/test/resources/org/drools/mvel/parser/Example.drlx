@@ -1,12 +1,13 @@
 package org.drools.mvel.parser;
 
-class Example {
-  rule fooBar {
-        Foo foo = /blah/baz[x];
-        Bar bar = /blah/baz[y];
-    } then {
-        System.out.println("hello");
-    }
+import blah.*;
 
+unit Example;
+
+rule fooBar when {
+    Foo foo = /blah/baz[x == "test"];
+    Bar bar = /blah/baz[y];
+} then {
+    System.out.println("hello");
 }
 

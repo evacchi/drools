@@ -65,6 +65,15 @@ public class ComponentsFactory {
     }
 
     private static class Holder {
-        private static ComponentsSupplier supplier = instanceFromNames(DYNAMIC_IMPL, STATIC_IMPL);
+        private static final boolean IS_NATIVE_IMAGE = System.getProperty("org.graalvm.nativeimage.imagecode") != null;
+        private static final boolean OVERRIDE_CL = System.getProperty("drools.use.static") != null;
+        private static final ComponentsSupplier supplier;
+        static {
+            if (IS_NATIVE_IMAGE || OVERRIDE_CL) {
+                supplier = instanceFromNames(STATIC_IMPL);
+            } else {
+                supplier = instanceFromNames(DYNAMIC_IMPL);
+            }
+        }
     }
 }

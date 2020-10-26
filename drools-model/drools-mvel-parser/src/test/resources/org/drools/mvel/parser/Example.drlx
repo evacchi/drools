@@ -1,0 +1,12 @@
+package org.drools.mvel.parser;
+
+class Example {
+  rule fooBar {
+    Foo foo = /blah/baz[x];
+    Bar bar = /blah/baz[y];
+    do {
+        System.out.println("hello");
+    }
+  }
+}
+

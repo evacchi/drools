@@ -296,6 +296,8 @@ TOKEN :
 | < EXPORTS: "exports" >
 | < PROVIDES: "provides" >
 | < TRANSITIVE: "transitive" >
+| < WHEN: "when" >
+| < THEN: "then" >
 | < RULE: "rule" >
 | < NOT: "not" >
 | < MODIFY: "modify" >
@@ -2996,6 +2998,7 @@ RuleDeclaration RuleDeclaration(ModifierHolder modifier):
 {
   "rule"
   name = SimpleName()
+  <WHEN>
   body = RuleBody()
 
 	{ return new RuleDeclaration(range(begin, token()), modifier.annotations, name, body); }
@@ -3007,11 +3010,11 @@ RuleBody RuleBody():
     JavaToken begin;
 }
 {
-  "{" { begin=token(); }
+  "{"
   items = RuleItems()
   "}"
 
-    { return new RuleBody(range(begin, token()), items); }
+    { return new RuleBody(null, items); }
 }
 
 NodeList<RuleItem> RuleItems():
@@ -3021,10 +3024,13 @@ NodeList<RuleItem> RuleItems():
     RuleConsequence consequnce;
 }
 {
+
   (
     item = RulePattern() { items.add(item); }
-  |
-    item = RuleConsequence() { items.add(item); }
+  )*
+  "}" <THEN> "{"
+  (
+      item = RuleConsequence() { items.add(item); }
   )*
 
     { return items; }

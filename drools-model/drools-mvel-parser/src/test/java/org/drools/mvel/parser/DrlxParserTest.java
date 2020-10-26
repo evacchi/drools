@@ -9,6 +9,7 @@ import org.junit.Test;
 
 import static org.drools.mvel.parser.Providers.provider;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class DrlxParserTest {
 
@@ -20,8 +21,9 @@ public class DrlxParserTest {
                 mvelParser.parse(context,
                                  provider(Paths.get("src/test/resources/org/drools/mvel/parser/Example.drlx")));
 
-        assertTrue(parse.isSuccessful());
-
+        if (!parse.isSuccessful()) {
+            fail(parse.toString());
+        }
     }
 
 }

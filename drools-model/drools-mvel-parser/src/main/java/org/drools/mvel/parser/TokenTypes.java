@@ -164,7 +164,6 @@ import static org.drools.mvel.parser.GeneratedMvelParserConstants.STRING_LITERAL
 import static org.drools.mvel.parser.GeneratedMvelParserConstants.SUPER;
 import static org.drools.mvel.parser.GeneratedMvelParserConstants.SWITCH;
 import static org.drools.mvel.parser.GeneratedMvelParserConstants.SYNCHRONIZED;
-import static org.drools.mvel.parser.GeneratedMvelParserConstants.THEN;
 import static org.drools.mvel.parser.GeneratedMvelParserConstants.THIS;
 import static org.drools.mvel.parser.GeneratedMvelParserConstants.THROW;
 import static org.drools.mvel.parser.GeneratedMvelParserConstants.THROWS;
@@ -268,7 +267,6 @@ public class TokenTypes {
             case UNIT:
             case RULE:
             case WHEN:
-            case THEN:
                 return JavaToken.Category.KEYWORD;
             case WINDOWS_EOL:
             case UNIX_EOL:
@@ -427,7 +425,6 @@ public class TokenTypes {
             case GT:
             case MODIFY:
                 return JavaToken.Category.OPERATOR;
-            // These are DRLX tokens, They don't have the constants generated
             case ENTER_JAVADOC_COMMENT:
             case ENTER_MULTILINE_COMMENT:
             case COMMENT_CONTENT:

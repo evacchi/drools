@@ -45,6 +45,11 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 import java.util.function.Supplier;
 
+import com.github.javaparser.ParseResult;
+import com.github.javaparser.Problem;
+import com.github.javaparser.Range;
+import com.github.javaparser.TokenRange;
+import com.github.javaparser.ast.CompilationUnit;
 import org.drools.compiler.builder.InternalKnowledgeBuilder;
 import org.drools.compiler.builder.impl.errors.MissingImplementationException;
 import org.drools.compiler.compiler.AnnotationDeclarationError;
@@ -132,6 +137,9 @@ import org.drools.core.util.DroolsStreamUtils;
 import org.drools.core.util.IoUtils;
 import org.drools.core.util.StringUtils;
 import org.drools.core.xml.XmlChangeSetReader;
+import org.drools.mvel.parser.MvelParser;
+import org.drools.mvel.parser.ParseStart;
+import org.drools.compiler.drlx.DrlxCompiler;
 import org.drools.reflective.ComponentsFactory;
 import org.drools.reflective.classloader.ProjectClassLoader;
 import org.kie.api.KieBase;
@@ -166,6 +174,7 @@ import org.xml.sax.SAXException;
 import static org.drools.core.impl.KnowledgeBaseImpl.registerFunctionClassAndInnerClasses;
 import static org.drools.core.util.StringUtils.isEmpty;
 import static org.drools.core.util.StringUtils.ucFirst;
+import static org.drools.mvel.parser.Providers.provider;
 
 public class KnowledgeBuilderImpl implements InternalKnowledgeBuilder {
 
@@ -566,6 +575,34 @@ public class KnowledgeBuilderImpl implements InternalKnowledgeBuilder {
         }
         return hasErrors ? null : pkg;
     }
+
+    PackageDescr drlxToPackageDescr(Resource resource) throws IOException {
+        ParseStart<CompilationUnit> context = ParseStart.DRLX_COMPILATION_UNIT;
+        MvelParser mvelParser = new MvelParser();
+        ParseResult<CompilationUnit> result =
+                mvelParser.parse(context,
+                                 provider(resource.getReader()));
+        if (result.isSuccessful()) {
+            DrlxCompiler drlxCompiler = new DrlxCompiler();
+            PackageDescr pkg = drlxCompiler.visit(result.getResult().get(), null);
+            if (pkg == null) {
+                addBuilderResult(new ParserError(resource, "Parser returned a null Package", 0, 0));
+                return null;
+            } else {
+                pkg.setResource(resource);
+                return pkg;
+            }
+        } else {
+            for (Problem problem : result.getProblems()) {
+                TokenRange tokenRange = problem.getLocation().get();
+                Range range = tokenRange.getBegin().getRange().get();
+                int lineCount = range.getLineCount();
+                this.results.add(new ParserError(problem.getMessage(), lineCount, -1));
+            }
+            return null;
+        }
+    }
+
 
     /**
      * Load a rule package from XML source.

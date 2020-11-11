@@ -172,9 +172,15 @@ public class CompositeKnowledgeBuilderImpl implements CompositeKnowledgeBuilder 
                                                  kb -> ((KnowledgeBuilderImpl) kb).setAssetFilter(null));
     }
 
+    static final ResourceType DRLX =
+            ResourceType.addResourceTypeToRegistry("DRLX", "Drools Extended Rule Language", "src/main/resources", "drlx");
+
+
     private Collection<CompositePackageDescr> buildPackageDescr() {
         Map<String, CompositePackageDescr> packages = new HashMap<>();
+
         buildResource(packages, ResourceType.DRL, ResourceToPkgDescrMapper.DRL_TO_PKG_DESCR);
+        buildResource(packages, DRLX, ResourceToPkgDescrMapper.DRLX_TO_PKG_DESCR);
         buildResource(packages, ResourceType.GDRL,ResourceToPkgDescrMapper. DRL_TO_PKG_DESCR);
         buildResource(packages, ResourceType.RDRL, ResourceToPkgDescrMapper.DRL_TO_PKG_DESCR);
         buildResource(packages, ResourceType.DESCR, ResourceToPkgDescrMapper.DRL_TO_PKG_DESCR);
@@ -313,6 +319,7 @@ public class CompositeKnowledgeBuilderImpl implements CompositeKnowledgeBuilder 
         PackageDescr map(KnowledgeBuilderImpl kBuilder, ResourceDescr resourceDescr) throws Exception;
 
         ResourceToPkgDescrMapper DRL_TO_PKG_DESCR = ( kBuilder, resourceDescr ) -> kBuilder.drlToPackageDescr(resourceDescr.resource);
+        ResourceToPkgDescrMapper DRLX_TO_PKG_DESCR = ( kBuilder, resourceDescr ) -> kBuilder.drlxToPackageDescr(resourceDescr.resource);
         ResourceToPkgDescrMapper TEMPLATE_TO_PKG_DESCR = ( kBuilder, resourceDescr ) -> kBuilder.templateToPackageDescr( resourceDescr.resource);
         ResourceToPkgDescrMapper DSLR_TO_PKG_DESCR = ( kBuilder, resourceDescr ) -> kBuilder.dslrToPackageDescr(resourceDescr.resource);
         ResourceToPkgDescrMapper XML_TO_PKG_DESCR = ( kBuilder, resourceDescr ) -> kBuilder.xmlToPackageDescr(resourceDescr.resource);

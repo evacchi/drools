@@ -2,7 +2,10 @@ package org.drools.compiler.drlx;
 
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.ImportDeclaration;
+import com.github.javaparser.ast.PackageDeclaration;
 import com.github.javaparser.ast.body.TypeDeclaration;
+import com.github.javaparser.ast.modules.ModuleDeclaration;
+import org.drools.compiler.lang.ParseException;
 import org.drools.compiler.lang.api.CEDescrBuilder;
 import org.drools.compiler.lang.api.DescrFactory;
 import org.drools.compiler.lang.api.ImportDescrBuilder;
@@ -25,10 +28,20 @@ public class DrlxCompiler implements DrlGenericVisitor<BaseDescr, Void> {
     PackageDescrBuilder builder = DescrFactory.newPackage();
 
     public PackageDescr visit(CompilationUnit u, Void arg) {
-        u.getPackageDeclaration().ifPresent(pkg -> builder.name(pkg.getNameAsString()));
+        PackageDeclaration packageDeclaration = u.getPackageDeclaration().orElseThrow(() -> {
+            throw new ParseException("Expected package declaration.", -1);
+        });
+        String pkgName = packageDeclaration.getNameAsString();
+        builder.name(pkgName);
+
         for (ImportDeclaration i : u.getImports()) {
             this.visit(i, null);
         }
+        ModuleDeclaration moduleDeclaration = u.getModule().orElseThrow(() -> {
+            throw new ParseException("Expected unit declaration.", -1);
+        });
+        builder.newUnit().target(String.format("%s.%s", pkgName, moduleDeclaration.getNameAsString()));
+
         for (TypeDeclaration<?> typeDeclaration : u.getTypes()) {
             RuleDeclaration rd = (RuleDeclaration) typeDeclaration;
             this.visit(rd, null);
@@ -46,14 +59,14 @@ public class DrlxCompiler implements DrlGenericVisitor<BaseDescr, Void> {
     public RuleDescr visit(RuleDeclaration decl, Void v) {
         RuleDescrBuilder ruleDescrBuilder = builder.newRule();
         ruleDescrBuilder.name(decl.getNameAsString());
-        PatternDescrBuilder<CEDescrBuilder<RuleDescrBuilder, AndDescr>> and = ruleDescrBuilder.lhs().pattern();
+        PatternDescrBuilder<CEDescrBuilder<RuleDescrBuilder, AndDescr>> pat = ruleDescrBuilder.lhs().pattern();
         for (RuleItem item : decl.getRuleBody().getItems()) {
             if (item instanceof RulePattern) {
                 RulePattern p = (RulePattern) item;
                 if (p.getBind() == null) {
-                    and.constraint(p.getExpr().toString());
+                    pat.constraint(p.getExpr().toString());
                 } else {
-                    and.bind(p.getBind().toString(), p.getExpr().toString(), false);
+                    pat.id(p.getBind().toString(), false).constraint(p.getExpr().toString());
                 }
             } else if (item instanceof RuleConsequence) {
                 RuleConsequence c = (RuleConsequence) item;

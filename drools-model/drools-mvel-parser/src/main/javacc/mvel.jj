@@ -3003,6 +3003,7 @@ CompilationUnit DrlxCompilationUnit():
     ModifierHolder modifier;
 	TypeDeclaration<?> tn = null;
 	ModuleDeclaration module = null;
+	SimpleName unit = null;
 }
 {
     try {
@@ -3011,12 +3012,12 @@ CompilationUnit DrlxCompilationUnit():
         (
             in = ImportDeclaration() { imports = add(imports, in); }
         |
-            UnitDeclaration() // FIXME keep name around
+            unit = UnitDeclaration() // FIXME keep name around
             modifier = Modifiers()
             tn = RuleDeclaration(modifier) { types = add(types, tn); }
         )*
         (<EOF> | <CTRL_Z>)
-        { return new CompilationUnit(range(token_source.getHomeToken(), token()), pakage, imports, types, module); }
+        { return new CompilationUnit(range(token_source.getHomeToken(), token()), pakage, imports, types, new ModuleDeclaration().setName(unit.getIdentifier())); }
     } catch (ParseException e) {
         recover(EOF, e);
         final CompilationUnit compilationUnit = new CompilationUnit(range(token_source.getHomeToken(), token()), null, new NodeList<ImportDeclaration>(), new NodeList<TypeDeclaration<?>>(), null);

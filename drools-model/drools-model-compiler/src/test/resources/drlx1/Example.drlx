@@ -1,11 +1,11 @@
-package drlx1;
+package org.drools.modelcompiler.drlx;
+import java.time.LocalDate;
 
 unit Example;
 
 rule fooBar
 when {
-    Foo foo = /blah/baz[x == "test"];
-    Bar bar = /blah/baz[y];
+    LocalDate foo = /dates[ year > 2020 ];
 } do {
-    System.out.println("hello");
+    System.out.println("finally");
 }

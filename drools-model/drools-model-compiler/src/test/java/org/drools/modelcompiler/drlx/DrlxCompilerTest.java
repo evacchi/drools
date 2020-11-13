@@ -18,6 +18,8 @@ package org.drools.modelcompiler.drlx;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.LocalDate;
+import java.util.UUID;
 
 import com.github.javaparser.ParseResult;
 import com.github.javaparser.Problem;
@@ -35,12 +37,15 @@ import org.drools.core.definitions.InternalKnowledgePackage;
 import org.drools.core.definitions.impl.KnowledgePackageImpl;
 import org.drools.core.io.impl.InputStreamResource;
 import org.drools.modelcompiler.ExecutableModelProject;
+import org.drools.modelcompiler.KJARUtils;
 import org.drools.modelcompiler.builder.PackageModel;
 import org.drools.modelcompiler.builder.generator.DRLIdGenerator;
 import org.drools.modelcompiler.builder.generator.ModelGenerator;
+import org.drools.modelcompiler.domain.Person;
 import org.drools.mvel.DrlDumper;
 import org.drools.mvel.parser.MvelParser;
 import org.drools.mvel.parser.ParseStart;
+import org.drools.ruleunit.RuleUnitExecutor;
 import org.junit.Test;
 import org.kie.api.KieServices;
 import org.kie.api.builder.KieBuilder;
@@ -50,6 +55,7 @@ import org.kie.api.builder.ReleaseId;
 import org.kie.api.builder.Results;
 import org.kie.api.builder.model.KieModuleModel;
 import org.kie.api.io.Resource;
+import org.kie.api.io.ResourceType;
 import org.kie.api.runtime.KieContainer;
 import org.kie.api.runtime.KieSession;
 
@@ -112,9 +118,30 @@ public class DrlxCompilerTest {
                 packageModel,
                 false);
 
-        assertEquals(packageModel.getRuleUnits().size(), 1);
+        assertEquals(1, packageModel.getRuleUnits().size());
+    }
 
+    @Test
+    public void testCompileUnitFull() throws IOException {
+        final ResourceType DRLX =
+                ResourceType.addResourceTypeToRegistry("DRLX", "Drools Extended Rule Language", "src/main/resources", "drlx");
 
+        String path = "drlx1/Example.drlx";
+        InputStream p = getClass().getClassLoader().getResourceAsStream(path);
+        InputStreamResource r = new InputStreamResource(p);
+        r.setSourcePath("src/main/resources/" + path);
+
+        KieServices ks = KieServices.get();
+        ReleaseId releaseId = ks.newReleaseId("org.kie", "kjar-test-1.0", "1.0");
+        KieFileSystem kfs = ks.newKieFileSystem();
+        kfs.write(r);
+        kfs.writePomXML(KJARUtils.getPom(releaseId));
+        KieBuilder kieBuilder = ks.newKieBuilder(kfs).buildAll(ExecutableModelProject.class);
+        KieContainer kieContainer = ks.newKieContainer(releaseId);
+        RuleUnitExecutor executor = RuleUnitExecutor.newRuleUnitExecutor(kieContainer);
+        executor.newDataSource("dates",
+                               LocalDate.of(2021, 7, 7));
+        assertEquals(1, executor.run(Example.class));
     }
 
     private static String getPom(ReleaseId releaseId) {

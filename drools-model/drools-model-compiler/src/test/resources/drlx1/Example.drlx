@@ -1,5 +1,9 @@
 package org.drools.modelcompiler.drlx;
+
+
 import java.time.LocalDate;
+
+/** with this comment I break **/
 
 unit Example;
 

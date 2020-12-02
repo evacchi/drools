@@ -579,6 +579,7 @@ public class KnowledgeBuilderImpl implements InternalKnowledgeBuilder {
     PackageDescr drlxToPackageDescr(Resource resource) throws IOException {
         ParseStart<CompilationUnit> context = ParseStart.DRLX_COMPILATION_UNIT;
         MvelParser mvelParser = new MvelParser();
+        mvelParser.setSemicolonInsertion(false);
         ParseResult<CompilationUnit> result =
                 mvelParser.parse(context,
                                  provider(resource.getReader()));

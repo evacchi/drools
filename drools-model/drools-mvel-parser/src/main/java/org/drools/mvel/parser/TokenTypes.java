@@ -124,6 +124,7 @@ import static org.drools.mvel.parser.GeneratedMvelParserConstants.NOT;
 import static org.drools.mvel.parser.GeneratedMvelParserConstants.NULL;
 import static org.drools.mvel.parser.GeneratedMvelParserConstants.OCTAL_LITERAL;
 import static org.drools.mvel.parser.GeneratedMvelParserConstants.OLD_MAC_EOL;
+import static org.drools.mvel.parser.GeneratedMvelParserConstants.OLD_MAC_EOL_;
 import static org.drools.mvel.parser.GeneratedMvelParserConstants.OPEN;
 import static org.drools.mvel.parser.GeneratedMvelParserConstants.OPENS;
 import static org.drools.mvel.parser.GeneratedMvelParserConstants.ORASSIGN;
@@ -156,6 +157,7 @@ import static org.drools.mvel.parser.GeneratedMvelParserConstants.SINGLE_LINE_CO
 import static org.drools.mvel.parser.GeneratedMvelParserConstants.SLASH;
 import static org.drools.mvel.parser.GeneratedMvelParserConstants.SLASHASSIGN;
 import static org.drools.mvel.parser.GeneratedMvelParserConstants.SPACE;
+import static org.drools.mvel.parser.GeneratedMvelParserConstants.SPACE_;
 import static org.drools.mvel.parser.GeneratedMvelParserConstants.STAR;
 import static org.drools.mvel.parser.GeneratedMvelParserConstants.STARASSIGN;
 import static org.drools.mvel.parser.GeneratedMvelParserConstants.STATIC;
@@ -271,9 +273,11 @@ public class TokenTypes {
             case WINDOWS_EOL:
             case UNIX_EOL:
             case OLD_MAC_EOL:
+            case OLD_MAC_EOL_:
                 return JavaToken.Category.EOL;
             case EOF:
             case SPACE:
+            case SPACE_:
             case CTRL_Z:
                 return JavaToken.Category.WHITESPACE_NO_EOL;
             case SINGLE_LINE_COMMENT:

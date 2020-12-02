@@ -73,6 +73,7 @@ public class DrlxCompilerTest {
 
         ParseStart<CompilationUnit> context = ParseStart.DRLX_COMPILATION_UNIT;
         MvelParser mvelParser = new MvelParser();
+        mvelParser.setSemicolonInsertion(false);
         ParseResult<CompilationUnit> result =
                 mvelParser.parse(context,
                                  provider(r.getReader()));
@@ -82,12 +83,11 @@ public class DrlxCompilerTest {
             System.out.println(new DrlDumper().dump(pkg));
         } else {
             for (Problem problem : result.getProblems()) {
-                TokenRange tokenRange = problem.getLocation().get();
-                Range range = tokenRange.getBegin().getRange().get();
-                int lineCount = range.getLineCount();
+                int lineCount = problem.getLocation().flatMap(rg -> rg.getBegin().getRange()).map(Range::getLineCount).orElse(-1);
                 System.out.println(new ParserError(problem.getMessage(), lineCount, -1));
-                fail();
             }
+            fail();
+
         }
     }
 
@@ -98,6 +98,7 @@ public class DrlxCompilerTest {
 
         ParseStart<CompilationUnit> context = ParseStart.DRLX_COMPILATION_UNIT;
         MvelParser mvelParser = new MvelParser();
+        mvelParser.setSemicolonInsertion(false);
         ParseResult<CompilationUnit> result =
                 mvelParser.parse(context,
                                  provider(r.getReader()));

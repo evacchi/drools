@@ -22,6 +22,7 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 import com.github.javaparser.ParseResult;
+import com.github.javaparser.ParserConfiguration;
 import com.github.javaparser.Problem;
 import com.github.javaparser.Range;
 import com.github.javaparser.TokenRange;
@@ -70,8 +71,7 @@ public class DrlxCompilerTest {
     @Test
     public void testWhitespace() {
         ParseStart<Expression> context = ParseStart.EXPRESSION;
-        MvelParser mvelParser = new MvelParser();
-        mvelParser.setSemicolonInsertion(false);
+        MvelParser mvelParser = new MvelParser(new ParserConfiguration(), false);
         ParseResult<Expression> result = mvelParser.parse(context, provider("1\n+1"));
         assertEquals("1 + 1", result.getResult().get().toString());
     }
@@ -82,8 +82,7 @@ public class DrlxCompilerTest {
         InputStreamResource r = new InputStreamResource(p);
 
         ParseStart<CompilationUnit> context = ParseStart.DRLX_COMPILATION_UNIT;
-        MvelParser mvelParser = new MvelParser();
-        mvelParser.setSemicolonInsertion(false);
+        MvelParser mvelParser = new MvelParser(new ParserConfiguration(), false);
         ParseResult<CompilationUnit> result =
                 mvelParser.parse(context,
                                  provider(r.getReader()));
@@ -107,8 +106,7 @@ public class DrlxCompilerTest {
         InputStreamResource r = new InputStreamResource(p);
 
         ParseStart<CompilationUnit> context = ParseStart.DRLX_COMPILATION_UNIT;
-        MvelParser mvelParser = new MvelParser();
-        mvelParser.setSemicolonInsertion(false);
+        MvelParser mvelParser = new MvelParser(new ParserConfiguration(), false);
         ParseResult<CompilationUnit> result =
                 mvelParser.parse(context,
                                  provider(r.getReader()));

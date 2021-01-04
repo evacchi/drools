@@ -47,6 +47,7 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.function.Supplier;
 
 import com.github.javaparser.ParseResult;
+import com.github.javaparser.ParserConfiguration;
 import com.github.javaparser.Problem;
 import com.github.javaparser.Range;
 import com.github.javaparser.TokenRange;
@@ -579,8 +580,7 @@ public class KnowledgeBuilderImpl implements InternalKnowledgeBuilder {
 
     PackageDescr drlxToPackageDescr(Resource resource) throws IOException {
         ParseStart<CompilationUnit> context = ParseStart.DRLX_COMPILATION_UNIT;
-        MvelParser mvelParser = new MvelParser();
-        mvelParser.setSemicolonInsertion(false);
+        MvelParser mvelParser = new MvelParser(new ParserConfiguration(), false);
         ParseResult<CompilationUnit> result =
                 mvelParser.parse(context,
                                  provider(resource.getReader()));

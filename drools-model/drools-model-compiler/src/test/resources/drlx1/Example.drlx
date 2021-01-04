@@ -1,0 +1,17 @@
+package org.drools.modelcompiler.drlx;
+
+
+import java.time.LocalDate;
+
+/** with this comment I break **/
+
+unit Example;
+
+rule fooBar
+when {
+    LocalDate foo = /dates[ year > 2020 ];
+} do {
+    System.out.println("finally");
+    int a = 1
+    + 1;
+}

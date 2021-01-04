@@ -99,6 +99,11 @@ public final class MvelParser {
         this.optionalSemicolon = optionalSemicolon;
     }
 
+    boolean semicolonInsertion = true;
+    public void setSemicolonInsertion(boolean semicolonInsertion) {
+        this.semicolonInsertion = semicolonInsertion;
+    }
+
     /**
      * Get the configuration for the static parse... methods.
      * This is a STATIC field, so modifying it will directly change how all static parse... methods work!
@@ -129,6 +134,9 @@ public final class MvelParser {
             astParser = new GeneratedMvelParser(provider);
         } else {
             astParser.reset(provider);
+        }
+        if (!semicolonInsertion) {
+            astParser.getTokenSource().setDefaultState(GeneratedMvelParserTokenManager.NO_SEMI_INSERT);
         }
         astParser.setTabSize(configuration.getTabSize());
         astParser.setStoreTokens(configuration.isStoreTokens());

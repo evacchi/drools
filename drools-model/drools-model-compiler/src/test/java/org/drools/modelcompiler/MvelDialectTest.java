@@ -46,6 +46,26 @@ public class MvelDialectTest extends BaseModelTest {
     }
 
     @Test
+    public void FAKE() {
+        String str = "rule R\n" +
+                "dialect \"mvel\"\n" +
+                "when\n" +
+                "  x: /foo/bar\n" +
+                "then\n" +
+                "  System.out.println(\"Hello World\");\n" +
+                "  insert(\"Hello World\");\n" +
+                "end";
+
+        KieSession ksession = getKieSession(str);
+
+        FactHandle fh_47 = ksession.insert(47);
+        ksession.fireAllRules();
+
+        Collection<String> results = getObjectsIntoList(ksession, String.class);
+        assertTrue(results.contains("Hello World"));
+    }
+
+    @Test
     public void testMVELinsert() {
         String str = "rule R\n" +
                 "dialect \"mvel\"\n" +

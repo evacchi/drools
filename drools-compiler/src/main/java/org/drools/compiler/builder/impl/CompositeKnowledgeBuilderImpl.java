@@ -172,15 +172,11 @@ public class CompositeKnowledgeBuilderImpl implements CompositeKnowledgeBuilder 
                                                  kb -> ((KnowledgeBuilderImpl) kb).setAssetFilter(null));
     }
 
-    static final ResourceType DRLX =
-            ResourceType.addResourceTypeToRegistry("DRLX", "Drools Extended Rule Language", "src/main/resources", "drlx");
-
-
     private Collection<CompositePackageDescr> buildPackageDescr() {
         Map<String, CompositePackageDescr> packages = new HashMap<>();
 
         buildResource(packages, ResourceType.DRL, ResourceToPkgDescrMapper.DRL_TO_PKG_DESCR);
-        buildResource(packages, DRLX, ResourceToPkgDescrMapper.DRLX_TO_PKG_DESCR);
+        buildResource(packages, ResourceType.DRLX, ResourceToPkgDescrMapper.DRLX_TO_PKG_DESCR);
         buildResource(packages, ResourceType.GDRL,ResourceToPkgDescrMapper. DRL_TO_PKG_DESCR);
         buildResource(packages, ResourceType.RDRL, ResourceToPkgDescrMapper.DRL_TO_PKG_DESCR);
         buildResource(packages, ResourceType.DESCR, ResourceToPkgDescrMapper.DRL_TO_PKG_DESCR);

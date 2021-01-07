@@ -87,6 +87,7 @@ import org.drools.compiler.compiler.RuleBuildError;
 import org.drools.compiler.compiler.ScoreCardFactory;
 import org.drools.compiler.compiler.TypeDeclarationError;
 import org.drools.compiler.compiler.xml.XmlPackageReader;
+import org.drools.compiler.drlx.DrlxCompiler;
 import org.drools.compiler.lang.ExpanderException;
 import org.drools.compiler.lang.descr.AbstractClassTypeDeclarationDescr;
 import org.drools.compiler.lang.descr.AccumulateImportDescr;
@@ -141,7 +142,7 @@ import org.drools.core.util.StringUtils;
 import org.drools.core.xml.XmlChangeSetReader;
 import org.drools.mvel.parser.MvelParser;
 import org.drools.mvel.parser.ParseStart;
-import org.drools.compiler.drlx.DrlxCompiler;
+import org.drools.compiler.drlx.DrlxVisitor;
 import org.drools.reflective.ComponentsFactory;
 import org.drools.reflective.classloader.ProjectClassLoader;
 import org.kie.api.KieBase;
@@ -579,29 +580,11 @@ public class KnowledgeBuilderImpl implements InternalKnowledgeBuilder {
     }
 
     PackageDescr drlxToPackageDescr(Resource resource) throws IOException {
-        ParseStart<CompilationUnit> context = ParseStart.DRLX_COMPILATION_UNIT;
-        MvelParser mvelParser = new MvelParser(new ParserConfiguration(), false);
-        ParseResult<CompilationUnit> result =
-                mvelParser.parse(context,
-                                 provider(resource.getReader()));
-        if (result.isSuccessful()) {
-            DrlxCompiler drlxCompiler = new DrlxCompiler();
-            PackageDescr pkg = drlxCompiler.visit(result.getResult().get(), null);
-            if (pkg == null) {
-                addBuilderResult(new ParserError(resource, "Parser returned a null Package", 0, 0));
-                return null;
-            } else {
-                pkg.setResource(resource);
-                return pkg;
-            }
-        } else {
-            for (Problem problem : result.getProblems()) {
-                TokenRange tokenRange = problem.getLocation().get();
-                Range range = tokenRange.getBegin().getRange().get();
-                int lineCount = range.getLineCount();
-                this.results.add(new ParserError(problem.getMessage(), lineCount, -1));
-            }
-            return null;
+        DrlxCompiler drlxCompiler = new DrlxCompiler();
+        try {
+            return drlxCompiler.toPackageDescr(resource);
+        } finally {
+            updateResults(drlxCompiler.getResults());
         }
     }
 

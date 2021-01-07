@@ -19,13 +19,12 @@ package org.drools.modelcompiler.drlx;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.LocalDate;
-import java.util.UUID;
+import java.util.stream.Collectors;
 
 import com.github.javaparser.ParseResult;
 import com.github.javaparser.ParserConfiguration;
 import com.github.javaparser.Problem;
 import com.github.javaparser.Range;
-import com.github.javaparser.TokenRange;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.expr.Expression;
 import org.drools.compiler.builder.impl.KnowledgeBuilderConfigurationImpl;
@@ -33,17 +32,18 @@ import org.drools.compiler.builder.impl.KnowledgeBuilderImpl;
 import org.drools.compiler.compiler.DialectCompiletimeRegistry;
 import org.drools.compiler.compiler.PackageRegistry;
 import org.drools.compiler.compiler.ParserError;
+import org.drools.compiler.drlx.DrlxCompiler;
+import org.drools.compiler.drlx.DrlxVisitor;
 import org.drools.compiler.kproject.ReleaseIdImpl;
 import org.drools.compiler.lang.descr.PackageDescr;
 import org.drools.core.definitions.InternalKnowledgePackage;
-import org.drools.core.definitions.impl.KnowledgePackageImpl;
 import org.drools.core.io.impl.InputStreamResource;
+import org.drools.model.Model;
 import org.drools.modelcompiler.ExecutableModelProject;
 import org.drools.modelcompiler.KJARUtils;
 import org.drools.modelcompiler.builder.PackageModel;
 import org.drools.modelcompiler.builder.generator.DRLIdGenerator;
 import org.drools.modelcompiler.builder.generator.ModelGenerator;
-import org.drools.modelcompiler.domain.Person;
 import org.drools.mvel.DrlDumper;
 import org.drools.mvel.parser.MvelParser;
 import org.drools.mvel.parser.ParseStart;
@@ -52,14 +52,10 @@ import org.junit.Test;
 import org.kie.api.KieServices;
 import org.kie.api.builder.KieBuilder;
 import org.kie.api.builder.KieFileSystem;
-import org.kie.api.builder.Message;
 import org.kie.api.builder.ReleaseId;
-import org.kie.api.builder.Results;
-import org.kie.api.builder.model.KieModuleModel;
-import org.kie.api.io.Resource;
-import org.kie.api.io.ResourceType;
 import org.kie.api.runtime.KieContainer;
-import org.kie.api.runtime.KieSession;
+import org.kie.internal.builder.KnowledgeBuilder;
+import org.kie.internal.builder.KnowledgeBuilderResult;
 
 import static org.drools.mvel.parser.Providers.provider;
 import static org.junit.Assert.assertEquals;
@@ -81,23 +77,10 @@ public class DrlxCompilerTest {
         InputStream p = getClass().getClassLoader().getResourceAsStream("drlx1/Example.drlx");
         InputStreamResource r = new InputStreamResource(p);
 
-        ParseStart<CompilationUnit> context = ParseStart.DRLX_COMPILATION_UNIT;
-        MvelParser mvelParser = new MvelParser(new ParserConfiguration(), false);
-        ParseResult<CompilationUnit> result =
-                mvelParser.parse(context,
-                                 provider(r.getReader()));
-        if (result.isSuccessful()) {
-            org.drools.compiler.drlx.DrlxCompiler drlxCompiler = new org.drools.compiler.drlx.DrlxCompiler();
-            PackageDescr pkg = drlxCompiler.visit(result.getResult().get(), null);
-            System.out.println(new DrlDumper().dump(pkg));
-        } else {
-            for (Problem problem : result.getProblems()) {
-                int lineCount = problem.getLocation().flatMap(rg -> rg.getBegin().getRange()).map(Range::getLineCount).orElse(-1);
-                System.out.println(new ParserError(problem.getMessage(), lineCount, -1));
-            }
-            fail();
+        DrlxCompiler drlxCompiler = new DrlxCompiler();
+        drlxCompiler.toPackageDescr(r);
 
-        }
+        assertTrue("Should not have compiler errors\n" + drlxCompiler.getResults().stream().map(KnowledgeBuilderResult::toString).collect(Collectors.joining("\n")), drlxCompiler.getResults().isEmpty());
     }
 
     @Test
@@ -105,22 +88,17 @@ public class DrlxCompilerTest {
         InputStream p = getClass().getClassLoader().getResourceAsStream("drlx1/Example.drlx");
         InputStreamResource r = new InputStreamResource(p);
 
-        ParseStart<CompilationUnit> context = ParseStart.DRLX_COMPILATION_UNIT;
-        MvelParser mvelParser = new MvelParser(new ParserConfiguration(), false);
-        ParseResult<CompilationUnit> result =
-                mvelParser.parse(context,
-                                 provider(r.getReader()));
-        org.drools.compiler.drlx.DrlxCompiler drlxCompiler = new org.drools.compiler.drlx.DrlxCompiler();
-        PackageDescr packageDescr = drlxCompiler.visit(result.getResult().get(), null);
+        DrlxCompiler drlxCompiler = new DrlxCompiler();
+        PackageDescr packageDescr = drlxCompiler.toPackageDescr(r);
 
-        ModelGenerator modelGenerator = new ModelGenerator();
+        assertTrue("Should not have compiler errors", drlxCompiler.getResults().isEmpty());
 
         KnowledgeBuilderImpl kbuilder = new KnowledgeBuilderImpl();
         PackageRegistry registry = kbuilder.getOrCreatePackageRegistry(packageDescr);
         kbuilder.getAndRegisterTypeDeclaration(org.drools.modelcompiler.drlx.Example.class, "org.drools.modelcompiler.drlx");
         InternalKnowledgePackage knowledgePackage = registry.getPackage();
         PackageModel packageModel = new PackageModel(new ReleaseIdImpl("", "", ""), packageDescr.getName(), new KnowledgeBuilderConfigurationImpl(), false, new DialectCompiletimeRegistry(), new DRLIdGenerator());
-        modelGenerator.generateModel(
+        ModelGenerator.generateModel(
                 kbuilder,
                 knowledgePackage,
                 packageDescr,
@@ -132,9 +110,6 @@ public class DrlxCompilerTest {
 
     @Test
     public void testCompileUnitFull() throws IOException {
-        final ResourceType DRLX =
-                ResourceType.addResourceTypeToRegistry("DRLX", "Drools Extended Rule Language", "src/main/resources", "drlx");
-
         String path = "drlx1/Example.drlx";
         InputStream p = getClass().getClassLoader().getResourceAsStream(path);
         InputStreamResource r = new InputStreamResource(p);
@@ -149,8 +124,8 @@ public class DrlxCompilerTest {
         KieContainer kieContainer = ks.newKieContainer(releaseId);
         RuleUnitExecutor executor = RuleUnitExecutor.newRuleUnitExecutor(kieContainer);
         executor.newDataSource("dates",
-                               LocalDate.of(2021, 7, 7));
-        assertEquals(1, executor.run(Example.class));
+                               LocalDate.of(2021, 1, 1));
+        assertEquals(3, executor.run(Example.class));
     }
 
     private static String getPom(ReleaseId releaseId) {

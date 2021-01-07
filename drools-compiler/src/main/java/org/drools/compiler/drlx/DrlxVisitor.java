@@ -46,7 +46,8 @@ public class DrlxVisitor implements DrlGenericVisitor<BaseDescr, Void> {
             RuleDeclaration rd = (RuleDeclaration) typeDeclaration;
             this.visit(rd, null);
         }
-        return builder.getDescr();
+        PackageDescr descr = builder.getDescr();
+        return descr;
     }
 
     @Override
@@ -59,9 +60,10 @@ public class DrlxVisitor implements DrlGenericVisitor<BaseDescr, Void> {
     public RuleDescr visit(RuleDeclaration decl, Void v) {
         RuleDescrBuilder ruleDescrBuilder = builder.newRule();
         ruleDescrBuilder.name(decl.getNameAsString());
-        PatternDescrBuilder<CEDescrBuilder<RuleDescrBuilder, AndDescr>> pat = ruleDescrBuilder.lhs().pattern();
+        CEDescrBuilder<?, AndDescr> lhs = ruleDescrBuilder.lhs().and();
         for (RuleItem item : decl.getRuleBody().getItems()) {
             if (item instanceof RulePattern) {
+                PatternDescrBuilder<? extends CEDescrBuilder<?, AndDescr>> pat = lhs.pattern();
                 RulePattern p = (RulePattern) item;
                 if (p.getBind() == null) {
                     pat.constraint(p.getExpr().toString());

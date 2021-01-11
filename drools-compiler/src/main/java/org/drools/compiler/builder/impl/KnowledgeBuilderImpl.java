@@ -46,12 +46,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 import java.util.function.Supplier;
 
-import com.github.javaparser.ParseResult;
-import com.github.javaparser.ParserConfiguration;
-import com.github.javaparser.Problem;
-import com.github.javaparser.Range;
-import com.github.javaparser.TokenRange;
-import com.github.javaparser.ast.CompilationUnit;
 import org.drools.compiler.builder.InternalKnowledgeBuilder;
 import org.drools.compiler.builder.impl.errors.MissingImplementationException;
 import org.drools.compiler.compiler.AnnotationDeclarationError;
@@ -140,9 +134,6 @@ import org.drools.core.util.DroolsStreamUtils;
 import org.drools.core.util.IoUtils;
 import org.drools.core.util.StringUtils;
 import org.drools.core.xml.XmlChangeSetReader;
-import org.drools.mvel.parser.MvelParser;
-import org.drools.mvel.parser.ParseStart;
-import org.drools.compiler.drlx.DrlxVisitor;
 import org.drools.reflective.ComponentsFactory;
 import org.drools.reflective.classloader.ProjectClassLoader;
 import org.kie.api.KieBase;
@@ -177,7 +168,6 @@ import org.xml.sax.SAXException;
 import static org.drools.core.impl.KnowledgeBaseImpl.registerFunctionClassAndInnerClasses;
 import static org.drools.core.util.StringUtils.isEmpty;
 import static org.drools.core.util.StringUtils.ucFirst;
-import static org.drools.mvel.parser.Providers.provider;
 
 public class KnowledgeBuilderImpl implements InternalKnowledgeBuilder {
 

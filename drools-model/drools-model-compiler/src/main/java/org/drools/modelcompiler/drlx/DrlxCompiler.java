@@ -10,11 +10,14 @@ import com.github.javaparser.Problem;
 import com.github.javaparser.Range;
 import com.github.javaparser.TokenRange;
 import com.github.javaparser.ast.CompilationUnit;
+import org.drools.compiler.builder.PackageDescrCompiler;
 import org.drools.compiler.compiler.ParserError;
 import org.drools.compiler.lang.descr.PackageDescr;
 import org.drools.mvel.parser.MvelParser;
 import org.drools.mvel.parser.ParseStart;
 import org.kie.api.io.Resource;
+import org.kie.api.io.ResourceConfiguration;
+import org.kie.api.io.ResourceType;
 import org.kie.internal.builder.KnowledgeBuilderResult;
 
 import static org.drools.mvel.parser.Providers.provider;

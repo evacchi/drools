@@ -24,6 +24,8 @@ import java.util.stream.Collectors;
 
 import org.drools.compiler.lang.descr.CompositePackageDescr;
 import org.drools.compiler.lang.descr.PackageDescr;
+import org.kie.api.internal.assembler.KieAssemblers;
+import org.kie.api.internal.utils.ServiceRegistry;
 import org.kie.api.io.Resource;
 import org.kie.api.io.ResourceConfiguration;
 import org.kie.api.io.ResourceType;
@@ -176,7 +178,6 @@ public class CompositeKnowledgeBuilderImpl implements CompositeKnowledgeBuilder 
         Map<String, CompositePackageDescr> packages = new HashMap<>();
 
         buildResource(packages, ResourceType.DRL, ResourceToPkgDescrMapper.DRL_TO_PKG_DESCR);
-        buildResource(packages, ResourceType.DRLX, ResourceToPkgDescrMapper.DRLX_TO_PKG_DESCR);
         buildResource(packages, ResourceType.GDRL,ResourceToPkgDescrMapper. DRL_TO_PKG_DESCR);
         buildResource(packages, ResourceType.RDRL, ResourceToPkgDescrMapper.DRL_TO_PKG_DESCR);
         buildResource(packages, ResourceType.DESCR, ResourceToPkgDescrMapper.DRL_TO_PKG_DESCR);
@@ -188,8 +189,34 @@ public class CompositeKnowledgeBuilderImpl implements CompositeKnowledgeBuilder 
         buildResource(packages, ResourceType.TEMPLATE, ResourceToPkgDescrMapper.TEMPLATE_TO_PKG_DESCR);
         buildResource(packages, ResourceType.GDST, ResourceToPkgDescrMapper.GUIDED_DTABLE_TO_PKG_DESCR);
         this.resourcesByType.remove(ResourceType.DRT); // drt is a template for dtables but doesn't have to be built on its own
+
+        buildResourcesFromAssemblers();
+
         return packages.values();
     }
+
+    private void buildResourcesFromAssemblers() {
+        KieAssemblers assemblers = ServiceRegistry.getService(KieAssemblers.class);
+        try {
+            for (Map.Entry<ResourceType, List<ResourceDescr>> resourceTypeListEntry : resourcesByType.entrySet()) {
+                ResourceType type = resourceTypeListEntry.getKey();
+                List<ResourceDescr> descrs = resourceTypeListEntry.getValue();
+                for (ResourceDescr descr : descrs) {
+                    assemblers.addResourceAsPackageDescr(this, descr.resource, type, descr.configuration);
+                }
+            }
+        } catch (RuntimeException e) {
+            if (buildException == null) {
+                buildException = e;
+            }
+        } catch (Exception e) {
+            if (buildException == null) {
+                buildException = new RuntimeException(e);
+            }
+        }
+    }
+
+
 
     private void buildResource(Map<String, CompositePackageDescr> packages, ResourceType resourceType, ResourceToPkgDescrMapper mapper) {
         List<ResourceDescr> resourcesByType = this.resourcesByType.remove(resourceType);
@@ -315,7 +342,6 @@ public class CompositeKnowledgeBuilderImpl implements CompositeKnowledgeBuilder 
         PackageDescr map(KnowledgeBuilderImpl kBuilder, ResourceDescr resourceDescr) throws Exception;
 
         ResourceToPkgDescrMapper DRL_TO_PKG_DESCR = ( kBuilder, resourceDescr ) -> kBuilder.drlToPackageDescr(resourceDescr.resource);
-        ResourceToPkgDescrMapper DRLX_TO_PKG_DESCR = ( kBuilder, resourceDescr ) -> kBuilder.drlxToPackageDescr(resourceDescr.resource);
         ResourceToPkgDescrMapper TEMPLATE_TO_PKG_DESCR = ( kBuilder, resourceDescr ) -> kBuilder.templateToPackageDescr( resourceDescr.resource);
         ResourceToPkgDescrMapper DSLR_TO_PKG_DESCR = ( kBuilder, resourceDescr ) -> kBuilder.dslrToPackageDescr(resourceDescr.resource);
         ResourceToPkgDescrMapper XML_TO_PKG_DESCR = ( kBuilder, resourceDescr ) -> kBuilder.xmlToPackageDescr(resourceDescr.resource);

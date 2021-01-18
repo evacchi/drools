@@ -81,7 +81,6 @@ import org.drools.compiler.compiler.RuleBuildError;
 import org.drools.compiler.compiler.ScoreCardFactory;
 import org.drools.compiler.compiler.TypeDeclarationError;
 import org.drools.compiler.compiler.xml.XmlPackageReader;
-import org.drools.compiler.drlx.DrlxCompiler;
 import org.drools.compiler.lang.ExpanderException;
 import org.drools.compiler.lang.descr.AbstractClassTypeDeclarationDescr;
 import org.drools.compiler.lang.descr.AccumulateImportDescr;
@@ -568,16 +567,6 @@ public class KnowledgeBuilderImpl implements InternalKnowledgeBuilder {
         }
         return hasErrors ? null : pkg;
     }
-
-    PackageDescr drlxToPackageDescr(Resource resource) throws IOException {
-        DrlxCompiler drlxCompiler = new DrlxCompiler();
-        try {
-            return drlxCompiler.toPackageDescr(resource);
-        } finally {
-            updateResults(drlxCompiler.getResults());
-        }
-    }
-
 
     /**
      * Load a rule package from XML source.

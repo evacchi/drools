@@ -23,28 +23,20 @@ import java.util.stream.Collectors;
 
 import com.github.javaparser.ParseResult;
 import com.github.javaparser.ParserConfiguration;
-import com.github.javaparser.Problem;
-import com.github.javaparser.Range;
-import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.expr.Expression;
 import org.drools.compiler.builder.impl.KnowledgeBuilderConfigurationImpl;
 import org.drools.compiler.builder.impl.KnowledgeBuilderImpl;
 import org.drools.compiler.compiler.DialectCompiletimeRegistry;
 import org.drools.compiler.compiler.PackageRegistry;
-import org.drools.compiler.compiler.ParserError;
-import org.drools.compiler.drlx.DrlxCompiler;
-import org.drools.compiler.drlx.DrlxVisitor;
 import org.drools.compiler.kproject.ReleaseIdImpl;
 import org.drools.compiler.lang.descr.PackageDescr;
 import org.drools.core.definitions.InternalKnowledgePackage;
 import org.drools.core.io.impl.InputStreamResource;
-import org.drools.model.Model;
 import org.drools.modelcompiler.ExecutableModelProject;
 import org.drools.modelcompiler.KJARUtils;
 import org.drools.modelcompiler.builder.PackageModel;
 import org.drools.modelcompiler.builder.generator.DRLIdGenerator;
 import org.drools.modelcompiler.builder.generator.ModelGenerator;
-import org.drools.mvel.DrlDumper;
 import org.drools.mvel.parser.MvelParser;
 import org.drools.mvel.parser.ParseStart;
 import org.drools.ruleunit.RuleUnitExecutor;
@@ -54,13 +46,11 @@ import org.kie.api.builder.KieBuilder;
 import org.kie.api.builder.KieFileSystem;
 import org.kie.api.builder.ReleaseId;
 import org.kie.api.runtime.KieContainer;
-import org.kie.internal.builder.KnowledgeBuilder;
 import org.kie.internal.builder.KnowledgeBuilderResult;
 
 import static org.drools.mvel.parser.Providers.provider;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 public class DrlxCompilerTest {
 

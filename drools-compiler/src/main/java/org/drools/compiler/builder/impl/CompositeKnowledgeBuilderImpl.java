@@ -42,6 +42,8 @@ public class CompositeKnowledgeBuilderImpl implements CompositeKnowledgeBuilder 
 
     private final Map<ResourceType, List<ResourceDescr>> resourcesByType = new HashMap<>();
 
+    private final Map<String, CompositePackageDescr> packages = new HashMap<>();
+
     private RuntimeException buildException = null;
 
     public ResourceType currentType = null;
@@ -175,19 +177,17 @@ public class CompositeKnowledgeBuilderImpl implements CompositeKnowledgeBuilder 
     }
 
     private Collection<CompositePackageDescr> buildPackageDescr() {
-        Map<String, CompositePackageDescr> packages = new HashMap<>();
-
-        buildResource(packages, ResourceType.DRL, ResourceToPkgDescrMapper.DRL_TO_PKG_DESCR);
-        buildResource(packages, ResourceType.GDRL,ResourceToPkgDescrMapper. DRL_TO_PKG_DESCR);
-        buildResource(packages, ResourceType.RDRL, ResourceToPkgDescrMapper.DRL_TO_PKG_DESCR);
-        buildResource(packages, ResourceType.DESCR, ResourceToPkgDescrMapper.DRL_TO_PKG_DESCR);
-        buildResource(packages, ResourceType.DSLR, ResourceToPkgDescrMapper.DSLR_TO_PKG_DESCR);
-        buildResource(packages, ResourceType.RDSLR, ResourceToPkgDescrMapper.DSLR_TO_PKG_DESCR);
-        buildResource(packages, ResourceType.XDRL, ResourceToPkgDescrMapper.XML_TO_PKG_DESCR);
-        buildResource(packages, ResourceType.DTABLE, ResourceToPkgDescrMapper.DTABLE_TO_PKG_DESCR);
-        buildResource(packages, ResourceType.TDRL, ResourceToPkgDescrMapper.DRL_TO_PKG_DESCR);
-        buildResource(packages, ResourceType.TEMPLATE, ResourceToPkgDescrMapper.TEMPLATE_TO_PKG_DESCR);
-        buildResource(packages, ResourceType.GDST, ResourceToPkgDescrMapper.GUIDED_DTABLE_TO_PKG_DESCR);
+        buildResource(ResourceType.DRL, ResourceToPkgDescrMapper.DRL_TO_PKG_DESCR);
+        buildResource(ResourceType.GDRL,ResourceToPkgDescrMapper. DRL_TO_PKG_DESCR);
+        buildResource(ResourceType.RDRL, ResourceToPkgDescrMapper.DRL_TO_PKG_DESCR);
+        buildResource(ResourceType.DESCR, ResourceToPkgDescrMapper.DRL_TO_PKG_DESCR);
+        buildResource(ResourceType.DSLR, ResourceToPkgDescrMapper.DSLR_TO_PKG_DESCR);
+        buildResource(ResourceType.RDSLR, ResourceToPkgDescrMapper.DSLR_TO_PKG_DESCR);
+        buildResource(ResourceType.XDRL, ResourceToPkgDescrMapper.XML_TO_PKG_DESCR);
+        buildResource(ResourceType.DTABLE, ResourceToPkgDescrMapper.DTABLE_TO_PKG_DESCR);
+        buildResource(ResourceType.TDRL, ResourceToPkgDescrMapper.DRL_TO_PKG_DESCR);
+        buildResource(ResourceType.TEMPLATE, ResourceToPkgDescrMapper.TEMPLATE_TO_PKG_DESCR);
+        buildResource(ResourceType.GDST, ResourceToPkgDescrMapper.GUIDED_DTABLE_TO_PKG_DESCR);
         this.resourcesByType.remove(ResourceType.DRT); // drt is a template for dtables but doesn't have to be built on its own
 
         buildResourcesFromAssemblers();
@@ -218,12 +218,12 @@ public class CompositeKnowledgeBuilderImpl implements CompositeKnowledgeBuilder 
 
 
 
-    private void buildResource(Map<String, CompositePackageDescr> packages, ResourceType resourceType, ResourceToPkgDescrMapper mapper) {
+    private void buildResource(ResourceType resourceType, ResourceToPkgDescrMapper mapper) {
         List<ResourceDescr> resourcesByType = this.resourcesByType.remove(resourceType);
         if (resourcesByType != null) {
             for (ResourceDescr resourceDescr : resourcesByType) {
                 try {
-                    registerPackageDescr(resourceDescr, packages, resourceDescr.resource, mapper.map(kBuilder, resourceDescr));
+                    registerPackageDescr(resourceDescr, resourceDescr.resource, mapper.map(kBuilder, resourceDescr));
                 } catch (RuntimeException e) {
                     if (buildException == null) {
                         buildException = e;
@@ -237,17 +237,22 @@ public class CompositeKnowledgeBuilderImpl implements CompositeKnowledgeBuilder 
         }
     }
 
-    private void registerPackageDescr(ResourceDescr resourceDescr, Map<String, CompositePackageDescr> packages, Resource resource, PackageDescr packageDescr) {
+    public CompositePackageDescr addPackageDescr(Resource resource, PackageDescr packageDescr) {
+        CompositePackageDescr compositePackageDescr = packages.get(packageDescr.getNamespace());
+        if (compositePackageDescr == null) {
+            compositePackageDescr = packageDescr instanceof CompositePackageDescr ?
+                    ( (CompositePackageDescr) packageDescr ) :
+                    new CompositePackageDescr(resource, packageDescr);
+            packages.put(packageDescr.getNamespace(), compositePackageDescr);
+        } else {
+            compositePackageDescr.addPackageDescr(resource, packageDescr);
+        }
+        return compositePackageDescr;
+    }
+
+    private void registerPackageDescr(ResourceDescr resourceDescr, Resource resource, PackageDescr packageDescr) {
         if (packageDescr != null) {
-            CompositePackageDescr compositePackageDescr = packages.get(packageDescr.getNamespace());
-            if (compositePackageDescr == null) {
-                compositePackageDescr = packageDescr instanceof CompositePackageDescr ?
-                                        ( (CompositePackageDescr) packageDescr ) :
-                                        new CompositePackageDescr(resource, packageDescr);
-                packages.put(packageDescr.getNamespace(), compositePackageDescr);
-            } else {
-                compositePackageDescr.addPackageDescr(resource, packageDescr);
-            }
+            CompositePackageDescr compositePackageDescr = addPackageDescr(resource, packageDescr);
             compositePackageDescr.addFilter( resourceDescr.getFilter() );
         }
     }

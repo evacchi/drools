@@ -1,5 +1,6 @@
 package org.drools.modelcompiler.drlx;
 
+import org.drools.compiler.builder.impl.CompositeKnowledgeBuilderImpl;
 import org.drools.compiler.builder.impl.KnowledgeBuilderImpl;
 import org.drools.compiler.lang.descr.PackageDescr;
 import org.kie.api.internal.assembler.KieAssemblerService;
@@ -15,12 +16,15 @@ public class DrlxAssembler implements KieAssemblerService {
     }
 
     @Override
-    public void addResource(Object kbuilder, Resource resource, ResourceType type, ResourceConfiguration configuration) throws Exception {
-        KnowledgeBuilderImpl kieBuilder = (KnowledgeBuilderImpl) kbuilder;
+    public void addResourceAsPackageDescr(Object kbuilder, Resource resource, ResourceType type, ResourceConfiguration configuration) throws Exception {
+        CompositeKnowledgeBuilderImpl kieBuilder = (CompositeKnowledgeBuilderImpl) kbuilder;
         DrlxCompiler drlxCompiler = new DrlxCompiler();
         PackageDescr packageDescr = drlxCompiler.toPackageDescr(resource);
-        kieBuilder.addPackage(packageDescr);
+        kieBuilder.addPackageDescr(resource, packageDescr);
     }
 
+    @Override
+    public void addResource(Object kbuilder, Resource resource, ResourceType type, ResourceConfiguration configuration) throws Exception {
 
+    }
 }
